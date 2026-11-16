@@ -12,7 +12,7 @@ function takeTokenFromHash(hash) {
 
 // Runs on MagangHub's own page: hands the token over in the URL fragment (never sent to a server).
 function bookmarkletHref(origin) {
-  const code = "(function(){var t=sessionStorage.getItem('monev_access_token');" +
+  const code = "(function(){if(location.hostname!=='monev.maganghub.kemnaker.go.id'){alert('Buka halaman MagangHub dulu');return}var t=sessionStorage.getItem('monev_access_token');" +
     "if(!t){alert('Login MagangHub dulu');return}" +
     "window.open(" + JSON.stringify(origin + "/#mh=") + "+encodeURIComponent(t),'_blank','noopener')})();";
   return "javascript:" + encodeURI(code).replace(/#/g, "%23"); // a raw # would truncate a saved bookmark
@@ -71,7 +71,9 @@ function show(data) {
   }
 }
 
+let gen = 0; // bumped by Keluar and every load(); a stale response must not touch the DOM
 async function load() {
+  const g = ++gen;
   const t = token();
   reset();
   if (!t) { status(""); return; }
@@ -79,14 +81,16 @@ async function load() {
   let res;
   try {
     res = await fetch(`${API}/daily-logs?page=${page}`, { headers: { Authorization: "Bearer " + t } });
-  } catch (e) { status("Gagal terhubung", true); return; }
-  if (res.status === 401) {
+  } catch (e) { if (g === gen) status("Gagal terhubung", true); return; }
+  if (g !== gen) return;
+  if (res.status === 401 || res.status === 403) {
     status("Token kedaluwarsa atau tidak valid. Buka MagangHub, lalu klik tombol → Shelia lagi.", true);
     return;
   }
   if (!res.ok) { status(`Gagal memuat (HTTP ${res.status})`, true); return; }
   let body = null;
   try { body = await res.json(); } catch (e) { /* non-JSON body */ }
+  if (g !== gen) return;
   const data = Array.isArray(body && body.data) ? body.data : [];
   const total = body && typeof body.total === "number" ? body.total : null;
   if (page === 1 && data.length) pageSize = data.length;
@@ -116,7 +120,7 @@ $("mh-prev").addEventListener("click", () => { page--; load(); });
 $("mh-next").addEventListener("click", () => { page++; load(); });
 $("mh-out").addEventListener("click", () => {
   try { localStorage.removeItem(KEY); } catch (e) { /* storage blocked */ }
-  page = 1; pageSize = 0;
+  gen++; page = 1; pageSize = 0;
   status("");
   reset();
 });

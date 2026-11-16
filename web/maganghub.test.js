@@ -13,12 +13,13 @@ const { takeTokenFromHash, bookmarkletHref } = (() => {
 })();
 
 const ORIGIN = "https://test-shelia.holo.my.id";
-function runBookmarklet(token) {
+function runBookmarklet(token, hostname = "monev.maganghub.kemnaker.go.id") {
   const calls = { open: [], alert: [] };
   const ctx = vm.createContext({
     sessionStorage: { getItem: (k) => (k === "monev_access_token" ? token : null) },
     window: { open: (...a) => calls.open.push(a) },
     alert: (m) => calls.alert.push(m),
+    location: { hostname },
     encodeURIComponent,
   });
   const href = bookmarkletHref(ORIGIN);
@@ -39,6 +40,12 @@ test("bookmarklet reads monev_access_token and opens fragment URL", () => {
   const c = runBookmarklet("tok/1");
   assert.deepStrictEqual(c.open, [[ORIGIN + "/#mh=tok%2F1", "_blank", "noopener"]]);
   assert.strictEqual(c.alert.length, 0);
+});
+
+test("bookmarklet refuses to run on other hosts", () => {
+  const c = runBookmarklet("tok", "evil.example");
+  assert.strictEqual(c.open.length, 0);
+  assert.deepStrictEqual(c.alert, ["Buka halaman MagangHub dulu"]);
 });
 
 test("bookmarklet alerts when logged out", () => {
