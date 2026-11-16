@@ -40,13 +40,28 @@
     return String(body);
   }
 
-  if (typeof module !== "undefined") module.exports = { redactJson: redactJson, redactHeaders: redactHeaders, describeBody: describeBody };
+  // "/api/x?token=a&page=2" -> "/api/x?token=***&page=2" (pathname untouched)
+  function redactPath(u) {
+    var i = u.indexOf("?");
+    if (i < 0) return u;
+    return u.slice(0, i + 1) + u.slice(i + 1).split("&").map(function (kv) {
+      var j = kv.indexOf("=");
+      if (j < 0) return kv;
+      var k = kv.slice(0, j);
+      try { k = decodeURIComponent(k); } catch (e) { /* keep raw */ }
+      return SECRET.test(k) ? kv.slice(0, j) + "=***" : kv;
+    }).join("&");
+  }
+
+  var api = { redactJson: redactJson, redactHeaders: redactHeaders, describeBody: describeBody, redactPath: redactPath };
+  if (typeof module !== "undefined") module.exports = api;
   if (typeof window === "undefined") return;
-  window.apiLog = { redactJson: redactJson, redactHeaders: redactHeaders, describeBody: describeBody };
+  window.apiLog = api;
 
   // ---- UI ----
-  var list = document.createElement("div");
+  var list = null;
   function mount() {
+    list = document.createElement("div");
     var host = document.querySelector("main.container") || document.body;
     var sec = document.createElement("section");
     sec.id = "shelia-log";
@@ -70,6 +85,7 @@
   }
 
   function render(e) {
+    if (!list) return;
     var d = document.createElement("details");
     var s = document.createElement("summary");
     s.className = "small";
@@ -92,7 +108,7 @@
         entry = {
           at: new Date().toISOString(),
           method: String(init.method || (isReq && input.method) || "GET").toUpperCase(),
-          path: url.pathname + url.search,
+          path: redactPath(url.pathname + url.search),
           request: { headers: redactHeaders(init.headers || (isReq && input.headers)), body: describeBody(init.body) },
         };
       }
@@ -103,16 +119,17 @@
 
     function done() {
       entry.ms = Date.now() - started;
-      try { render(entry); window.dispatchEvent(new CustomEvent("api-log", { detail: entry })); } catch (e) { /* never break the app */ }
+      try { render(entry); } catch (e) { /* never break the app */ }
+      try { window.dispatchEvent(new CustomEvent("api-log", { detail: entry })); } catch (e) { /* ditto */ }
     }
     p.then(function (res) {
       entry.status = res.status;
       return res.clone().text().then(function (t) {
         try { entry.response = redactJson(JSON.parse(t)); } catch (e) { entry.response = t ? t.slice(0, 2000) : "(empty)"; }
-      }).catch(function (e) { entry.response = "(unreadable: " + e + ")"; });
+      });
     }, function (err) {
       entry.error = String(err && err.message || err);
-    }).then(done);
+    }).catch(function (e) { entry.response = "(unreadable: " + e + ")"; }).then(done).catch(function () {});
     return p;
   };
 })();

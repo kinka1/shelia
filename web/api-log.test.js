@@ -38,3 +38,10 @@ test("null body", () => {
   assert.strictEqual(describeBody(null), null);
   assert.strictEqual(describeBody(undefined), null);
 });
+
+test("redacts query-string secrets, keeps pathname", () => {
+  const { redactPath } = require("./api-log.js");
+  assert.strictEqual(redactPath("/api/x?token=abc&page=2"), "/api/x?token=***&page=2");
+  assert.strictEqual(redactPath("/api/auth/login"), "/api/auth/login");
+  assert.strictEqual(redactPath("/api/x?Face_Token=a"), "/api/x?Face_Token=***");
+});
