@@ -23,7 +23,9 @@ function runBookmarklet(token) {
   });
   const href = bookmarkletHref(ORIGIN);
   assert.ok(href.startsWith("javascript:"));
-  vm.runInContext(decodeURIComponent(href.slice(11)), ctx);
+  assert.ok(!href.includes("#"));
+  assert.strictEqual(new URL(href).hash, "");
+  vm.runInContext(decodeURIComponent(new URL(href).pathname), ctx);
   return calls;
 }
 

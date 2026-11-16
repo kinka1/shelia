@@ -15,7 +15,7 @@ function bookmarkletHref(origin) {
   const code = "(function(){var t=sessionStorage.getItem('monev_access_token');" +
     "if(!t){alert('Login MagangHub dulu');return}" +
     "window.open(" + JSON.stringify(origin + "/#mh=") + "+encodeURIComponent(t),'_blank','noopener')})();";
-  return "javascript:" + encodeURI(code);
+  return "javascript:" + encodeURI(code).replace(/#/g, "%23"); // a raw # would truncate a saved bookmark
 }
 
 if (typeof module !== "undefined") module.exports = { takeTokenFromHash, bookmarkletHref };
@@ -53,7 +53,7 @@ function status(msg, isError) {
 function reset() {
   $("mh-list").replaceChildren();
   $("mh-nav").hidden = true;
-  $("mh-out").hidden = true;
+  $("mh-out").hidden = !token();
 }
 
 function show(data) {
@@ -80,7 +80,6 @@ async function load() {
   try {
     res = await fetch(`${API}/daily-logs?page=${page}`, { headers: { Authorization: "Bearer " + t } });
   } catch (e) { status("Gagal terhubung", true); return; }
-  $("mh-out").hidden = false;
   if (res.status === 401) {
     status("Token kedaluwarsa atau tidak valid. Buka MagangHub, lalu klik tombol → Shelia lagi.", true);
     return;
