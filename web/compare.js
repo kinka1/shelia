@@ -9,7 +9,7 @@
     const doc = new DOMParser().parseFromString(await res.text(), "text/html");
     const main = doc.querySelector("main.container");
     main.querySelector(".topbar a").remove(); // back link to Shelia is pointless here
-    main.querySelector(".topbar h1").textContent = "Mock Monev MagangHub";
+    main.querySelector(".topbar h1").textContent = "Monev MagangHub";
     col.append(...main.childNodes);
   } catch (e) {
     col.textContent = "Gagal memuat Monev: " + e.message;

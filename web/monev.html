@@ -3,32 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Monev (Mock)</title>
+  <title>Monev MagangHub</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/monev.js" defer></script>
 </head>
 <body>
   <main class="container">
     <header class="topbar">
-      <h1>Monev (Mock)</h1>
+      <h1>Monev MagangHub</h1>
       <a href="/" class="btn ghost small">Kembali ke Shelia</a>
     </header>
-    <p class="alert info">Ini MOCK: data hanya disimpan di server uji ini, tidak ada yang dikirim ke Kemnaker.</p>
     <p id="auth-msg" class="alert warn" hidden>Login dulu di halaman Shelia. <a href="/">Buka Shelia</a></p>
 
     <form id="monev-form" class="card">
       <h2>Absen + Log Harian</h2>
       <label>Tanggal <input id="f-date" type="date" required></label>
       <label>Status
-        <select id="f-status">
+        <select id="f-status" disabled>
           <option value="PRESENT">Hadir</option>
-          <option value="PERMIT">Izin</option>
-          <option value="SICK">Sakit</option>
         </select>
       </label>
       <label>Latitude <input id="f-lat" value="-7.308430344545027"></label>
       <label>Longitude <input id="f-lng" value="112.785199930883"></label>
-      <label>Lokasi <input id="f-location"></label>
+      <label>Lokasi <input id="f-location" value="Surabaya" readonly></label>
       <label>Aktivitas <textarea id="f-activity" required rows="3"></textarea></label>
       <label>Pembelajaran <textarea id="f-lesson" required rows="2"></textarea></label>
       <label>Kendala <textarea id="f-obstacles" required rows="2"></textarea></label>
