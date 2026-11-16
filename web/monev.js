@@ -131,3 +131,9 @@ const syncRequired = () => {
 $("f-status").addEventListener("change", syncRequired);
 
 if (token()) loadList(); else noAuth();
+
+// Used by compare.js after Shelia login/logout changes the token.
+window.monevRefresh = () => {
+  $("auth-msg").hidden = true;
+  if (token()) { page = 1; loadList(1); } else { $("list").replaceChildren(); noAuth(); }
+};
