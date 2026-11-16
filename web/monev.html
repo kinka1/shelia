@@ -6,6 +6,7 @@
   <title>Monev MagangHub</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/monev.js" defer></script>
+  <script src="/maganghub.js" defer></script>
 </head>
 <body>
   <main class="container">
@@ -13,6 +14,20 @@
       <h1>Monev MagangHub</h1>
       <a href="/" class="btn ghost small">Kembali ke Shelia</a>
     </header>
+    <section id="mh-card" class="card">
+      <h2>MagangHub (asli)</h2>
+      <p class="small muted">1. Seret tombol <a id="mh-bm" href="#">→ Shelia</a> ke bookmark bar (sekali saja).
+        2. Login di <a href="https://monev.maganghub.kemnaker.go.id/" target="_blank" rel="noopener">MagangHub</a>.
+        3. Klik bookmark tadi.</p>
+      <p id="mh-msg" class="muted small" hidden></p>
+      <ul id="mh-list" class="sessions"></ul>
+      <div id="mh-nav" class="row between" hidden>
+        <button id="mh-prev" type="button" class="btn small">Sebelumnya</button>
+        <span id="mh-info" class="muted small"></span>
+        <button id="mh-next" type="button" class="btn small">Berikutnya</button>
+      </div>
+      <button id="mh-out" type="button" class="btn ghost small" hidden>Keluar</button>
+    </section>
     <p id="auth-msg" class="alert warn" hidden>Login dulu di halaman Shelia. <a href="/">Buka Shelia</a></p>
 
     <form id="monev-form" class="card">

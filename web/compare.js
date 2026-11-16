@@ -18,6 +18,9 @@
   const s = document.createElement("script");
   s.src = "/monev.js";
   document.body.append(s);
+  const mh = document.createElement("script");
+  mh.src = "/maganghub.js";
+  document.body.append(mh);
 
   // app.js writes/clears localStorage AFTER the response (and after res.json()), i.e. after the
   // api-log event. Poll until the token differs from its value at event time, then refresh;
