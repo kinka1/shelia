@@ -34,10 +34,43 @@ function el(tag, text, cls) {
   return e;
 }
 
-async function loadList() {
-  const r = await api("/daily-logs?page=" + page);
-  if (!r || r.status !== 200) return;
-  const { data, total } = r.body;
+let loading = false;
+
+function setNav(pages) {
+  $("prev-btn").disabled = loading || page <= 1;
+  $("next-btn").disabled = loading || page >= pages;
+}
+
+async function loadList(target = page) {
+  if (loading) return;
+  loading = true;
+  setNav(0);
+  $("list-err").hidden = true;
+  try {
+    const r = await api("/daily-logs?page=" + target);
+    if (!r) return;
+    if (r.status !== 200) {
+      if (r.status !== 401) {
+        $("list-err").textContent = (r.body && r.body.message) || "HTTP " + r.status;
+        $("list-err").hidden = false;
+      }
+      return;
+    }
+    page = target;
+    render(r.body);
+  } catch (e) {
+    $("list-err").textContent = "Gagal memuat daftar: " + e.message;
+    $("list-err").hidden = false;
+  } finally {
+    loading = false;
+    setNav(lastPages);
+  }
+}
+
+let lastPages = 1;
+
+function render(body) {
+  const { data, total } = body;
   const list = $("list");
   list.replaceChildren();
   if (!data.length) list.append(el("li", "Belum ada data.", "muted"));
@@ -56,8 +89,7 @@ async function loadList() {
   }
   const pages = Math.max(1, Math.ceil(total / PER_PAGE));
   $("page-info").textContent = `Halaman ${page} / ${pages} (${total})`;
-  $("prev-btn").disabled = page <= 1;
-  $("next-btn").disabled = page >= pages;
+  lastPages = pages;
 }
 
 $("monev-form").addEventListener("submit", async (ev) => {
@@ -65,13 +97,17 @@ $("monev-form").addEventListener("submit", async (ev) => {
   const body = {
     date: $("f-date").value,
     status: $("f-status").value,
-    latitude: parseFloat($("f-lat").value),
-    longitude: parseFloat($("f-lng").value),
+    latitude: Number($("f-lat").value.trim()),
+    longitude: Number($("f-lng").value.trim()),
     location: $("f-location").value,
     activity_log: $("f-activity").value,
     lesson_learned: $("f-lesson").value,
     obstacles: $("f-obstacles").value,
   };
+  if (!$("f-lat").value.trim() || !$("f-lng").value.trim() || !Number.isFinite(body.latitude) || !Number.isFinite(body.longitude)) {
+    $("res-out").textContent = "Latitude/longitude harus berupa angka.";
+    return;
+  }
   $("req-out").textContent = JSON.stringify(body, null, 2);
   $("res-out").textContent = "...";
   $("submit-btn").disabled = true;
@@ -79,8 +115,7 @@ $("monev-form").addEventListener("submit", async (ev) => {
     const r = await api("/attendances/with-daily-log", { method: "POST", body: JSON.stringify(body) });
     if (!r) { $("res-out").textContent = "Tidak ada token."; return; }
     $("res-out").textContent = `HTTP ${r.status}\n` + JSON.stringify(r.body, null, 2);
-    page = 1;
-    await loadList();
+    await loadList(1);
   } catch (e) {
     $("res-out").textContent = "Gagal: " + e.message;
   } finally {
@@ -88,7 +123,11 @@ $("monev-form").addEventListener("submit", async (ev) => {
   }
 });
 
-$("prev-btn").addEventListener("click", () => { page--; loadList(); });
-$("next-btn").addEventListener("click", () => { page++; loadList(); });
+$("prev-btn").addEventListener("click", () => loadList(page - 1));
+$("next-btn").addEventListener("click", () => loadList(page + 1));
+const syncRequired = () => {
+  for (const id of ["f-activity", "f-lesson", "f-obstacles"]) $(id).required = $("f-status").value === "PRESENT";
+};
+$("f-status").addEventListener("change", syncRequired);
 
 if (token()) loadList(); else noAuth();
