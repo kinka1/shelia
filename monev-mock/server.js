@@ -30,7 +30,7 @@ const validDate = (s) => {
   return d.toISOString().slice(0, 10) === s;
 };
 
-function createServer({ authUrl, dataFile, now = () => new Date() }) {
+function createServer({ authUrl, dataFile, now = () => new Date(), authTimeoutMs = 5000 }) {
   let db;
   const load = () => {
     if (db) return db;
@@ -51,7 +51,7 @@ function createServer({ authUrl, dataFile, now = () => new Date() }) {
     if (!auth) throw new HttpError(401, "Unauthorized");
     if ((tokens.get(auth) ?? 0) > Date.now()) return;
     let res;
-    try { res = await fetch(authUrl, { headers: { Authorization: auth, Accept: "application/json" } }); }
+    try { res = await fetch(authUrl, { headers: { Authorization: auth, Accept: "application/json" }, signal: AbortSignal.timeout(authTimeoutMs) }); }
     catch { throw new HttpError(502, "Tidak dapat memverifikasi token"); }
     if (res.status === 401 || res.status === 403) throw new HttpError(401, "Unauthorized");
     if (!res.ok) throw new HttpError(502, "Tidak dapat memverifikasi token");
@@ -104,7 +104,7 @@ function createServer({ authUrl, dataFile, now = () => new Date() }) {
       clock_in: wib.toISOString().slice(11, 16), created_at: now().toISOString(), anomalies,
     };
     list.push(entry);
-    save();
+    try { save(); } catch (e) { list.pop(); db.nextId--; throw e; }
     return entry;
   }
 

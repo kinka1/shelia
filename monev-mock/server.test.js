@@ -56,7 +56,34 @@ test("rejects missing access email", async () => {
 
 test("fails closed when shelia errors", async () => {
   assert.strictEqual((await post(body({ date: "2026-11-17" }), { token: "boom" })).status, 502);
-  assert.strictEqual((await call("GET", "/daily-logs", { email: "boom@x.id" })).json.total, 0);
+  assert.strictEqual((await call("GET", "/daily-logs")).json.total, 0);
+});
+
+test("502 when shelia never answers", async () => {
+  const hang = http.createServer(() => {});
+  const m = createServer({ authUrl: await listen(hang), dataFile: path.join(os.tmpdir(), "monev-hang.json"), now, authTimeoutMs: 100 });
+  const t = Date.now();
+  const r = await fetch((await listen(m)) + "/daily-logs", { headers: { Authorization: "Bearer slow", "cf-access-authenticated-user-email": "a@x.id" } });
+  assert.strictEqual(r.status, 502);
+  assert.ok(Date.now() - t < 2000);
+  m.close(); hang.closeAllConnections(); hang.close();
+});
+
+test("failed save leaves nothing behind", async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "monev-ro-"));
+  const m = createServer({ authUrl: stubUrl, dataFile: path.join(dir, "monev.json"), now });
+  const b = await listen(m);
+  const h = { Authorization: "Bearer good", "cf-access-authenticated-user-email": "a@x.id" };
+  const get = () => fetch(b + "/daily-logs", { headers: h }).then((r) => r.json());
+  const put = () => fetch(b + "/attendances/with-daily-log", { method: "POST", headers: h, body: JSON.stringify(body()) });
+  await get();
+  fs.chmodSync(dir, 0o500);
+  try {
+    assert.strictEqual((await put()).status, 500);
+    assert.strictEqual((await get()).total, 0);
+    fs.chmodSync(dir, 0o700);
+    assert.strictEqual((await put()).status, 201);
+  } finally { fs.chmodSync(dir, 0o700); m.close(); }
 });
 
 test("stores present entry", async () => {
