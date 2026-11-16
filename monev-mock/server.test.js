@@ -17,6 +17,8 @@ let stub, stubUrl, mock, base, dataFile;
 before(async () => {
   stub = http.createServer((req, res) => {
     const a = req.headers.authorization;
+    if (req.url === "/ok") { res.statusCode = 200; return res.end("{}"); }
+    if (a === "Bearer redirect") { res.statusCode = 302; res.setHeader("Location", stubUrl + "/ok"); return res.end(); }
     res.statusCode = a === "Bearer good" ? 200 : a === "Bearer boom" ? 500 : 401;
     res.end("{}");
   });
@@ -56,6 +58,11 @@ test("rejects missing access email", async () => {
 
 test("fails closed when shelia errors", async () => {
   assert.strictEqual((await post(body({ date: "2026-11-17" }), { token: "boom" })).status, 502);
+  assert.strictEqual((await call("GET", "/daily-logs")).json.total, 0);
+});
+
+test("redirect from shelia is not a valid token", async () => {
+  assert.strictEqual((await post(body({ date: "2026-11-18" }), { token: "redirect" })).status, 401);
   assert.strictEqual((await call("GET", "/daily-logs")).json.total, 0);
 });
 

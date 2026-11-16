@@ -51,9 +51,10 @@ function createServer({ authUrl, dataFile, now = () => new Date(), authTimeoutMs
     if (!auth) throw new HttpError(401, "Unauthorized");
     if ((tokens.get(auth) ?? 0) > Date.now()) return;
     let res;
-    try { res = await fetch(authUrl, { headers: { Authorization: auth, Accept: "application/json" }, signal: AbortSignal.timeout(authTimeoutMs) }); }
+    try { res = await fetch(authUrl, { headers: { Authorization: auth, Accept: "application/json" }, redirect: "manual", signal: AbortSignal.timeout(authTimeoutMs) }); }
     catch { throw new HttpError(502, "Tidak dapat memverifikasi token"); }
-    if (res.status === 401 || res.status === 403) throw new HttpError(401, "Unauthorized");
+    res.body?.cancel();
+    if (res.status === 401 || res.status === 403 || (res.status >= 300 && res.status < 400) || res.type === "opaqueredirect") throw new HttpError(401, "Unauthorized");
     if (!res.ok) throw new HttpError(502, "Tidak dapat memverifikasi token");
     tokens.set(auth, Date.now() + TOKEN_TTL_MS);
   }

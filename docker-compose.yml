@@ -36,10 +36,10 @@ services:
     command: node /srv/server.js
     environment:
       - SHELIA_AUTH_URL=https://dev-shelia.shelterapp2.co.id/api/v2/attendance/shifts/available
-      - DATA_FILE=/data/monev.json
+      - DATA_FILE=/home/node/monev.json
     volumes:
       - ./monev-mock/server.js:/srv/server.js:ro
-      - monev-data:/data
+      - monev-data:/home/node
     read_only: true
     user: node
     restart: unless-stopped
