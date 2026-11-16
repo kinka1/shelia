@@ -12,6 +12,8 @@ services:
     volumes:
       - ./app:/srv/app:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web:/srv/web:ro
+    depends_on: [monev-mock]
     read_only: true
     tmpfs: [/var/cache/nginx, /run, /tmp]
     restart: unless-stopped
@@ -27,6 +29,35 @@ services:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+
+  monev-mock:
+    image: node:22-alpine
+    container_name: shelia-test-monev
+    command: node /srv/server.js
+    environment:
+      - SHELIA_AUTH_URL=https://dev-shelia.shelterapp2.co.id/api/v2/attendance/shifts/available
+      - DATA_FILE=/data/monev.json
+    volumes:
+      - ./monev-mock/server.js:/srv/server.js:ro
+      - monev-data:/data
+    read_only: true
+    user: node
+    restart: unless-stopped
+    networks: [proxy-network]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 64M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  monev-data:
 
 networks:
   proxy-network:
