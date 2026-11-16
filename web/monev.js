@@ -1,3 +1,4 @@
+(() => {
 "use strict";
 const API = "/monev-api/v1";
 const LABELS = { weekend: "akhir pekan", holiday: "hari libur", backdated: "mundur tanggal", future: "tanggal ke depan" };
@@ -135,5 +136,6 @@ if (token()) loadList(); else noAuth();
 // Used by compare.js after Shelia login/logout changes the token.
 window.monevRefresh = () => {
   $("auth-msg").hidden = true;
-  if (token()) { page = 1; loadList(1); } else { $("list").replaceChildren(); noAuth(); }
+  if (token()) { page = 1; loadList(1); } else { $("list").replaceChildren(); $("page-info").textContent = ""; noAuth(); }
 };
+})();
