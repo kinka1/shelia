@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monev (Mock)</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/monev.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <header class="topbar">
+      <h1>Monev (Mock)</h1>
+      <a href="/" class="btn ghost small">Kembali ke Shelia</a>
+    </header>
+    <p class="alert info">Ini MOCK: data hanya disimpan di server uji ini, tidak ada yang dikirim ke Kemnaker.</p>
+    <p id="auth-msg" class="alert warn" hidden>Login dulu di halaman Shelia. <a href="/">Buka Shelia</a></p>
+
+    <form id="monev-form" class="card" novalidate>
+      <h2>Absen + Log Harian</h2>
+      <label>Tanggal <input id="f-date" type="date" required></label>
+      <label>Status
+        <select id="f-status">
+          <option value="WFO">WFO</option>
+          <option value="WFH">WFH</option>
+        </select>
+      </label>
+      <label>Latitude <input id="f-lat" value="-7.308430344545027"></label>
+      <label>Longitude <input id="f-lng" value="112.785199930883"></label>
+      <label>Lokasi <input id="f-location"></label>
+      <label>Aktivitas <textarea id="f-activity" rows="3"></textarea></label>
+      <label>Pembelajaran <textarea id="f-lesson" rows="2"></textarea></label>
+      <label>Kendala <textarea id="f-obstacles" rows="2"></textarea></label>
+      <button id="submit-btn" type="submit" class="btn primary block">Kirim</button>
+    </form>
+
+    <div class="card">
+      <h2>Request</h2>
+      <pre id="req-out" class="small">-</pre>
+      <h2>Response</h2>
+      <pre id="res-out" class="small">-</pre>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <h2>Daftar Log</h2>
+        <span id="page-info" class="muted small"></span>
+      </div>
+      <ul id="list" class="sessions"></ul>
+      <div class="row between">
+        <button id="prev-btn" type="button" class="btn small">Sebelumnya</button>
+        <button id="next-btn" type="button" class="btn small">Berikutnya</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
