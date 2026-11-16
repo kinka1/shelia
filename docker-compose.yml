@@ -1,0 +1,33 @@
+# Absensi Web (kinka1/shelia) — dev-only test client, behind Cloudflare Access.
+# Public path: Cloudflare Access (email OTP) -> tunnel -> nginx-proxy -> this container.
+# Update: cd app && git pull && cd .. && docker compose up -d --force-recreate
+services:
+  web:
+    image: nginx:1.29-alpine
+    container_name: shelia-test-web
+    expose: ["80"]
+    environment:
+      - VIRTUAL_HOST=test-shelia.holo.my.id
+      - VIRTUAL_PORT=80
+    volumes:
+      - ./app:/srv/app:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    read_only: true
+    tmpfs: [/var/cache/nginx, /run, /tmp]
+    restart: unless-stopped
+    networks: [proxy-network]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits: { cpus: "0.5", memory: 64M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  proxy-network:
+    external: true
