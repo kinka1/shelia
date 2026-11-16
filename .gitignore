@@ -1,0 +1,23 @@
+# Dependensi (bila nanti memakai npm)
+node_modules/
+
+# Environment / rahasia
+.env
+.env.*
+
+# Log
+*.log
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pengaturan lokal Claude Code
+.claude/settings.local.json
+
+# Dokumen lokal yang tidak dipublikasikan
+CLAUDE.md
+WEB_ATTENDANCE_API.md
