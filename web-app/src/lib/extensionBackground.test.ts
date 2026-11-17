@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { DEFAULTS, handle } from '../../../extension/background.js'
+import { DEFAULTS, handle, reloadShelia } from '../../../extension/background.js'
 import { pageSend, pageToken, todayWIB } from '../../../extension/mh.js'
 
 const SENDER = { origin: 'https://test-shelia.holo.my.id', tab: { id: 1, windowId: 9 } }
@@ -119,5 +119,13 @@ describe('extension worker', () => {
   })
   it('a whole request fits in Chrome\'s 5-minute limit for one event', () => {
     expect(DEFAULTS.loadWaitMs + DEFAULTS.tokenWaitMs + DEFAULTS.loginWaitMs + 1_000).toBeLessThanOrEqual(270_000)
+  })
+  it('after install or update, reloads open test-shelia tabs so they see the extension', async () => {
+    const c = fake()
+    c.tabs.query.mockResolvedValueOnce([{ id: 3 }, { id: 4 }] as any)
+    ;(c.tabs as any).reload = vi.fn(async () => {})
+    await reloadShelia(c)
+    expect(c.tabs.query).toHaveBeenCalledWith({ url: 'https://test-shelia.holo.my.id/*' })
+    expect((c.tabs as any).reload.mock.calls).toEqual([[3], [4]])
   })
 })

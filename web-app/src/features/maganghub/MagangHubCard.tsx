@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,13 +7,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { fmtDate } from './LogDetailSheet'
 import { MIN_CHARS, fetchMyToday, fieldState, remainingFields, todayWIB } from '@/lib/dailyLog'
-import { sendBody, sendBookmarkletHref, sendUrl } from '@/lib/sendBookmarklet'
-import { extError, extSend, useExtension } from '@/lib/extension'
+import { extError, extSend, sendBody, useExtension } from '@/lib/extension'
 import { toast } from 'sonner'
-import { onLogSent } from '@/lib/handoff'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
-import { TokenDialog } from './TokenDialog'
+import { MhConnect } from './MhConnect'
 import { useMhToken } from './useMhToken'
 
 const FIELDS = [
@@ -43,12 +41,9 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [expanded, setExpanded] = useState(false)
   const [point, setPoint] = useState(OFFICE)
   const [confirming, setConfirming] = useState(false)
-  const [waiting, setWaiting] = useState(false) // MagangHub tab opened; the send happens there
   const ext = useExtension()
   const [sending, setSending] = useState(false)
   const [sendErr, setSendErr] = useState('')
-  // React 19 blocks javascript: hrefs set as props, so set it on the node.
-  const sendBookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', sendBookmarkletHref(location.origin)), [])
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -63,10 +58,10 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
 
   const left = remainingFields(v)
   // The token is what proves this is your MagangHub account, so no token, no send.
-  const canSend = mh.status === 'ok'
+  const canSend = !!ext.version && mh.status === 'ok'
   const [connKey, connLabel] = CONN[mh.status]
 
-  // The log is sent from MagangHub's own page (bookmark "→ Kirim log"), so here we only prepare and open it.
+  // Kirim log only opens the confirmation; the extension sends from MagangHub's own page.
   function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!left && canSend) { setSendErr(''); setConfirming(true) }
@@ -82,24 +77,6 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
     setSendErr(extError(r))
   }
 
-  function openMagangHub() {
-    window.open(sendUrl({ date, ...v, latitude: point.lat, longitude: point.lng }), '_blank', 'noopener')
-    setConfirming(false)
-    setWaiting(true)
-  }
-
-  // The bookmark's tab tells us it sent the log, then closes.
-  useEffect(() => onLogSent(() => void check().then((r) => { if (r) setWaiting(false) })), []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Back from the MagangHub tab: look again whether the log arrived.
-  useEffect(() => {
-    if (!waiting) return
-    const again = () => { if (document.visibilityState === 'visible') void check().then((r) => { if (r) setWaiting(false) }) }
-    window.addEventListener('focus', again)
-    document.addEventListener('visibilitychange', again)
-    return () => { window.removeEventListener('focus', again); document.removeEventListener('visibilitychange', again) }
-  }, [waiting]) // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <section>
       <div className="flex flex-wrap items-center gap-2">
@@ -109,7 +86,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />
         {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
-        <TokenDialog token={mh.token} connected={!!mh.token} onDisconnect={mh.disconnect} onRefresh={mh.refresh} />
+        <MhConnect installed={!!ext.version} onRefresh={mh.refresh} />
       </div>
       {sentAt && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
@@ -152,8 +129,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {!canSend ? <span className="text-xs text-warning-ink">{mh.status === 'expired' ? 'Token kedaluwarsa, perbarui dulu' : 'Sambungkan MagangHub dulu'}</span>
-                : waiting ? <span role="status" className="text-xs text-primary-ink">Kirim dari tab MagangHub dengan bookmark → Kirim log</span>
+              {!canSend ? <span className="text-xs text-warning-ink">{!ext.version ? 'Pasang ekstensi dulu' : mh.status === 'expired' ? 'Token kedaluwarsa, perbarui dulu' : 'Sambungkan MagangHub dulu'}</span>
                 : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
               <Button type="submit" disabled={left > 0 || !canSend}>Kirim log</Button>
@@ -181,27 +157,10 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             ))}
           </div>
           {sendErr && <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive-ink">{sendErr}</p>}
-          {ext.version ? (
-            <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
-              <Button disabled={sending} onClick={() => void sendViaExtension()}>{sending ? 'Mengirim…' : 'Kirim ke MagangHub'}</Button>
-            </DialogFooter>
-          ) : (<>
-          <ol className="list-decimal space-y-1.5 pl-5 text-sm">
-            <li>
-              Sekali saja: seret{' '}
-              <a ref={sendBookmarkRef} onClick={(e) => e.preventDefault()}
-                className="inline-flex rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">→ Kirim log</a>
-              {' '}ke bookmark bar.
-            </li>
-            <li>Klik <b>Buka MagangHub</b>. Kalau diminta login, login dulu lalu klik lagi.</li>
-            <li>Di tab MagangHub, klik bookmark <b>→ Kirim log</b> lalu konfirmasi.</li>
-          </ol>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
-            <Button onClick={openMagangHub}>Buka MagangHub</Button>
+            <Button disabled={sending} onClick={() => void sendViaExtension()}>{sending ? 'Mengirim…' : 'Kirim ke MagangHub'}</Button>
           </DialogFooter>
-          </>)}
         </DialogContent>
       </Dialog>
       </>)}

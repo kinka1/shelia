@@ -14,7 +14,7 @@ export function useMhToken() {
     return () => { live = false }
   }, [token])
 
-  // Token saved by the bookmark's tab: pick it up here without a reload.
+  // Token saved by another test-shelia tab: pick it up here without a reload.
   useEffect(() => {
     const h = (e: StorageEvent) => { if (e.key === MH_KEY) setToken(getMhToken()) }
     window.addEventListener('storage', h)

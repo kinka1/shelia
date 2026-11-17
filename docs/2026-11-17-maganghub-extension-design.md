@@ -17,7 +17,11 @@ user's laptop, with their own MagangHub login — never through the VPS.
   - send request: does **not** send by itself; returns to test-shelia with the form intact for a
     fresh click (a send can't be undone).
 - Page-load auto refresh never brings a tab to the front; logged out → card shows Belum terhubung.
-- Without the extension (other browsers, phone), the bookmark flow keeps working unchanged.
+- Without the extension, the card offers **Pasang ekstensi** (download + steps) and sending is disabled.
+  The bookmarks were removed at the user's request (2026-11-17). With the extension, **Perbarui token**
+  refreshes in one click (no dialog). The extension reloads open test-shelia tabs after install/update,
+  because Chrome only exposes an extension to pages loaded after it was installed (needs a host
+  permission for test-shelia).
 
 ## Non-goals / anti-goals
 - No MagangHub/Kemnaker login form in our page; the extension never reads or fills passwords/OTPs.

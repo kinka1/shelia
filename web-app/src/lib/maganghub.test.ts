@@ -1,47 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MH_KEY, bookmarkletHref, fetchDailyLogs, intakeTokenFromLocation, takeTokenFromHash, tokenExpiry } from './maganghub'
-
-const ORIGIN = 'https://test-shelia.holo.my.id'
-function runBookmarklet(token: string | null, hostname = 'monev.maganghub.kemnaker.go.id') {
-  const calls = { open: [] as unknown[][], alert: [] as string[], go: '' }
-  const href = bookmarkletHref(ORIGIN)
-  expect(href.startsWith('javascript:')).toBe(true)
-  expect(href).not.toContain('#')
-  const code = decodeURIComponent(href.slice('javascript:'.length))
-  new Function('sessionStorage', 'window', 'alert', 'location', code)(
-    { getItem: (k: string) => (k === 'monev_access_token' ? token : null) },
-    { open: (...a: unknown[]) => calls.open.push(a) },
-    (m: string) => calls.alert.push(m),
-    { hostname, set href(u: string) { calls.go = u } },
-  )
-  return calls
-}
+import { MH_KEY, fetchDailyLogs, tokenExpiry } from './maganghub'
 
 describe('token hand-off', () => {
   beforeEach(() => localStorage.clear())
   afterEach(() => { vi.unstubAllGlobals(); history.replaceState(null, '', '/') })
 
-  it('takes token from hash', () => {
-    expect(takeTokenFromHash('#mh=abc%2B1')).toBe('abc+1')
-    expect(takeTokenFromHash('')).toBeNull()
-    expect(takeTokenFromHash('#x=1')).toBeNull()
-  })
-  it('bookmarklet reads monev_access_token and sends the same tab to our fragment URL', () => {
-    const c = runBookmarklet('tok/1')
-    expect(c.go).toBe(ORIGIN + '/#mh=tok%2F1')
-    expect(c.open).toEqual([])
-    expect(c.alert).toEqual([])
-  })
-  it('bookmarklet refuses other hosts and logged-out state', () => {
-    expect(runBookmarklet('tok', 'evil.example').alert).toEqual(['Buka halaman MagangHub dulu'])
-    expect(runBookmarklet(null).alert).toEqual(['Login MagangHub dulu'])
-  })
-  it('intakeTokenFromLocation stores the token and clears the hash', () => {
-    history.replaceState(null, '', '/#mh=abc%2B1')
-    intakeTokenFromLocation()
-    expect(localStorage.getItem(MH_KEY)).toBe('abc+1')
-    expect(location.hash).toBe('')
-  })
   it('tokenExpiry reads the JWT exp', () => {
     const p = btoa(JSON.stringify({ exp: 1795000000 })).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
     expect(tokenExpiry(`h.${p}.s`)).toEqual(new Date(1795000000 * 1000))

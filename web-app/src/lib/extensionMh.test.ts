@@ -13,6 +13,7 @@ describe('extension mh.js', () => {
     expect(MH_SITE).toBe('https://monev.maganghub.kemnaker.go.id')
     expect(ALLOWED_ORIGINS).toEqual(['https://test-shelia.holo.my.id'])
     expect(manifest.externally_connectable.matches).toEqual(['https://test-shelia.holo.my.id/*'])
+    expect(manifest.host_permissions).toEqual(['https://monev.maganghub.kemnaker.go.id/*', 'https://test-shelia.holo.my.id/*'])
     expect(todayWIB(NOW)).toBe('2026-11-18')
   })
 

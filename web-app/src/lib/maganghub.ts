@@ -1,5 +1,4 @@
 import { loggedFetch } from './apiLog'
-import { closeIfAnotherTab } from './handoff'
 
 export const MH_KEY = 'maganghub.token'
 const API = '/maganghub-api/v1'
@@ -7,32 +6,9 @@ const API = '/maganghub-api/v1'
 export type MhStatus = 'none' | 'ok' | 'expired'
 export interface MhLog { date: string; clock_in?: string; status?: string; state?: string; created_at?: string; activity_log?: string; lesson_learned?: string; obstacles?: string }
 
-export function takeTokenFromHash(hash: string): string | null {
-  const m = /^#mh=(.+)$/.exec(hash || '')
-  if (!m) return null
-  try { return decodeURIComponent(m[1]) } catch { return null }
-}
-
-// Runs on MagangHub's own page: hands the token over in the URL fragment (never sent to a server).
-export function bookmarkletHref(origin: string): string {
-  const code = "(function(){if(location.hostname!=='monev.maganghub.kemnaker.go.id'){alert('Buka halaman MagangHub dulu');return}var t=sessionStorage.getItem('monev_access_token');" +
-    "if(!t){alert('Login MagangHub dulu');return}" +
-    'location.href=' + JSON.stringify(origin + '/#mh=') + '+encodeURIComponent(t)})();'
-  return 'javascript:' + encodeURI(code).replace(/#/g, '%23') // a raw # would truncate a saved bookmark
-}
-
 export const getMhToken = (): string | null => { try { return localStorage.getItem(MH_KEY) } catch { return null } }
 export const setMhToken = (t: string): void => { try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ } }
 export const clearMhToken = (): void => { try { localStorage.removeItem(MH_KEY) } catch { /* storage blocked */ } }
-
-export function intakeTokenFromLocation(): void {
-  const sent = location.hash === '#mh-sent' // back from the → Kirim log bookmark
-  const t = takeTokenFromHash(location.hash)
-  if (!t && !sent) return
-  if (t) try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ }
-  history.replaceState(null, '', location.pathname + location.search)
-  closeIfAnotherTab(sent ? 'sent' : undefined)
-}
 
 export function tokenExpiry(token: string): Date | null {
   try {

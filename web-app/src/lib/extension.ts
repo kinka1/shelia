@@ -28,7 +28,7 @@ function call(msg: unknown, ms: number): Promise<ExtResult | null> {
 }
 
 export async function extAvailable(): Promise<{ version: string } | null> {
-  const r = await call({ type: 'hello' }, 800)
+  const r = await call({ type: 'hello' }, 2000) // a sleeping worker can take a moment to wake
   return r && 'ok' in r && r.ok && r.version ? { version: r.version } : null
 }
 
@@ -38,12 +38,29 @@ export const extToken = async (interactive: boolean): Promise<ExtResult> =>
 export const extSend = async (body: object): Promise<ExtResult> =>
   (await call({ type: 'send', body }, LONG)) ?? { error: 'missing' }
 
-/** Installed extension version (null = not installed / not yet known) and a way to look again. */
+/** Installed extension version, or null. Looked up on load and whenever the tab comes back into
+ *  view; the extension itself reloads this page after it is installed. */
 export function useExtension() {
   const [version, setVersion] = useState<string | null>(null)
   const recheck = useCallback(() => extAvailable().then((v) => { setVersion(v?.version ?? null); return v }), [])
-  useEffect(() => { void recheck() }, [recheck])
+  useEffect(() => {
+    void recheck()
+    const again = () => { if (document.visibilityState === 'visible') void recheck() }
+    document.addEventListener('visibilitychange', again)
+    return () => document.removeEventListener('visibilitychange', again)
+  }, [recheck])
   return { version, recheck }
+}
+
+export type SendLog = { date: string; activity_log: string; lesson_learned: string; obstacles: string; latitude?: number; longitude?: number }
+
+/** MagangHub's create payload: date, status, the three texts, coordinates only when present. */
+export function sendBody(v: SendLog): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    date: v.date, status: 'PRESENT', activity_log: v.activity_log, lesson_learned: v.lesson_learned, obstacles: v.obstacles,
+  }
+  if (Number.isFinite(v.latitude) && Number.isFinite(v.longitude)) { body.latitude = v.latitude; body.longitude = v.longitude }
+  return body
 }
 
 /** Plain-language message for a failed extension request. */

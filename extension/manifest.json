@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Shelia MagangHub",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Kirim log harian dan ambil token MagangHub dari test-shelia, lewat situs MagangHub sendiri.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtxDjgvFHdj29xhFGLPgiS1jUPOd2NMP4OhYXAlSVb7J6wCtfXPSeLnZXKCwU7G7q01n8w7+6eAevLWjQ8rbtwe2hfGmOHfxhuCqDNGaBaskq1CLOHPGcr4TI0fJdh98s6w4CofS+NEDIbjyhYTHrZWQuF2KFf5n1cemgx8fLHdc2vCtrB6m+4kqlZUJD4SnfTjWRDEWVPSqJaCGXC7cVDrhs3kxDnBY66kzOr1XkGCJPU/SUmen8jEO6XPvbCqgOnHyUVrRUkFewEwIXsfgJ+zvHbTgxdHJB8k8f1kKGXFqiasYMivbDIY7358MQ0krIl3y7jWktqsXtJQ31e6vTAQIDAQAB",
   "background": { "service_worker": "background.js", "type": "module" },
   "permissions": ["scripting"],
-  "host_permissions": ["https://monev.maganghub.kemnaker.go.id/*"],
+  "host_permissions": ["https://monev.maganghub.kemnaker.go.id/*", "https://test-shelia.holo.my.id/*"],
   "externally_connectable": { "matches": ["https://test-shelia.holo.my.id/*"] }
 }

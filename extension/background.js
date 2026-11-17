@@ -103,7 +103,15 @@ function nextEvent(chrome, tabId, ms) {
   return { done, watch: (t) => { id = t } }
 }
 
+/** Chrome only lets a page see an extension that was installed when the page loaded, so reload
+ *  open test-shelia tabs after install or update: they pick the extension up right away. */
+export async function reloadShelia(chrome) {
+  const tabs = await chrome.tabs.query({ url: ALLOWED_ORIGINS[0] + '/*' })
+  for (const t of tabs) await chrome.tabs.reload(t.id).catch(() => {})
+}
+
 if (globalThis.chrome && chrome.runtime && chrome.runtime.onMessageExternal) {
+  chrome.runtime.onInstalled.addListener(() => { void reloadShelia(chrome) })
   chrome.runtime.onMessageExternal.addListener((msg, sender, reply) => {
     handle(msg, sender, chrome).then(reply, () => reply({ error: 'failed' }))
     return true // keep the channel open for the async reply

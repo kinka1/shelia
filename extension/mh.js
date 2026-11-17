@@ -7,7 +7,7 @@ const TEXTS = ['activity_log', 'lesson_learned', 'obstacles']
 
 export const todayWIB = (now = new Date()) => new Date(now.getTime() + 7 * 3600_000).toISOString().slice(0, 10)
 
-/** MagangHub's create payload, checked like the bookmark does; anything else is dropped. */
+/** MagangHub's create payload, checked again here; anything else is dropped. */
 export function validateBody(b, now = new Date()) {
   if (!b || typeof b !== 'object') return { error: 'Data log tidak valid.' }
   if (b.date !== todayWIB(now)) return { error: 'Log hanya bisa dikirim untuk hari ini.' }
