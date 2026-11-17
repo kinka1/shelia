@@ -8,12 +8,12 @@ export function useToday() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (action = 'Muat status hari ini') => {
     setLoading(true)
     setError('')
     try {
       const res = await sheliaApi('/attendance-integration/user/today', {
-        method: 'POST', json: { lat: CONFIG.LAT, lng: CONFIG.LNG }, action: 'Muat status hari ini',
+        method: 'POST', json: { lat: CONFIG.LAT, lng: CONFIG.LNG }, action,
       })
       const t = res.data || {}
       let list: any[] = []
