@@ -31,11 +31,17 @@ describe('generateLog', () => {
     expect(sent).toContain('feat: tambah ekstensi')
     expect(sent).toContain('src/a.ts (+3 −1)')
     expect(sent).toMatch(/Indonesia/)
-    expect(sent).toContain('150–250')
-    expect(sent).toMatch(/2–3 kalimat/)
+    expect(sent).toContain('Target panjang: 100–150 karakter') // one small commit: short, no padding
     expect(sent).toMatch(/bertele-tele/)
+    expect(sent).toMatch(/shared widget[\s\S]*coach mark/) // codebase terms stay English
     expect(sent).toMatch(/Jangan menulis "tidak ada kendala"/)
     expect(sent).not.toMatch(/Tidak ada kendala berarti\./)
+  })
+
+  it('a small day: over 200 characters is asked once to be shorter', async () => {
+    const f = answers(reply({ ...good, activity_log: text(230) }), reply(good))
+    expect(await generateLog(commits, 'K')).toEqual(good)
+    expect(all(f, 1)).toMatch(/activity_log[\s\S]*lebih pendek, 100–150/)
   })
 
   it('a short field → one retry naming it; then valid', async () => {
@@ -57,9 +63,11 @@ describe('generateLog', () => {
     expect(all(f, 1)).toMatch(/activity_log[\s\S]*lebih pendek/)
   })
 
-  it('an explanatory 200-character field is fine, no retry', async () => {
+  it('more work gets the explanatory target; there a 200-character field is fine, no retry', async () => {
+    const many: GitCommit[] = [1, 2, 3].map((i) => ({ sha: `s${i}`, message: `feat ${i}`, files: [{ path: `src/f${i}.ts`, additions: 40, deletions: 5 }] }))
     const f = answers(reply({ ...good, activity_log: text(200) }))
-    expect(await generateLog(commits, 'K')).toEqual({ ...good, activity_log: text(200) })
+    expect(await generateLog(many, 'K')).toEqual({ ...good, activity_log: text(200) })
+    expect(all(f, 0)).toContain('Target panjang: 150–250 karakter')
     expect(f).toHaveBeenCalledTimes(1)
   })
 

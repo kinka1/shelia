@@ -13,7 +13,13 @@ export const MODELS = [
 export type ModelId = (typeof MODELS)[number]['id']
 export const DEFAULT_MODEL: ModelId = 'deepseek-flash'
 const KEYS = ['activity_log', 'lesson_learned', 'obstacles'] as const
-const LONG = 300 // above this, ask once for a shorter text (never cut by code)
+// Length follows the amount of work, so a small day isn't padded into a big one.
+// ponytail: fixed cut-off (2 commits, 80 changed lines); tune if real days read wrong.
+type Target = { range: string; long: number } // long: above this, ask once for a shorter text (never cut by code)
+const SMALL: Target = { range: '100–150', long: 200 }
+const NORMAL: Target = { range: '150–250', long: 300 }
+const lines = (cs: GitCommit[]) => cs.reduce((n, c) => n + c.files.reduce((m, f) => m + f.additions + f.deletions, 0), 0)
+export const targetFor = (cs: GitCommit[]): Target => (cs.length <= 2 && lines(cs) <= 80 ? SMALL : NORMAL)
 
 const SYSTEM = `Kamu membantu peserta magang (MagangHub Kemnaker) menulis log harian dari commit pekerjaannya.
 Balas HANYA JSON: {"activity_log": "...", "lesson_learned": "...", "obstacles": "..."}.
@@ -23,14 +29,14 @@ Gaya bahasa: Bahasa Indonesia baku yang luwes, seperti peserta magang menulis la
 - Gunakan kalimat aktif tanpa subjek "saya", diawali kata kerja: "Memperbaiki…", "Menambahkan…", "Mempelajari…".
 - Tulis dengan susunan kalimat Indonesia, bukan terjemahan harfiah dari bahasa Inggris. Hindari: "melakukan implementasi" (tulis "menerapkan"), "melakukan perbaikan" (tulis "memperbaiki"), "di mana" dan "yang mana" sebagai kata sambung, "dalam rangka", "hal ini", "adalah sebuah", "berhasil" yang tidak perlu.
 - Hindari kata yang terdengar dibuat AI atau berlebihan: "secara signifikan", "memastikan", "meningkatkan pengalaman pengguna", "krusial", "optimal", "berbagai", "mulus", "efisien dan efektif".
-- Tulis seperti developer Indonesia: kalimatnya Bahasa Indonesia, tetapi istilah teknis yang biasa diucapkan dalam bahasa Inggris tetap ditulis apa adanya, misalnya fix bug, solve bug, improve frontend, backend, endpoint, filter, login, logout, embed, deploy, refactor, API, token, branch, database. Jangan memaksa padanan Indonesia yang terasa kaku ("antarmuka depan", "titik akhir", "masuk/keluar akun"). Selain istilah itu, jangan menulis kalimat atau frasa bahasa Inggris utuh, dan jangan menulis kata "commit".
+- Tulis seperti developer Indonesia: kalimatnya Bahasa Indonesia, tetapi istilah teknis dan nama hal di codebase atau proyek tetap dalam bahasa Inggris seperti developer menyebutnya, misalnya fix bug, solve bug, improve frontend, backend, endpoint, filter, login, logout, embed, deploy, refactor, API, token, branch, database, shared widget, coach mark, component, state, hook, layout, modal, migration, query, unit test, dependency. Nama widget, komponen, modul, atau fitur yang terlihat dari nama file juga ditulis apa adanya. Jangan memaksa padanan Indonesia yang terasa kaku ("antarmuka depan", "titik akhir", "masuk/keluar akun"). Selain istilah itu, jangan menulis kalimat atau frasa bahasa Inggris utuh, dan jangan menulis kata "commit".
 - Tanpa markdown, tanpa hash commit, tanpa nama file lengkap; sebut bagian sistemnya saja.
 
 Aturan isi untuk setiap field:
-- Panjang 150–250 karakter, 2–3 kalimat yang menjelaskan: apa yang dikerjakan, bagaimana atau mengapa, dan hasil atau dampaknya. Wajib minimal 100 karakter.
+- Panjang mengikuti "Target panjang" di pesan pengguna (wajib minimal 100 karakter). Target pendek (100–150) berarti pekerjaannya kecil: satu atau dua kalimat, jangan dibesar-besarkan atau ditambah hal yang tidak ada. Target 150–250: 2–3 kalimat yang menjelaskan apa yang dikerjakan, bagaimana atau mengapa, dan hasilnya.
 - Jelas tapi tidak bertele-tele: setiap kalimat harus membawa informasi baru. Jangan mengulang isi field lain, jangan memakai kalimat pembuka atau penutup basa-basi ("Pada hari ini…", "Secara keseluruhan…").
 - Hanya tulis apa yang ditunjukkan commit (pesan dan nama file). Jangan mengarang fitur, angka, alat, atau nama yang tidak ada.
-- Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap 150–250 karakter.
+- Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap sesuai target panjang.
 - Jika ada "Periode", rangkum pekerjaan selama periode itu, bukan satu hari.
 activity_log: apa yang dikerjakan atau diubah; sebut bagian sistem yang terlihat dari nama file.
 lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh.
@@ -77,20 +83,21 @@ async function ask(messages: Msg[], key: string, model: string): Promise<Call> {
   } catch { return { error: 'Jawaban DeepSeek tidak bisa dibaca. Coba lagi.' } }
 }
 
-/** At most two calls: a second one only to fix a field under 100 or over 300 characters. */
+/** At most two calls: a second one only to fix a field under 100 or over the target's limit. */
 /** period: e.g. "10–12 Nov 2026" when the commits span a chosen range (absent for today). */
 export async function generateLog(commits: GitCommit[], deepseekKey: string, model: string = DEFAULT_MODEL, period?: string): Promise<LogTexts | { error: string }> {
-  const user = `${period ? `Periode: ${period}\n\n` : ''}${describeCommits(commits)}`
+  const t = targetFor(commits)
+  const user = `Target panjang: ${t.range} karakter per field.\n${period ? `Periode: ${period}\n` : ''}\n${describeCommits(commits)}`
   const messages: Msg[] = [{ role: 'system', content: SYSTEM }, { role: 'user', content: user }]
   const first = await ask(messages, deepseekKey, model)
   if ('error' in first) return first
   const short = KEYS.filter((k) => first.texts[k].length < MIN_CHARS)
-  const long = KEYS.filter((k) => first.texts[k].length > LONG)
+  const long = KEYS.filter((k) => first.texts[k].length > t.long)
   if (!short.length && !long.length) return first.texts
 
   const fix = [
-    ...short.map((k) => `${k} baru ${first.texts[k].length} karakter: tulis ulang menjadi 150–250 karakter, minimal 100 karakter.`),
-    ...long.map((k) => `${k} ${first.texts[k].length} karakter: buat lebih pendek, 150–250 karakter (tetap minimal 100).`),
+    ...short.map((k) => `${k} baru ${first.texts[k].length} karakter: tulis ulang menjadi ${t.range} karakter, minimal 100 karakter.`),
+    ...long.map((k) => `${k} ${first.texts[k].length} karakter: buat lebih pendek, ${t.range} karakter (tetap minimal 100).`),
   ].join('\n')
   const second = await ask([...messages, { role: 'assistant', content: first.raw }, { role: 'user', content: `${fix}\nBalas JSON lengkap ketiga field.` }], deepseekKey, model)
   if ('error' in second) return short.length ? second : first.texts // only "too long": the first answer is still valid
