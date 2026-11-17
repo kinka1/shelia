@@ -22,10 +22,10 @@ export const BUCKET: Record<Bucket, { label: string; tone: 'success' | 'warning'
   cuti: { label: 'Cuti', tone: 'info' },
   dinas: { label: 'Dinas', tone: 'info' },
   tidak_hadir: { label: 'Tidak hadir', tone: 'danger' },
-  belum: { label: 'Belum absen', tone: 'warning' },
+  belum: { label: 'Belum absen', tone: 'none' },
   libur: { label: 'Libur', tone: 'muted' },
   kosong: { label: 'Tidak ada catatan', tone: 'muted' },
-  nanti: { label: 'Belum tiba', tone: 'none' },
+  nanti: { label: 'Hari mendatang', tone: 'none' },
 }
 
 const CUTI = new Set(['leave', 'annual_leave'])
@@ -67,8 +67,8 @@ export function monthDays(period: string, rows: SheliaRow[], logs: MhLog[], toda
     if (sessions.length) {
       const found = sessions.map((r) => bucketOf(r.status, r.check_in?.status))
       bucket = RANK.find((b) => found.includes(b))!
-    } else if (date > today) bucket = 'nanti'
-    else if (weekday(date) >= 5) bucket = 'libur'
+    } else if (weekday(date) >= 5) bucket = 'libur' // weekends without a row, as the admin calendar draws them
+    else if (date > today) bucket = 'nanti'
     else if (date === today) bucket = 'belum'
     else bucket = 'kosong'
     return { date, bucket, sessions, log }
