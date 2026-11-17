@@ -1,12 +1,24 @@
-import { Moon, Sun } from 'lucide-react'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useTheme } from '@/lib/theme'
+import { useTheme, type Theme } from '@/lib/theme'
 
+const NEXT: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' }
+const LABEL: Record<Theme, string> = { system: 'Sistem', light: 'Terang', dark: 'Gelap' }
+const ICON = { system: Monitor, light: Sun, dark: Moon }
+
+/** Satu tombol yang berputar: Sistem, Terang, Gelap. */
 export default function ThemeToggle() {
-  const { theme, toggle } = useTheme()
+  const { theme, setTheme } = useTheme()
+  const Icon = ICON[theme]
   return (
-    <Button variant="ghost" size="icon" onClick={toggle} aria-label={theme === 'dark' ? 'Mode terang' : 'Mode gelap'}>
-      {theme === 'dark' ? <Sun /> : <Moon />}
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(NEXT[theme])}
+      aria-label={`Tema: ${LABEL[theme]}. Ketuk untuk ganti ke ${LABEL[NEXT[theme]]}`}
+      title={`Tema: ${LABEL[theme]}`}
+    >
+      <Icon />
     </Button>
   )
 }

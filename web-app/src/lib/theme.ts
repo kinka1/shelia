@@ -1,49 +1,56 @@
 /**
- * Mode terang/gelap. Kelas `dark` di <html> menggerakkan token Tailwind;
- * pilihan disimpan di localStorage supaya bertahan antar sesi.
+ * Mode tema: 'system' (ikut peramban), 'light' atau 'dark'. Pilihan disimpan di
+ * localStorage; kelas `dark` di <html> menggerakkan token Tailwind.
  */
-import { useCallback, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 
 const STORAGE_KEY = 'shelia-theme'
+const QUERY = '(prefers-color-scheme: dark)'
 
-type Theme = 'light' | 'dark'
+export type Theme = 'system' | 'light' | 'dark'
 
 const readStored = (): Theme => {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'dark' ? 'dark' : 'light'
+    const v = localStorage.getItem(STORAGE_KEY)
+    return v === 'light' || v === 'dark' ? v : 'system'
   } catch {
-    return 'light'
+    return 'system'
   }
 }
 
 const listeners = new Set<() => void>()
-let current: Theme = 'light'
+let current: Theme = 'system'
 
-const apply = (theme: Theme) => {
+const render = () => {
+  const dark = current === 'dark' || (current === 'system' && window.matchMedia(QUERY).matches)
+  document.documentElement.classList.toggle('dark', dark)
+}
+
+export const setTheme = (theme: Theme) => {
   current = theme
-  document.documentElement.classList.toggle('dark', theme === 'dark')
   try {
     localStorage.setItem(STORAGE_KEY, theme)
   } catch {
     // Penyimpanan bisa gagal di mode privat; tema tetap berlaku untuk sesi ini.
   }
+  render()
   listeners.forEach((listener) => listener())
 }
 
 /** Panggil sekali saat aplikasi dimuat. */
 export const initTheme = () => {
   current = readStored()
-  document.documentElement.classList.toggle('dark', current === 'dark')
+  render()
+  window.matchMedia(QUERY).addEventListener('change', render)
 }
 
-export const useTheme = () => {
-  const theme = useSyncExternalStore(
+export const useTheme = () => ({
+  theme: useSyncExternalStore(
     (listener) => {
       listeners.add(listener)
       return () => listeners.delete(listener)
     },
     () => current,
-  )
-  const toggle = useCallback(() => apply(current === 'dark' ? 'light' : 'dark'), [])
-  return { theme, toggle }
-}
+  ),
+  setTheme,
+})
