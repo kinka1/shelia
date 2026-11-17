@@ -146,7 +146,7 @@ export default function Riwayat() {
               </ul>
               <div className="space-y-1.5 pt-1 text-xs text-muted-foreground">
                 <ul aria-label="Keterangan Shelia" className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <li className="w-20 font-semibold text-foreground">Shelia (atas)</li>
+                  <li className="w-32 shrink-0 whitespace-nowrap font-semibold text-foreground">Shelia (atas)</li>
                   {[...SHELIA_LEGEND, ...SHELIA_IF_SHOWN.filter((b) => days.some((d) => d.bucket === b)).map((b) => [b, BUCKET[b].label] as [Bucket, string])].map(([b, label]) => (
                     <li key={b} className="flex items-center gap-1.5">
                       <span aria-hidden className={cn('size-4 rounded-sm border border-border', TOP[b])} />{label}
@@ -154,7 +154,7 @@ export default function Riwayat() {
                   ))}
                 </ul>
                 <ul aria-label="Keterangan MagangHub" className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <li className="w-20 font-semibold text-foreground">MagangHub (bawah)</li>
+                  <li className="w-32 shrink-0 whitespace-nowrap font-semibold text-foreground">MagangHub (bawah)</li>
                   {MH_LEGEND.map((b) => (
                     <li key={b} className="flex items-center gap-1.5">
                       <span aria-hidden className={cn('flex size-4 items-center justify-center rounded-sm border border-border text-[10px] font-semibold', BOTTOM[b][0])}>{BOTTOM[b][1]}</span>{MH_BUCKET[b]}
