@@ -85,6 +85,10 @@ function createServer({ authUrl, dataFile, now = () => new Date(), authTimeoutMs
         if (typeof b[f] !== "string" || !b[f].trim()) errors[f] = `${f} wajib diisi`;
         else if (b[f].trim().length < 100) errors[f] = `${f} minimal 100 karakter`;
       }
+      for (const [f, max] of [["latitude", 90], ["longitude", 180]]) {
+        if (typeof b[f] !== "number" || !Number.isFinite(b[f])) errors[f] = `${f} wajib berupa angka`;
+        else if (Math.abs(b[f]) > max) errors[f] = `${f} di luar rentang`;
+      }
     }
     if (Object.keys(errors).length) throw new HttpError(422, "Data tidak valid", errors);
 

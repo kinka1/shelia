@@ -26,7 +26,7 @@ export class DailyLogError extends Error {
   }
 }
 
-export async function submitDailyLog(v: { date: string; activity_log: string; lesson_learned: string; obstacles: string }): Promise<void> {
+export async function submitDailyLog(v: { date: string; activity_log: string; lesson_learned: string; obstacles: string; latitude: number; longitude: number }): Promise<void> {
   const res = await loggedFetch(`${BASE}/attendances/with-daily-log`, {
     method: 'POST',
     headers: { ...headers(), 'Content-Type': 'application/json' },

@@ -63,3 +63,36 @@ describe('MagangHubCard stale check', () => {
     expect(screen.queryByText('Terkirim 08:01')).toBeNull()
   })
 })
+
+describe('MagangHubCard location', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const sent = () => {
+    const posts: any[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) => {
+      if (i?.method === 'POST') { posts.push(JSON.parse(String(i.body))); return json({}, 201) }
+      return json({ data: [] })
+    }))
+    return posts
+  }
+  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } }) }
+
+  it('sends the office coordinates by default', async () => {
+    const posts = sent()
+    render(<MagangHubCard />)
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    await waitFor(() => expect(posts).toHaveLength(1))
+    expect(posts[0]).toMatchObject({ latitude: -7.308430344545027, longitude: 112.785199930883, location: 'Surabaya' })
+  })
+
+  it('fills latitude and longitude from the device GPS', async () => {
+    const posts = sent()
+    vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition: (ok: PositionCallback) => ok({ coords: { latitude: -7.25, longitude: 112.75, accuracy: 18 } } as GeolocationPosition) } })
+    render(<MagangHubCard />)
+    fireEvent.click(screen.getByRole('button', { name: /Gunakan lokasi saya/ }))
+    expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.250000')
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    await waitFor(() => expect(posts).toHaveLength(1))
+    expect(posts[0]).toMatchObject({ latitude: -7.25, longitude: 112.75 })
+  })
+})

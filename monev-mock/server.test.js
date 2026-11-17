@@ -151,3 +151,14 @@ test("holidays lists 2026-12-25", async () => {
   assert.ok(r.json.data.some((h) => h.date === "2026-12-25" && h.type === "NATIONAL" && h.scope === "NATIONAL"));
   assert.ok(r.json.total >= 16);
 });
+
+test("PRESENT needs numeric latitude/longitude in range", async () => {
+  const p = (o) => post(body({ date: "2026-11-20", ...o }));
+  const missing = await p({ latitude: undefined, longitude: "x" });
+  assert.strictEqual(missing.status, 422);
+  assert.match(missing.json.errors.latitude, /latitude wajib berupa angka/);
+  assert.match(missing.json.errors.longitude, /longitude wajib berupa angka/);
+  const out = await p({ latitude: 91, longitude: 181 });
+  assert.strictEqual(out.status, 422);
+  assert.ok(out.json.errors.latitude && out.json.errors.longitude);
+});

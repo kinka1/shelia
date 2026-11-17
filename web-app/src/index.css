@@ -236,3 +236,10 @@
   background-color: rgb(148 163 184);
 }
 
+
+/* Pin peta lokasi MagangHub (Leaflet divIcon). */
+.map-pin {
+  display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  background: hsl(var(--primary)); border: 3px solid hsl(var(--card)); box-shadow: 0 1px 4px hsl(0 0% 0% / 0.35);
+}
+.leaflet-container { font: inherit; }

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DailyLogError, MIN_CHARS, fetchMyToday, fieldState, remainingFields, submitDailyLog, todayWIB } from '@/lib/dailyLog'
 import { StatusPill } from '@/features/shelia/Sessions'
+import { LocationPicker, OFFICE } from './LocationPicker'
 import { TokenDialog } from './TokenDialog'
 import { useMhToken } from './useMhToken'
 
@@ -38,6 +39,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [busy, setBusy] = useState(false)
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [point, setPoint] = useState(OFFICE)
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -58,7 +60,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
     if (busy || left) return
     setBusy(true); setFormErr(''); setFieldErr({})
     try {
-      await submitDailyLog({ date, ...v })
+      await submitDailyLog({ date, ...v, latitude: point.lat, longitude: point.lng })
       toast.success('Log harian terkirim')
       await check()
     } catch (err) {
@@ -110,6 +112,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <Input id="mh-loc" value="Surabaya" readOnly aria-readonly className={READ_ONLY} />
           </div>
         </div>
+        <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
           return (
