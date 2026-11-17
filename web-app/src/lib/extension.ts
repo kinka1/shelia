@@ -46,13 +46,18 @@ export const EXT_POLL_MS = 3000
 export function useExtension() {
   const [version, setVersion] = useState<string | null | undefined>(undefined)
   const recheck = useCallback(() => extAvailable().then((v) => { setVersion(v?.version ?? null); return v }), [])
+  // Checks only until the extension is found. Once found it stays found: a sleeping worker can miss
+  // one answer, and flipping to "not installed" would unmount the log form and lose what was typed.
+  // An extension removed later shows up as an error when sending.
+  const found = version != null
   useEffect(() => {
+    if (found) return
     void recheck()
     const again = () => { if (document.visibilityState === 'visible') void recheck() }
     const timer = setInterval(again, EXT_POLL_MS)
     document.addEventListener('visibilitychange', again)
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', again) }
-  }, [recheck])
+  }, [recheck, found])
   return { version, recheck }
 }
 

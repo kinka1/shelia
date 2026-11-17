@@ -41,14 +41,26 @@ describe('useExtension', () => {
     await waitFor(() => expect(result.current.version).toBe('1.1.0'))
   })
 
-  it('notices a removed extension while the tab stays open', async () => {
+  it('once found, a missed answer (sleeping worker, tab switch) never flips it back', async () => {
     vi.useFakeTimers()
-    stubExt(() => ({ ok: true, version: '1.1.0' }))
+    const ext = stubExt(() => ({ ok: true, version: '1.1.0' }))
     const { result } = renderHook(() => useExtension())
     await act(() => vi.advanceTimersByTimeAsync(10))
     expect(result.current.version).toBe('1.1.0')
-    vi.unstubAllGlobals() // extension removed
-    await act(() => vi.advanceTimersByTimeAsync(EXT_POLL_MS + 10))
+    vi.unstubAllGlobals() // no answer now
+    document.dispatchEvent(new Event('visibilitychange'))
+    await act(() => vi.advanceTimersByTimeAsync(EXT_POLL_MS * 3))
+    expect(result.current.version).toBe('1.1.0')
+    expect(ext.mock.calls.length).toBe(1) // no more checks after it was found
+  })
+
+  it('keeps checking until the extension is installed', async () => {
+    vi.useFakeTimers()
+    const { result } = renderHook(() => useExtension())
+    await act(() => vi.advanceTimersByTimeAsync(2100))
     expect(result.current.version).toBeNull()
+    stubExt(() => ({ ok: true, version: '1.1.0' }))
+    await act(() => vi.advanceTimersByTimeAsync(EXT_POLL_MS + 10))
+    expect(result.current.version).toBe('1.1.0')
   })
 })
