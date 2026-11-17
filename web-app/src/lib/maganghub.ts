@@ -22,6 +22,7 @@ export function bookmarkletHref(origin: string): string {
 }
 
 export const getMhToken = (): string | null => { try { return localStorage.getItem(MH_KEY) } catch { return null } }
+export const setMhToken = (t: string): void => { try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ } }
 export const clearMhToken = (): void => { try { localStorage.removeItem(MH_KEY) } catch { /* storage blocked */ } }
 
 export function intakeTokenFromLocation(): void {

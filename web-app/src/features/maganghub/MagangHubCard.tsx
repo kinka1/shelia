@@ -7,7 +7,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { fmtDate } from './LogDetailSheet'
 import { MIN_CHARS, fetchMyToday, fieldState, remainingFields, todayWIB } from '@/lib/dailyLog'
-import { sendBookmarkletHref, sendUrl } from '@/lib/sendBookmarklet'
+import { sendBody, sendBookmarkletHref, sendUrl } from '@/lib/sendBookmarklet'
+import { extError, extSend, useExtension } from '@/lib/extension'
+import { toast } from 'sonner'
 import { onLogSent } from '@/lib/handoff'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
@@ -42,6 +44,9 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [point, setPoint] = useState(OFFICE)
   const [confirming, setConfirming] = useState(false)
   const [waiting, setWaiting] = useState(false) // MagangHub tab opened; the send happens there
+  const ext = useExtension()
+  const [sending, setSending] = useState(false)
+  const [sendErr, setSendErr] = useState('')
   // React 19 blocks javascript: hrefs set as props, so set it on the node.
   const sendBookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', sendBookmarkletHref(location.origin)), [])
 
@@ -64,7 +69,17 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   // The log is sent from MagangHub's own page (bookmark "→ Kirim log"), so here we only prepare and open it.
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!left && canSend) setConfirming(true)
+    if (!left && canSend) { setSendErr(''); setConfirming(true) }
+  }
+
+  // With the extension: one click, sent from a MagangHub tab it manages.
+  async function sendViaExtension() {
+    if (sending) return
+    setSending(true); setSendErr('')
+    const r = await extSend(sendBody({ date, ...v, latitude: point.lat, longitude: point.lng }))
+    setSending(false)
+    if ('ok' in r && r.ok) { setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
+    setSendErr(extError(r))
   }
 
   function openMagangHub() {
@@ -94,7 +109,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />
         {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
-        <TokenDialog token={mh.token} connected={!!mh.token} onDisconnect={mh.disconnect} />
+        <TokenDialog token={mh.token} connected={!!mh.token} onDisconnect={mh.disconnect} onRefresh={mh.refresh} />
       </div>
       {sentAt && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
@@ -165,6 +180,13 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
               </section>
             ))}
           </div>
+          {sendErr && <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive-ink">{sendErr}</p>}
+          {ext.version ? (
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
+              <Button disabled={sending} onClick={() => void sendViaExtension()}>{sending ? 'Mengirim…' : 'Kirim ke MagangHub'}</Button>
+            </DialogFooter>
+          ) : (<>
           <ol className="list-decimal space-y-1.5 pl-5 text-sm">
             <li>
               Sekali saja: seret{' '}
@@ -179,6 +201,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
             <Button onClick={openMagangHub}>Buka MagangHub</Button>
           </DialogFooter>
+          </>)}
         </DialogContent>
       </Dialog>
       </>)}

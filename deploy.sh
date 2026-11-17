@@ -8,6 +8,9 @@ HOST=ubuntu@213.35.109.129
 DEST=/home/Documents/shelia-test
 SSH=(ssh -i "$HOME/.ssh/ssh-key-2025-09-05.key")
 
+# The Chrome extension is offered as a download from the site (web-app/public is copied into dist).
+tmp=$(mktemp -d) && cp -R extension "$tmp/shelia-maganghub" && mkdir -p web-app/public \
+  && (cd "$tmp" && COPYFILE_DISABLE=1 zip -qrX - shelia-maganghub) > web-app/public/shelia-maganghub.zip && rm -rf "$tmp"
 (cd web-app && npm ci && npm run build)
 
 # The VPS has no rsync: copy with tar/cat over ssh (remote login shell is fish, so wrap in bash -c).

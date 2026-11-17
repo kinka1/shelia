@@ -6,6 +6,8 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 const stub = (rows: unknown[]) => vi.stubGlobal('fetch', vi.fn(async (u: string) => (String(u).includes('/daily-logs') ? json({ data: rows, total: rows.length }) : json({ data: [] }))))
 const L = 'x'.repeat(100)
 // Every card needs a MagangHub token: the form sends to the real MagangHub.
+import { stubExt } from '@/test/ext'
+
 beforeEach(() => localStorage.setItem('maganghub.token', 'mh-tok'))
 
 describe('MagangHubCard', () => {
@@ -147,5 +149,50 @@ describe('MagangHubCard send via MagangHub', () => {
     opened()
     render(<MagangHubCard />)
     expect(screen.queryByLabelText('Lokasi')).toBeNull()
+  })
+})
+
+describe('MagangHubCard with the extension', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const ext = (answer: (m: any) => any) => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })))
+    vi.stubGlobal('open', vi.fn())
+    return stubExt((m) => (m.type === 'hello' ? { ok: true, version: '1.0.0' } : answer(m)))
+  }
+
+  it('sends in one click, once, and closes the dialog', async () => {
+    let finish: (r: any) => void = () => {}
+    const send = ext((m) => (m.type === 'send' ? new Promise((r) => { finish = r }) : { ok: true, token: 'x' }))
+    render(<MagangHubCard />)
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    const btn = await screen.findByRole('button', { name: 'Kirim ke MagangHub' })
+    expect(screen.queryByRole('link', { name: '→ Kirim log' })).toBeNull()
+    fireEvent.click(btn); fireEvent.click(btn)
+    await waitFor(() => expect(send.mock.calls.filter(([, m]) => m.type === 'send')).toHaveLength(1))
+    const body = send.mock.calls.find(([, m]) => m.type === 'send')![1].body
+    expect(body).toMatchObject({ status: 'PRESENT', activity_log: L, latitude: -7.308430344545027 })
+    finish({ ok: true, status: 201 })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(window.open).not.toHaveBeenCalled()
+  })
+
+  it('shows MagangHub\'s refusal, and the login hint', async () => {
+    let answer: any = { error: 'http', status: 422, message: 'Aktivitas terlalu pendek' }
+    ext((m) => (m.type === 'send' ? answer : { ok: true, token: 'x' }))
+    render(<MagangHubCard />)
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Aktivitas terlalu pendek')
+    answer = { error: 'login' }
+    fireEvent.click(screen.getByRole('button', { name: 'Kirim ke MagangHub' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Login MagangHub'))
+  })
+
+  it('refreshes a missing token silently on load', async () => {
+    localStorage.removeItem('maganghub.token')
+    const send = ext(() => ({ ok: true, token: 'fresh' }))
+    render(<MagangHubCard />)
+    await waitFor(() => expect(localStorage.getItem('maganghub.token')).toBe('fresh'))
+    expect(send).toHaveBeenCalledWith(expect.any(String), { type: 'token', interactive: false }, expect.any(Function))
   })
 })

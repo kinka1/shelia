@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TokenDialog } from './TokenDialog'
+import { stubExt } from '@/test/ext'
 
 describe('TokenDialog', () => {
   it('sets the bookmarklet href imperatively (React 19 blocks javascript: props)', async () => {
@@ -36,5 +37,37 @@ describe('TokenDialog', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     rerender(<TokenDialog token="new" connected onDisconnect={() => {}} />)
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+  it('without the extension: shows install steps with the download and copy buttons', async () => {
+    render(<TokenDialog connected={false} onDisconnect={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    expect(await screen.findByText('Ekstensi belum terpasang')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/shelia-maganghub.zip')
+    expect(screen.getByRole('button', { name: 'Salin' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cek lagi' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '→ Shelia' })).toBeInTheDocument()
+  })
+
+  it('with the extension: one Ambil token button, no bookmark', async () => {
+    const send = stubExt((m) => (m.type === 'hello' ? { ok: true, version: '1.0.0' } : { ok: true, token: 'tok-new' }))
+    const onRefresh = vi.fn()
+    render(<TokenDialog connected={false} onDisconnect={() => {}} onRefresh={onRefresh} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    expect(await screen.findByText('Ekstensi terpasang (v1.0.0)')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '→ Shelia' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Ambil token' }))
+    await waitFor(() => expect(onRefresh).toHaveBeenCalled())
+    expect(localStorage.getItem('maganghub.token')).toBe('tok-new')
+    expect(send).toHaveBeenCalledWith(expect.any(String), { type: 'token', interactive: true }, expect.any(Function))
+    vi.unstubAllGlobals(); localStorage.clear()
+  })
+
+  it('with the extension: asks to log in on MagangHub when needed', async () => {
+    stubExt((m) => (m.type === 'hello' ? { ok: true, version: '1.0.0' } : { error: 'timeout' }))
+    render(<TokenDialog connected={false} onDisconnect={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ambil token' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Login MagangHub')
+    vi.unstubAllGlobals()
   })
 })

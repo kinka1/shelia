@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { MH_KEY, clearMhToken, fetchDailyLogs, getMhToken, tokenExpiry, type MhStatus } from '@/lib/maganghub'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { extAvailable, extToken } from '@/lib/extension'
+import { MH_KEY, setMhToken, clearMhToken, fetchDailyLogs, getMhToken, tokenExpiry, type MhStatus } from '@/lib/maganghub'
 
 export function useMhToken() {
   const [token, setToken] = useState<string | null>(getMhToken)
@@ -24,5 +25,15 @@ export function useMhToken() {
   const refresh = useCallback(() => setToken(getMhToken()), [])
   const expiry = token ? tokenExpiry(token) : null
   const status: MhStatus = !token ? 'none' : rejected || (expiry && expiry.getTime() < Date.now()) ? 'expired' : 'ok'
+
+  // With the extension, a missing or expired token is fetched quietly (once per page load).
+  const tried = useRef(false)
+  useEffect(() => {
+    if (status === 'ok' || tried.current) return
+    tried.current = true
+    void extAvailable().then((v) => v && extToken(false)).then((r) => {
+      if (r && 'ok' in r && r.ok && r.token) { setMhToken(r.token); setToken(r.token) }
+    })
+  }, [status])
   return { token, status, expiry, disconnect, refresh }
 }

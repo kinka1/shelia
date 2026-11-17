@@ -8,12 +8,16 @@ const KEY = '#shelia-log='
 export type SendLog = { date: string; activity_log: string; lesson_learned: string; obstacles: string; latitude?: number; longitude?: number }
 
 /** MagangHub's create payload: date, status, the three texts, coordinates only when present. */
-export function sendUrl(v: SendLog): string {
+export function sendBody(v: SendLog): Record<string, unknown> {
   const body: Record<string, unknown> = {
     date: v.date, status: 'PRESENT', activity_log: v.activity_log, lesson_learned: v.lesson_learned, obstacles: v.obstacles,
   }
   if (Number.isFinite(v.latitude) && Number.isFinite(v.longitude)) { body.latitude = v.latitude; body.longitude = v.longitude }
-  return `${MH_SITE}/dashboard${KEY}${encodeURIComponent(JSON.stringify(body))}`
+  return body
+}
+
+export function sendUrl(v: SendLog): string {
+  return `${MH_SITE}/dashboard${KEY}${encodeURIComponent(JSON.stringify(sendBody(v)))}`
 }
 
 // Plain ES5 so it runs as a bookmark on any browser. Only the whitelisted fields are ever sent.
