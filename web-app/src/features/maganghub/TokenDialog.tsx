@@ -8,7 +8,7 @@ const STEPS = ['Seret tombol ke bookmark bar', 'Buka MagangHub dan login', 'Klik
 export function TokenDialog({ connected, onDisconnect }: { connected: boolean; onDisconnect: () => void }) {
   return (
     <Dialog>
-      <DialogTrigger asChild><Button variant="outline" size="sm">Perbarui token</Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="outline">Perbarui token</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Hubungkan MagangHub</DialogTitle>
@@ -22,7 +22,7 @@ export function TokenDialog({ connected, onDisconnect }: { connected: boolean; o
           → Shelia
         </a>
         <ol className="list-decimal space-y-1 pl-5 text-sm">{STEPS.map((s) => <li key={s}>{s}</li>)}</ol>
-        {connected && <Button variant="ghost" size="sm" className="w-fit text-destructive-ink" onClick={onDisconnect}>Putuskan</Button>}
+        {connected && <Button variant="ghost" className="w-fit text-destructive-ink" onClick={onDisconnect}>Putuskan</Button>}
       </DialogContent>
     </Dialog>
   )

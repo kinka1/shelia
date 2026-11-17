@@ -37,7 +37,8 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   async function check(d = date) {
     const r = await fetchMyToday(d)
     setSentAt(r?.sentAt ?? null)
-    onSentAt?.(r?.sentAt ?? null)
+    if (d === todayWIB()) onSentAt?.(r?.sentAt ?? null)
+    return r
   }
   useEffect(() => { void check() }, [date]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -53,8 +54,13 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
       toast.success('Log harian terkirim')
       await check()
     } catch (err) {
-      if (err instanceof DailyLogError && err.status === 409) { await check(); return }
-      if (err instanceof DailyLogError && err.status === 422) setFieldErr(err.errors as Partial<Record<Key, string>>)
+      if (err instanceof DailyLogError && err.status === 409) {
+        if (!(await check())) setFormErr('Log untuk tanggal ini sudah ada.')
+        return
+      }
+      if (err instanceof DailyLogError && err.status === 422) {
+        setFieldErr(Object.fromEntries(Object.entries(err.errors).map(([k, m]) => [k, /wajib/i.test(String(m)) ? 'Wajib diisi' : `Minimal ${MIN_CHARS} karakter`])))
+      }
       setFormErr(err instanceof Error ? err.message : 'Gagal mengirim')
     } finally { setBusy(false) }
   }
@@ -71,7 +77,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="mh-date">Tanggal</Label>
               <Input id="mh-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />

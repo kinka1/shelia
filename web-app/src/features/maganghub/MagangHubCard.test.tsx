@@ -28,10 +28,19 @@ describe('MagangHubCard', () => {
 
   it('maps 422 errors to fields', async () => {
     vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
-      i?.method === 'POST' ? json({ message: 'x', errors: { obstacles: 'Terlalu pendek' } }, 422) : json({ data: [] })))
+      i?.method === 'POST' ? json({ message: 'x', errors: { obstacles: 'obstacles minimal 100 karakter' } }, 422) : json({ data: [] })))
     render(<MagangHubCard />)
     for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } })
     fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
-    expect(await screen.findByText('Terlalu pendek')).toBeInTheDocument()
+    expect(await screen.findByText('Minimal 100 karakter')).toBeInTheDocument()
+  })
+
+  it('shows a message when 409 finds no row on re-check', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
+      i?.method === 'POST' ? json({ message: 'Absensi untuk tanggal ini sudah ada' }, 409) : json({ data: [] })))
+    render(<MagangHubCard />)
+    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } })
+    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    expect(await screen.findByText('Log untuk tanggal ini sudah ada.')).toBeInTheDocument()
   })
 })
