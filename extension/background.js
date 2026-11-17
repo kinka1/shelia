@@ -1,4 +1,4 @@
-// Takes requests from test-shelia only, and does them inside a MagangHub tab: reuse an open one, or
+// Takes requests from Phoenix only, and does them inside a MagangHub tab: reuse an open one, or
 // open one in the background and close it afterwards. Passwords and OTPs are never touched: when
 // MagangHub needs a login, its own login page is brought forward for the user.
 import { ALLOWED_ORIGINS, MH_SITE, pageSend, pageToken, validateBody } from './mh.js'
@@ -106,7 +106,7 @@ function nextEvent(chrome, tabId, ms) {
 }
 
 /** Chrome only lets a page see an extension that was installed when the page loaded, so reload
- *  open test-shelia tabs after install or update: they pick the extension up right away. */
+ *  open Phoenix tabs after install or update: they pick the extension up right away. */
 export async function reloadShelia(chrome) {
   const tabs = await chrome.tabs.query({ url: ALLOWED_ORIGINS[0] + '/*' })
   for (const t of tabs) await chrome.tabs.reload(t.id).catch(() => {})

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { handle } from '../../../extension/background.js'
 import { installed, nextAt, onAlarm, onClick, pending } from '../../../extension/remind.js'
 
-const SENDER = { origin: 'https://test-shelia.holo.my.id', tab: { id: 1, windowId: 9 } }
+const SENDER = { origin: 'https://phoenix.holo.my.id', tab: { id: 1, windowId: 9 } }
 const at = (iso: string) => new Date(iso)
 
 function fake(stored: Record<string, unknown> = {}, tabs: { id: number; windowId: number }[] = []) {
@@ -88,13 +88,13 @@ describe('clicking a notification', () => {
   it('focuses an open test-shelia tab; with the log open it asks the page to generate', async () => {
     const c = fake({ remind: { status: { date: '2026-11-17', masuk: true, pulang: true, log: false } } }, [{ id: 4, windowId: 2 }])
     await onClick('pulang', c, at('2026-11-17T09:45:00Z'))
-    expect(c.tabs.update).toHaveBeenCalledWith(4, { active: true, url: 'https://test-shelia.holo.my.id/?generate=1' })
+    expect(c.tabs.update).toHaveBeenCalledWith(4, { active: true, url: 'https://phoenix.holo.my.id/?generate=1' })
     expect(c.windows.update).toHaveBeenCalledWith(2, { focused: true })
   })
   it('opens the site when no tab is open', async () => {
     const c = fake()
     await onClick('masuk', c, at('2026-11-17T00:45:00Z'))
-    expect(c.tabs.create).toHaveBeenCalledWith({ url: 'https://test-shelia.holo.my.id/' })
+    expect(c.tabs.create).toHaveBeenCalledWith({ url: 'https://phoenix.holo.my.id/' })
   })
 })
 

@@ -245,7 +245,7 @@ describe('tokenUrl (pre-filled "new token" page)', () => {
     const u = new URL(tokenUrl('https://github.com/kinka1/shelia')!.href)
     expect(u.origin + u.pathname).toBe('https://github.com/settings/personal-access-tokens/new')
     expect(Object.fromEntries(u.searchParams)).toEqual({
-      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (test-shelia).',
+      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (Phoenix).',
       target_name: 'kinka1', expires_in: '366', contents: 'read',
     })
     expect(tokenUrl('https://github.com/kinka1/shelia')!.site).toBe('GitHub')
@@ -255,7 +255,7 @@ describe('tokenUrl (pre-filled "new token" page)', () => {
     const u = new URL(t.href)
     expect(u.origin + u.pathname).toBe('https://gitlab.example.com/-/user_settings/personal_access_tokens')
     expect(Object.fromEntries(u.searchParams)).toEqual({
-      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (test-shelia).', scopes: 'read_api',
+      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (Phoenix).', scopes: 'read_api',
     })
     expect(t.site).toBe('GitLab')
   })

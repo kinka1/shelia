@@ -15,7 +15,7 @@ export function useMhToken() {
     return () => { live = false }
   }, [token])
 
-  // Token saved by another test-shelia tab: pick it up here without a reload.
+  // Token saved by another Phoenix tab: pick it up here without a reload.
   // A 401/403 from any MagangHub request later on: the token stopped working.
   useEffect(() => {
     const h = (e: StorageEvent) => { if (e.key === MH_KEY) setToken(getMhToken()) }

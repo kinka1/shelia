@@ -76,7 +76,7 @@ export async function onAlarm(alarm, chrome, now = new Date()) {
   chrome.alarms.create(alarm.name, { when: nextAt(event, now) })
 }
 
-/** Open the Absen page (reusing a test-shelia tab); with the log still open, ask it to generate. */
+/** Open the Absen page (reusing a Phoenix tab); with the log still open, ask it to generate. */
 export async function onClick(id, chrome, now = new Date()) {
   const r = await load(chrome)
   const url = SITE + (id === 'pulang' && pending('pulang', r.status, todayWIB(now)).includes('kirim log MagangHub') ? '?generate=1' : '')

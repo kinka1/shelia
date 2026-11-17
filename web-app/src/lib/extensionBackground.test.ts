@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { DEFAULTS, handle, reloadShelia } from '../../../extension/background.js'
 import { pageSend, pageToken, todayWIB } from '../../../extension/mh.js'
 
-const SENDER = { origin: 'https://test-shelia.holo.my.id', tab: { id: 1, windowId: 9 } }
+const SENDER = { origin: 'https://phoenix.holo.my.id', tab: { id: 1, windowId: 9 } }
 const T = 'x'.repeat(100)
 const body = () => ({ date: todayWIB(), status: 'PRESENT', activity_log: T, lesson_learned: T, obstacles: T })
 const FAST = { tokenWaitMs: 5, loginWaitMs: 200, pollMs: 20 }
@@ -125,7 +125,7 @@ describe('extension worker', () => {
     c.tabs.query.mockResolvedValueOnce([{ id: 3 }, { id: 4 }] as any)
     ;(c.tabs as any).reload = vi.fn(async () => {})
     await reloadShelia(c)
-    expect(c.tabs.query).toHaveBeenCalledWith({ url: 'https://test-shelia.holo.my.id/*' })
+    expect(c.tabs.query).toHaveBeenCalledWith({ url: 'https://phoenix.holo.my.id/*' })
     expect((c.tabs as any).reload.mock.calls).toEqual([[3], [4]])
   })
 })

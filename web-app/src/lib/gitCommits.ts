@@ -34,7 +34,7 @@ export function parseRepo(url: string): { kind: 'github' | 'gitlab'; api: string
 }
 
 const TOKEN_NAME = 'Shelia Generate'
-const TOKEN_NOTE = 'Baca commit untuk log harian MagangHub (test-shelia).'
+const TOKEN_NOTE = 'Baca commit untuk log harian MagangHub (Phoenix).'
 
 /** The site's own "new token" page, pre-filled read-only (documented URL parameters of both sites):
  *  GitHub fine-grained token with Contents: read for the repo owner, 366 days (the maximum);
