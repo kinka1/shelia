@@ -31,7 +31,9 @@ describe('generateLog', () => {
     expect(sent).toContain('feat: tambah ekstensi')
     expect(sent).toContain('src/a.ts (+3 −1)')
     expect(sent).toMatch(/Indonesia/)
-    expect(sent).toContain('100–130')
+    expect(sent).toContain('150–250')
+    expect(sent).toMatch(/2–3 kalimat/)
+    expect(sent).toMatch(/bertele-tele/)
     expect(sent).toMatch(/Jangan menulis "tidak ada kendala"/)
     expect(sent).not.toMatch(/Tidak ada kendala berarti\./)
   })
@@ -48,21 +50,27 @@ describe('generateLog', () => {
   })
 
   it('a long field → one retry asking shorter; still long → the valid long text is used', async () => {
-    const long = { ...good, activity_log: text(200) }
+    const long = { ...good, activity_log: text(320) }
     const f = answers(reply(long), reply(long))
     expect(await generateLog(commits, 'K')).toEqual(long)
     expect(f).toHaveBeenCalledTimes(2)
     expect(all(f, 1)).toMatch(/activity_log[\s\S]*lebih pendek/)
   })
 
+  it('an explanatory 200-character field is fine, no retry', async () => {
+    const f = answers(reply({ ...good, activity_log: text(200) }))
+    expect(await generateLog(commits, 'K')).toEqual({ ...good, activity_log: text(200) })
+    expect(f).toHaveBeenCalledTimes(1)
+  })
+
   it('a long field whose retry comes back short keeps the valid first text', async () => {
-    const long = { ...good, activity_log: text(200) }
+    const long = { ...good, activity_log: text(320) }
     answers(reply(long), reply({ ...good, activity_log: text(95), obstacles: text(120, 'd') }))
-    expect(await generateLog(commits, 'K')).toEqual({ ...good, activity_log: text(200), obstacles: text(120, 'd') })
+    expect(await generateLog(commits, 'K')).toEqual({ ...good, activity_log: text(320), obstacles: text(120, 'd') })
   })
 
   it('a long field whose retry fails keeps the valid first answer', async () => {
-    const long = { ...good, activity_log: text(200) }
+    const long = { ...good, activity_log: text(320) }
     answers(reply(long), new Response('{}', { status: 429 }))
     expect(await generateLog(commits, 'K')).toEqual(long)
   })

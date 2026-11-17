@@ -13,7 +13,7 @@ export const MODELS = [
 export type ModelId = (typeof MODELS)[number]['id']
 export const DEFAULT_MODEL: ModelId = 'deepseek-flash'
 const KEYS = ['activity_log', 'lesson_learned', 'obstacles'] as const
-const LONG = 160 // above this, ask once for a shorter text (never cut by code)
+const LONG = 300 // above this, ask once for a shorter text (never cut by code)
 
 const SYSTEM = `Kamu membantu peserta magang (MagangHub Kemnaker) menulis log harian dari commit pekerjaannya.
 Balas HANYA JSON: {"activity_log": "...", "lesson_learned": "...", "obstacles": "..."}.
@@ -27,16 +27,17 @@ Gaya bahasa: Bahasa Indonesia baku yang luwes, seperti peserta magang menulis la
 - Tanpa markdown, tanpa hash commit, tanpa nama file lengkap; sebut bagian sistemnya saja.
 
 Aturan isi untuk setiap field:
-- Panjang 100–130 karakter: minimal 100, sesingkat mungkin. Satu atau dua kalimat.
+- Panjang 150–250 karakter, 2–3 kalimat yang menjelaskan: apa yang dikerjakan, bagaimana atau mengapa, dan hasil atau dampaknya. Wajib minimal 100 karakter.
+- Jelas tapi tidak bertele-tele: setiap kalimat harus membawa informasi baru. Jangan mengulang isi field lain, jangan memakai kalimat pembuka atau penutup basa-basi ("Pada hari ini…", "Secara keseluruhan…").
 - Hanya tulis apa yang ditunjukkan commit (pesan dan nama file). Jangan mengarang fitur, angka, alat, atau nama yang tidak ada.
-- Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap 100–130 karakter.
+- Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap 150–250 karakter.
 - Jika ada "Periode", rangkum pekerjaan selama periode itu, bukan satu hari.
 activity_log: apa yang dikerjakan atau diubah; sebut bagian sistem yang terlihat dari nama file.
 lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh.
 obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, langsung tulis hal yang perlu dijaga atau dicek dari pekerjaan itu. Jangan menulis "tidak ada kendala" atau kalimat pembuka serupa.
 
 Contoh nada yang diinginkan (bukan isi):
-{"activity_log": "Fix bug validasi form login dan menambahkan filter tanggal pada endpoint riwayat absensi agar data lebih mudah dicari.", "lesson_learned": "Mempelajari cara backend memeriksa masa berlaku token dan cara frontend menampilkan pesan error tanpa logout paksa.", "obstacles": "Alur login dan logout perlu dicek ulang di ponsel karena tampilannya sempat bergeser setelah perubahan validasi form."}`
+{"activity_log": "Fix bug validasi form login yang membuat pesan error tidak muncul, lalu menambahkan filter tanggal pada endpoint riwayat absensi supaya data per periode bisa dicari tanpa memuat semua riwayat.", "lesson_learned": "Mempelajari cara backend memeriksa masa berlaku token sebelum memproses request, serta cara frontend menampilkan pesan error dengan jelas tanpa membuat pengguna logout paksa.", "obstacles": "Tampilan form login sempat bergeser di layar ponsel setelah validasi diubah, sehingga perlu penyesuaian layout. Alur login dan logout perlu dicek ulang di beberapa ukuran layar."}`
 
 const one = (c: GitCommit) => {
   const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')
@@ -76,7 +77,7 @@ async function ask(messages: Msg[], key: string, model: string): Promise<Call> {
   } catch { return { error: 'Jawaban DeepSeek tidak bisa dibaca. Coba lagi.' } }
 }
 
-/** At most two calls: a second one only to fix a field under 100 or over 160 characters. */
+/** At most two calls: a second one only to fix a field under 100 or over 300 characters. */
 /** period: e.g. "10–12 Nov 2026" when the commits span a chosen range (absent for today). */
 export async function generateLog(commits: GitCommit[], deepseekKey: string, model: string = DEFAULT_MODEL, period?: string): Promise<LogTexts | { error: string }> {
   const user = `${period ? `Periode: ${period}\n\n` : ''}${describeCommits(commits)}`
@@ -88,8 +89,8 @@ export async function generateLog(commits: GitCommit[], deepseekKey: string, mod
   if (!short.length && !long.length) return first.texts
 
   const fix = [
-    ...short.map((k) => `${k} baru ${first.texts[k].length} karakter: tulis ulang, minimal 100 karakter.`),
-    ...long.map((k) => `${k} ${first.texts[k].length} karakter: buat lebih pendek, 100–130 karakter (tetap minimal 100).`),
+    ...short.map((k) => `${k} baru ${first.texts[k].length} karakter: tulis ulang menjadi 150–250 karakter, minimal 100 karakter.`),
+    ...long.map((k) => `${k} ${first.texts[k].length} karakter: buat lebih pendek, 150–250 karakter (tetap minimal 100).`),
   ].join('\n')
   const second = await ask([...messages, { role: 'assistant', content: first.raw }, { role: 'user', content: `${fix}\nBalas JSON lengkap ketiga field.` }], deepseekKey, model)
   if ('error' in second) return short.length ? second : first.texts // only "too long": the first answer is still valid

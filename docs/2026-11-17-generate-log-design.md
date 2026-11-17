@@ -12,7 +12,7 @@ reviews and edits before sending (the existing confirmation dialog stays).
   **all branches**, on GitHub (github.com) or GitLab (gitlab.com or a self-hosted GitLab by link).
 - The intern supplies the repo link and their own DeepSeek API key; private repos also need a
   read-only access token (GitHub fine-grained/classic PAT, GitLab `read_api`/`read_repository`).
-- Each text: Indonesian, ≥ 100 characters after trim, aimed at 100–130 characters.
+- Each text: Indonesian, ≥ 100 characters after trim, aimed at 150–250 characters in 2–3 explanatory sentences (changed 2026-11-17: user found 100–130 too short; still no filler).
 - All three are always generated from the commits (user's decision):
   - Aktivitas: what was built/changed.
   - Pembelajaran: what the work touched or required (tools, parts of the system, techniques).
