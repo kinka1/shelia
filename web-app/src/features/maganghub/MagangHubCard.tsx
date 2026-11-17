@@ -121,7 +121,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           </div>
         </div>
         <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
-        <GenerateLog value={v} onChange={setV} />
+        {!sentAt && <GenerateLog value={v} onChange={setV} />}
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
           return (

@@ -4,7 +4,7 @@
 export type GitFile = { path: string; additions: number; deletions: number }
 export type GitCommit = { sha: string; message: string; files: GitFile[] }
 export type Settings = { repo: string; token?: string; deepseekKey: string; username?: string }
-type Result = { commits: GitCommit[]; trimmed: boolean } | { error: string }
+type Result = { commits: GitCommit[]; trimmed: boolean; note?: string } | { error: string }
 
 const MAX_COMMITS = 30
 const MAX_BRANCHES = 20
@@ -67,12 +67,20 @@ function pick<T>(all: T[], mine: (c: T) => boolean, who: string): { mine: T[]; t
 async function github(api: string, path: string, s: Settings, get: Get, range: Range): Promise<Result> {
   const me = s.token ? await get(`${api}/user`) : { login: s.username }
   const ids = [me.login, me.email].filter(Boolean).map((x: string) => x.toLowerCase())
-  await get(`${api}/repos/${path}`)
-  // ponytail: the first 20 branches as GitHub lists them; branch dates would cost a call each.
-  const branches: { name: string }[] = (await get(`${api}/repos/${path}/branches?per_page=100`)).slice(0, MAX_BRANCHES)
+  const info = await get(`${api}/repos/${path}`)
+  const main: string = info.default_branch || 'main'
+  // Without a token GitHub allows 60 requests an hour: read only the default branch.
+  // With one: the default branch first, then others as listed, 20 at most (said when skipped).
+  let names = [main]
+  let note: string | undefined
+  if (s.token) {
+    const all: string[] = (await get(`${api}/repos/${path}/branches?per_page=100`)).map((b: { name: string }) => b.name)
+    names = [main, ...all.filter((n) => n !== main)]
+    if (names.length > MAX_BRANCHES) { names = names.slice(0, MAX_BRANCHES); note = `Hanya ${MAX_BRANCHES} branch yang dibaca` }
+  }
   const seen = new Map<string, any>()
-  for (const b of branches) {
-    const list: any[] = await get(`${api}/repos/${path}/commits?sha=${encodeURIComponent(b.name)}&${q({ ...range, per_page: '100' })}`)
+  for (const name of names) {
+    const list: any[] = await get(`${api}/repos/${path}/commits?sha=${encodeURIComponent(name)}&${q({ ...range, per_page: '100' })}`)
     for (const c of list) if (c.parents?.length <= 1 && !seen.has(c.sha)) seen.set(c.sha, c)
   }
   const isMine = (c: any) => [c.author?.login, c.commit?.author?.email].some((x) => x && ids.includes(String(x).toLowerCase()))
@@ -83,7 +91,7 @@ async function github(api: string, path: string, s: Settings, get: Get, range: R
     const files: GitFile[] = (d.files || []).map((f: any) => ({ path: f.filename, additions: f.additions, deletions: f.deletions }))
     return { sha: c.sha, message: c.commit.message, files }
   }))
-  return { commits, trimmed: p.trimmed }
+  return { commits, trimmed: p.trimmed, ...(note ? { note } : {}) }
 }
 
 async function gitlab(api: string, path: string, s: Settings, get: Get, range: Range): Promise<Result> {

@@ -54,6 +54,18 @@ describe('generateLog', () => {
     expect(all(f, 1)).toMatch(/activity_log[\s\S]*lebih pendek/)
   })
 
+  it('a long field whose retry comes back short keeps the valid first text', async () => {
+    const long = { ...good, activity_log: text(200) }
+    answers(reply(long), reply({ ...good, activity_log: text(95), obstacles: text(120, 'd') }))
+    expect(await generateLog(commits, 'K')).toEqual({ ...good, activity_log: text(200), obstacles: text(120, 'd') })
+  })
+
+  it('a long field whose retry fails keeps the valid first answer', async () => {
+    const long = { ...good, activity_log: text(200) }
+    answers(reply(long), new Response('{}', { status: 429 }))
+    expect(await generateLog(commits, 'K')).toEqual(long)
+  })
+
   it('reads JSON inside ```json fences', async () => {
     answers(reply('```json\n' + JSON.stringify(good) + '\n```'))
     expect(await generateLog(commits, 'K')).toEqual(good)

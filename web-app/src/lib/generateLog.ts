@@ -62,7 +62,13 @@ export async function generateLog(commits: GitCommit[], deepseekKey: string): Pr
     ...long.map((k) => `${k} ${first.texts[k].length} karakter: buat lebih pendek, 100–130 karakter (tetap minimal 100).`),
   ].join('\n')
   const second = await ask([...messages, { role: 'assistant', content: first.raw }, { role: 'user', content: `${fix}\nBalas JSON lengkap ketiga field.` }], deepseekKey)
-  if ('error' in second) return second
-  if (KEYS.some((k) => second.texts[k].length < MIN_CHARS)) return { error: 'Teks yang dibuat terlalu pendek. Coba lagi.' }
-  return second.texts
+  if ('error' in second) return short.length ? second : first.texts // only "too long": the first answer is still valid
+  // Per field: the retry's text if valid, else the first one if valid; never lose a good answer.
+  const out = {} as LogTexts
+  for (const k of KEYS) {
+    const t = [second.texts[k], first.texts[k]].find((x) => x.length >= MIN_CHARS)
+    if (!t) return { error: 'Teks yang dibuat terlalu pendek. Coba lagi.' }
+    out[k] = t
+  }
+  return out
 }

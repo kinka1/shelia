@@ -40,6 +40,7 @@ describe('MagangHubCard form', () => {
     expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Lihat' }))
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Generate' })).toBeNull()
   })
 
   it('locks the date to today and has no Lokasi field', async () => {

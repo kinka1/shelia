@@ -53,7 +53,7 @@ describe('fetchTodayCommits — GitHub', () => {
       [`${gh}/repos/o/r/commits?sha=main`]: [mine, ghCommit('m1', 'budi', 'b@x.id', 2), ghCommit('o1', 'ani', 'a@x.id')],
       [`${gh}/repos/o/r/commits?sha=feat`]: [mine],
       [`${gh}/repos/o/r/commits/abc`]: { files: [{ filename: 'src/a.ts', additions: 3, deletions: 1, patch: '+code' }] },
-      [`${gh}/repos/o/r`]: { full_name: 'o/r' },
+      [`${gh}/repos/o/r`]: { full_name: 'o/r', default_branch: 'main' },
     })
     const r = await fetchTodayCommits({ ...base, token: 'T' }, NOW)
     expect(r).toEqual({ commits: [{ sha: 'abc', message: 'msg abc', files: [{ path: 'src/a.ts', additions: 3, deletions: 1 }] }], trimmed: false })
@@ -68,7 +68,7 @@ describe('fetchTodayCommits — GitHub', () => {
       [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
       [`${gh}/repos/o/r/commits?sha=main`]: [ghCommit('abc', 'budi', 'b@x.id')],
       [`${gh}/repos/o/r/commits/abc`]: { files: [] },
-      [`${gh}/repos/o/r`]: {},
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
     })
     const r = await fetchTodayCommits({ ...base, username: 'budi' }, NOW)
     expect('commits' in r && r.commits.map((c) => c.sha)).toEqual(['abc'])
@@ -85,7 +85,7 @@ describe('fetchTodayCommits — GitHub', () => {
     serve({
       [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
       [`${gh}/repos/o/r/commits?sha=main`]: [ghCommit('o1', 'ani', 'a@x.id'), ghCommit('o2', 'ani', 'a@x.id')],
-      [`${gh}/repos/o/r`]: {},
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
     })
     expect(await fetchTodayCommits({ ...base, username: 'budi' }, NOW)).toEqual({ error: 'Ada 2 commit hari ini, tapi tidak ada dari budi' })
   })
@@ -95,10 +95,41 @@ describe('fetchTodayCommits — GitHub', () => {
       [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
       [`${gh}/repos/o/r/commits?sha=main`]: Array.from({ length: 35 }, (_, i) => ghCommit(`c${i}`, 'budi', 'b@x.id')),
       [`${gh}/repos/o/r/commits/`]: { files: [] },
-      [`${gh}/repos/o/r`]: {},
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
     })
     const r = await fetchTodayCommits({ ...base, username: 'budi' }, NOW)
     expect('commits' in r && [r.commits.length, r.trimmed]).toEqual([30, true])
+  })
+})
+
+describe('fetchTodayCommits — GitHub branches and limits', () => {
+  const base = { repo: 'https://github.com/o/r', deepseekKey: 'k' }
+  it('without a token reads only the default branch (saves the 60/hour limit)', async () => {
+    const f = serve({
+      [`${gh}/repos/o/r/commits?sha=dev`]: [ghCommit('abc', 'budi', 'b@x.id')],
+      [`${gh}/repos/o/r/commits/abc`]: { files: [] },
+      [`${gh}/repos/o/r`]: { default_branch: 'dev' },
+    })
+    await fetchTodayCommits({ ...base, username: 'budi' }, NOW)
+    const urls = f.mock.calls.map(([u]) => u)
+    expect(urls.some((u) => u.includes('/branches'))).toBe(false)
+    expect(urls.filter((u) => u.includes('/commits?'))).toHaveLength(1)
+  })
+  it('with a token reads the default branch first, and says when branches were skipped', async () => {
+    const names = Array.from({ length: 25 }, (_, i) => ({ name: `a${String(i).padStart(2, '0')}` })).concat({ name: 'main' })
+    const f = serve({
+      [`${gh}/user`]: { login: 'budi' },
+      [`${gh}/repos/o/r/branches`]: names,
+      [`${gh}/repos/o/r/commits?sha=main`]: [ghCommit('abc', 'budi', 'b@x.id')],
+      [`${gh}/repos/o/r/commits?sha=`]: [],
+      [`${gh}/repos/o/r/commits/abc`]: { files: [] },
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
+    })
+    const r = await fetchTodayCommits({ ...base, token: 'T' }, NOW)
+    expect(r).toMatchObject({ commits: [{ sha: 'abc' }], note: 'Hanya 20 branch yang dibaca' })
+    const lists = f.mock.calls.map(([u]) => u).filter((u) => u.includes('/commits?'))
+    expect(lists).toHaveLength(20)
+    expect(lists[0]).toContain('sha=main')
   })
 })
 

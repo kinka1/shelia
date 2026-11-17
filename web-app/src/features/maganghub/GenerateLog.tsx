@@ -45,7 +45,7 @@ export function GenerateLog({ value, onChange }: { value: LogTexts; onChange: (v
     try {
       const c = await fetchTodayCommits(s)
       if ('error' in c) return setErr(c.error)
-      if (c.trimmed) setNote('Hanya 30 commit pertama dipakai')
+      setNote([c.note, c.trimmed && 'Hanya 30 commit pertama dipakai'].filter(Boolean).join(' · '))
       const t = await generateLog(c.commits, s.deepseekKey)
       if ('error' in t) return setErr(t.error)
       onChange(t)
@@ -92,6 +92,7 @@ export function GenerateLog({ value, onChange }: { value: LogTexts; onChange: (v
           <div className="flex flex-col gap-3">
             {field('repo', 'Link repo (GitHub atau GitLab)')}
             {field('token', 'Token akses (opsional untuk repo publik)', true)}
+            <p className="-mt-2 text-xs text-muted-foreground">Tanpa token hanya branch utama yang dibaca (batas GitHub 60 permintaan per jam).</p>
             {field('deepseekKey', 'API key DeepSeek', true)}
             {field('username', 'Username Git (hanya tanpa token)')}
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
