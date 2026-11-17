@@ -1,7 +1,0 @@
-.compare { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr; }
-.compare > * { min-width: 0; }
-.compare .container { max-width: none; margin: 0; }
-@media (min-width: 900px) {
-  .compare { grid-template-columns: 1fr 1fr; align-items: start; }
-}
-#shelia-log pre { max-height: 240px; overflow: auto; white-space: pre-wrap; word-break: break-word; }

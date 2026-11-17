@@ -1,45 +1,36 @@
-# Absensi Web
+# Shelia test site
 
-Website sederhana untuk login, logout, check-in, dan check-out ke API absensi dev. Website ini mengikuti dokumentasi
-API absensi web (`WEB_ATTENDANCE_API.md`), sebuah dokumen internal yang tidak disertakan di repo ini.
+Situs uji (dev-only) di belakang Cloudflare Access. Isinya: check-in/check-out Shelia, log harian MagangHub,
+riwayat, dan API log. Semua dilayani dari satu aplikasi React di `/`.
 
-## Menjalankan
+## Struktur
+
+- `web-app/`: aplikasi React (Vite + TypeScript), dibuild ke `web-app/dist`
+- `monev-mock/`: server Node kecil untuk log harian yang diposting aplikasi
+- `nginx.conf`: melayani SPA dan mem-proxy `/api/`, `/maganghub-api/`, `/monev-api/`
+- `docker-compose.yml`: container `web` (nginx) dan `monev-mock`
+- `deploy.sh`: build, sync ke VPS, validasi nginx, recreate container
+- `docs/`: catatan desain dan rencana (riwayat)
+
+## Pengembangan
 
 ```
-node server.js
+cd web-app && npm i && npm run dev
 ```
 
-Lalu buka **http://localhost:5173**.
+## Tes
 
-Alamatnya harus persis `http://localhost:5173`. CORS di API dev hanya mengizinkan origin itu, jadi bila dibuka dari
-`127.0.0.1`, port lain, atau langsung sebagai file, browser akan memblokir request ke API.
-
-## Pengaturan
-
-Ada di bagian `CONFIG` paling atas `app.js`:
-
-- `API_BASE`: `https://dev-shelia.shelterapp2.co.id/api`
-- `LAT`, `LNG`: koordinat tetap `-7.308430344545027, 112.785199930883`. Koordinat ini dikirim ke `user/today`,
-  check-in, dan check-out. GPS browser tidak dipakai.
-
-## Alur
-
-1. Login dengan NIK dan password HRIS. Token disimpan di `localStorage`.
-2. Halaman absen memanggil `user/today`, dan `next_action` menentukan tombol yang tampil.
-3. Untuk check-in, pengguna memilih shift (bila site punya shift), mengambil foto wajah (bila face recognition aktif),
-   dan mengisi alasan (bila di luar area). Website lalu memanggil `face/verify` dan setelah itu `check-in`.
-4. Untuk check-out, langkahnya sama, memakai `attendance_id` dari sesi yang sedang terbuka.
-5. Setelah 3 kali gagal verifikasi wajah, absen bisa dikirim lewat jalur bypass. Absen itu masuk HR review.
+```
+node --test monev-mock/
+cd web-app && npx vitest run
+```
 
 ## Deploy
-
-Aplikasi baru (React, `web-app/`) dilayani di `/`; halaman absensi lama ada di `/classic/`
-(berkas dari klon `app/` di VPS, tidak pernah diubah oleh skrip deploy).
 
 ```
 ./deploy.sh
 ```
 
-Skrip ini build `web-app` di Mac (`npm ci && npm run build`), rsync `web-app/dist/` (dengan `--delete`),
-`nginx.conf`, `docker-compose.yml`, `web/`, dan `monev-mock/` ke VPS, lalu recreate container `web` dan
-`monev-mock` dan menjalankan `nginx -t`.
+Skrip ini build `web-app` di Mac, rsync `web-app/dist/` (dengan `--delete`), `nginx.conf`, `docker-compose.yml`,
+dan `monev-mock/` ke VPS, menjalankan `nginx -t` di container sementara, lalu recreate `web` dan `monev-mock`.
+Direktori `app/` di VPS tidak pernah disentuh.
