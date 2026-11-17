@@ -258,7 +258,7 @@ describe('MagangHubCard gates', () => {
     localStorage.removeItem('maganghub.token')
     setup({ installed: false })
     render(<MagangHubCard />)
-    expect(await screen.findByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/shelia-maganghub.zip')
+    expect(await screen.findByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/phoenix-maganghub.zip')
     expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
   })
 

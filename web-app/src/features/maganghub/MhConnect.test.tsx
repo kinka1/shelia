@@ -31,7 +31,7 @@ describe('MhConnect', () => {
     render(<MhConnect installed={false} onRefresh={() => {}} />)
     fireEvent.click(screen.getByRole('button', { name: 'Pasang ekstensi' }))
     const dlg = await screen.findByRole('dialog')
-    expect(screen.getByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/shelia-maganghub.zip')
+    expect(screen.getByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/phoenix-maganghub.zip')
     expect(screen.getByRole('button', { name: 'Salin' })).toBeInTheDocument()
     expect(dlg).not.toHaveTextContent('bookmark')
     expect(screen.queryByRole('link', { name: '→ Shelia' })).toBeNull()

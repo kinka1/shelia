@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 // The "Phoenix MagangHub" Chrome extension (repo: extension/). Its ID is fixed by the manifest key.
 export const EXT_ID = 'fiagillffjfgpckjfblgknnhhcahecdj'
-export const EXT_ZIP = '/shelia-maganghub.zip'
+export const EXT_ZIP = '/phoenix-maganghub.zip'
 
 export type ExtResult =
   | { ok: true; version?: string; token?: string; status?: number }
