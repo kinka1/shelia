@@ -100,11 +100,14 @@ const MAX_PAGES = 10
 /** MagangHub lists newest first; pages are read until they reach the month before. */
 export async function fetchMhMonth(period: string): Promise<{ status: MhStatus; logs: MhLog[]; error?: string }> {
   const logs: MhLog[] = []
+  let seen = 0
   for (let page = 1; page <= MAX_PAGES; page++) {
     const r = await fetchDailyLogs(page, 'Riwayat MagangHub sebulan')
     if (r.status !== 'ok' || r.error) return { status: r.status, logs, ...(r.error ? { error: r.error } : {}) }
     logs.push(...r.rows.filter((l) => l.date?.startsWith(period)))
-    if (!r.rows.length || r.rows.some((l) => l.date && l.date < `${period}-01`)) return { status: 'ok', logs }
+    seen += r.rows.length
+    // Past the last page MagangHub repeats the last row instead of answering empty, so stop at its total.
+    if ((r.total != null && seen >= r.total) || !r.rows.length || r.rows.some((l) => l.date && l.date < `${period}-01`)) return { status: 'ok', logs }
   }
   // ponytail: page cap, so an old month stops after MAX_PAGES requests; it says so instead of showing 0.
   return { status: 'ok', logs, error: 'Log yang lebih lama tidak dimuat; sebagian tanda ✓ mungkin tidak tampil.' }

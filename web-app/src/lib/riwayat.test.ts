@@ -99,3 +99,14 @@ describe('final review fixes', () => {
     expect(r.error).toBe('Log yang lebih lama tidak dimuat; sebagian tanda ✓ mungkin tidak tampil.')
   })
 })
+
+describe('MagangHub paging, as the real API answers', () => {
+  it('stops at the total: past the last page the API repeats the last row', async () => {
+    localStorage.setItem('maganghub.token', 'mh')
+    const f = vi.fn(async () => json({ data: [{ date: '2026-11-16' }], page: 1, page_size: 10, total: 1 }))
+    vi.stubGlobal('fetch', f)
+    const r = await fetchMhMonth('2026-11')
+    expect(r).toEqual({ status: 'ok', logs: [expect.objectContaining({ date: '2026-11-16' })] })
+    expect(f).toHaveBeenCalledTimes(1)
+  })
+})
