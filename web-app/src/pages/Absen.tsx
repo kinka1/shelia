@@ -7,6 +7,7 @@ import { MagangHubCard } from '@/features/maganghub/MagangHubCard'
 import { SheliaCard, sheliaDone } from '@/features/shelia/SheliaCard'
 import { useToday } from '@/features/shelia/useToday'
 import { useSession } from '@/features/session/SessionProvider'
+import { useMhToken } from '@/features/maganghub/useMhToken'
 import LoginPage from '@/features/session/LoginPage'
 import { fmtTime } from '@/lib/attendance'
 import { cn } from '@/lib/utils'
@@ -42,10 +43,13 @@ export function sheliaItem(today: any, loading: boolean, loggedIn = true): Item 
   return { name: 'Shelia', tone: 'done', value: `Masuk ${inAt}${outAt !== '-' ? ` · pulang ${outAt}` : ''}${late}`, target: 'form-shelia' }
 }
 
-function TodayStatus({ shelia, sentAt, loading }: { shelia: Item | null; sentAt: string | null; loading: boolean }) {
-  const mh: Item = sentAt
-    ? { name: 'MagangHub', tone: 'done', value: `Terkirim ${sentAt}`, target: 'form-maganghub' }
-    : { name: 'MagangHub', tone: 'todo', value: 'Belum diisi', action: 'Isi log', target: 'form-maganghub' }
+export function mhItem(sentAt: string | null, connected: boolean): Item {
+  if (sentAt) return { name: 'MagangHub', tone: 'done', value: `Terkirim ${sentAt}`, target: 'form-maganghub' }
+  if (!connected) return { name: 'MagangHub', tone: 'todo', value: 'Belum terhubung', action: 'Hubungkan', target: 'form-maganghub' }
+  return { name: 'MagangHub', tone: 'todo', value: 'Belum diisi', action: 'Isi log', target: 'form-maganghub' }
+}
+
+function TodayStatus({ shelia, mh, loading }: { shelia: Item | null; mh: Item; loading: boolean }) {
   const items = shelia ? [shelia, mh] : null
   const n = items ? items.filter((i) => i.tone !== 'todo').length : 0
   const all = !!items && items.every((i) => i.tone === 'done')
@@ -100,9 +104,10 @@ export default function Absen() {
   const { token } = useSession()
   const shelia = useToday(!!token)
   const [sentAt, setSentAt] = useState<string | null>(null)
+  const mhConnected = useMhToken().status === 'ok'
   return (
     <div className="space-y-5">
-      <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading, !!token)} sentAt={sentAt} loading={!!token && shelia.loading} />
+      <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading, !!token)} mh={mhItem(sentAt, mhConnected)} loading={!!token && shelia.loading} />
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Card id="form-shelia" className="scroll-mt-20 p-5 shadow-none">{token ? <SheliaCard {...shelia} /> : <LoginPage />}</Card>
         <Card id="form-maganghub" className="scroll-mt-20 p-5 shadow-none"><MagangHubCard onSentAt={setSentAt} /></Card>

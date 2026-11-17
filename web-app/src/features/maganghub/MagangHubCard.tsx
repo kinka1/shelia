@@ -11,7 +11,7 @@ import { extError, extSend, sendBody, useExtension } from '@/lib/extension'
 import { toast } from 'sonner'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
-import { MhConnect } from './MhConnect'
+import { MhConnect, MhConnectPanel } from './MhConnect'
 import { useMhToken } from './useMhToken'
 
 const FIELDS = [
@@ -86,7 +86,10 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />
         {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
-        <MhConnect installed={!!ext.version} onRefresh={mh.refresh} />
+        {canSend && <MhConnect installed onRefresh={mh.refresh} />}
+        {mh.status !== 'none' && (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
+        )}
       </div>
       {sentAt && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
@@ -95,6 +98,8 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
           <span className="flex-1" />
           <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>Lihat</Button>
         </div>
+      ) : !canSend ? (
+        <MhConnectPanel installed={!!ext.version} expired={mh.status === 'expired'} onRefresh={mh.refresh} />
       ) : (<>
       <p className="mb-3 mt-0.5 text-[13px] text-muted-foreground">
         Log harian{mh.expiry ? ` · token berlaku sampai ${hhmm(mh.expiry)}` : ''}
@@ -129,10 +134,9 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {!canSend ? <span className="text-xs text-warning-ink">{!ext.version ? 'Pasang ekstensi dulu' : mh.status === 'expired' ? 'Token kedaluwarsa, perbarui dulu' : 'Sambungkan MagangHub dulu'}</span>
-                : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
+              {left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={left > 0 || !canSend}>Kirim log</Button>
+              <Button type="submit" disabled={left > 0}>Kirim log</Button>
             </>
           )}
         </div>

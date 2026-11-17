@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sheliaItem } from './Absen'
+import { mhItem, sheliaItem } from './Absen'
 
 const base = { work_date: '2026-11-17', message: 'Silakan check-in' }
 const sess = (o: object) => [{ work_date: '2026-11-17', check_in_time: '2026-11-17 08:02:00', ...o }]
@@ -18,6 +18,11 @@ describe('sheliaItem (kartu status absen)', () => {
     expect([it_.tone, it_.value, it_.action]).toEqual(['done', 'Masuk 08:02 · pulang 17:05 (terlambat)', undefined])
   })
   it('masih memuat → null (skeleton)', () => expect(sheliaItem(null, true)).toBeNull())
+  it('MagangHub belum terhubung → todo dengan aksi hubungkan', () => {
+    expect(mhItem(null, false)).toMatchObject({ tone: 'todo', value: 'Belum terhubung', action: 'Hubungkan' })
+    expect(mhItem(null, true)).toMatchObject({ tone: 'todo', value: 'Belum diisi', action: 'Isi log' })
+    expect(mhItem('08:01', true)).toMatchObject({ tone: 'done', value: 'Terkirim 08:01' })
+  })
   it('belum login Shelia → todo dengan aksi login', () => {
     const it_ = sheliaItem(null, false, false)!
     expect([it_.tone, it_.value, it_.action]).toEqual(['todo', 'Belum login', 'Login'])

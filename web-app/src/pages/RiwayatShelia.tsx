@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { ListPagination } from '@/components/ListPagination'
@@ -7,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusPill } from '@/features/shelia/Sessions'
 import { useToday } from '@/features/shelia/useToday'
 import { useSession } from '@/features/session/SessionProvider'
-import LoginPage from '@/features/session/LoginPage'
 import { readHistory, type HistoryRow } from '@/lib/sheliaHistory'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
@@ -41,13 +41,6 @@ export default function RiwayatShelia() {
   }, [rows, query])
   const visible = filtered.slice((page - 1) * perPage, page * perPage)
 
-  if (!token) return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-[-0.02em]">Riwayat Shelia</h1>
-      <div className="rounded-lg border bg-card p-5"><LoginPage /></div>
-    </div>
-  )
-
   return (
     <div className="space-y-4">
       <div>
@@ -61,7 +54,7 @@ export default function RiwayatShelia() {
             value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }}
           />
           <span className="flex-1" />
-          <Button variant="outline" className="h-9" disabled={loading} onClick={() => void reload('Muat riwayat Shelia')}>
+          <Button variant="outline" className="h-9" disabled={!token || loading} onClick={() => void reload('Muat riwayat Shelia')}>
             <RefreshCw className="size-4" aria-hidden /> Muat ulang
           </Button>
         </div>
@@ -72,7 +65,14 @@ export default function RiwayatShelia() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.length === 0 ? (
+            {!token ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="py-10 text-center">
+                  <p className="mb-3 font-medium">Shelia belum login</p>
+                  <Button asChild variant="outline" className="h-9"><Link to="/">Login di halaman Absen</Link></Button>
+                </TableCell>
+              </TableRow>
+            ) : visible.length === 0 ? (
               <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Belum ada riwayat.</TableCell></TableRow>
             ) : visible.map((r) => (
               <TableRow key={r.date}>
@@ -86,7 +86,7 @@ export default function RiwayatShelia() {
           </TableBody>
         </Table>
         <ListPagination
-          page={page} perPage={perPage} total={filtered.length}
+          page={page} perPage={perPage} total={token ? filtered.length : 0}
           onPageChange={setPage} onPerPageChange={(n) => { setPerPage(n); setPage(1) }}
         />
       </div>

@@ -5,6 +5,7 @@ import { MH_KEY, setMhToken, clearMhToken, fetchDailyLogs, getMhToken, tokenExpi
 export function useMhToken() {
   const [token, setToken] = useState<string | null>(getMhToken)
   const [rejected, setRejected] = useState(false) // 401/403 from MagangHub
+  const tried = useRef(false)
 
   useEffect(() => {
     setRejected(false)
@@ -21,13 +22,13 @@ export function useMhToken() {
     return () => window.removeEventListener('storage', h)
   }, [])
 
-  const disconnect = useCallback(() => { clearMhToken(); setToken(null) }, [])
+  // Keluar: forget the token here, and don't fetch it straight back from MagangHub's session.
+  const disconnect = useCallback(() => { tried.current = true; clearMhToken(); setToken(null) }, [])
   const refresh = useCallback(() => setToken(getMhToken()), [])
   const expiry = token ? tokenExpiry(token) : null
   const status: MhStatus = !token ? 'none' : rejected || (expiry && expiry.getTime() < Date.now()) ? 'expired' : 'ok'
 
   // With the extension, a missing or expired token is fetched quietly (once per page load).
-  const tried = useRef(false)
   useEffect(() => {
     if (status === 'ok' || tried.current) return
     tried.current = true

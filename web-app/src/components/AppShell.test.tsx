@@ -30,16 +30,20 @@ describe('AppShell', () => {
     render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
     expect(screen.getByRole('heading', { name: 'Masuk ke Shelia' })).toBeInTheDocument()
     expect(screen.getByLabelText('NIK')).toBeInTheDocument()
-    expect(screen.getByText('Log harian')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'MagangHub' })).toBeInTheDocument()
     expect(screen.getByText('Belum login')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Menu akun' })).toBeNull()
     expect(f.mock.calls.some(([u]) => String(u).startsWith('/api/'))).toBe(false)
   })
 
-  it('Riwayat Shelia asks for the Shelia login too', () => {
+  it('Riwayat Shelia, like Riwayat MagangHub, points to the login on Absen', () => {
     localStorage.clear()
+    localStorage.setItem('shelia.history', JSON.stringify([{ date: '2026-11-16', shift: 'Pagi', checkIn: '08:00', checkOut: '17:00', status: 'hadir' }]))
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')))
     render(<MemoryRouter initialEntries={['/riwayat-shelia']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
-    expect(screen.getByLabelText('NIK')).toBeInTheDocument()
+    expect(screen.getByText('Shelia belum login')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Login di halaman Absen' })).toHaveAttribute('href', '/')
+    expect(screen.queryByLabelText('NIK')).toBeNull()
+    expect(screen.queryByText('Pagi')).toBeNull()
   })
 })

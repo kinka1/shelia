@@ -25,6 +25,7 @@ describe('MagangHubCard form', () => {
   it('gates Kirim log on 100 chars per field', async () => {
     setup()
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     const btn = screen.getByRole('button', { name: 'Kirim log' })
     expect(await screen.findByText('Lengkapi 3 isian lagi')).toBeInTheDocument()
     expect(btn).toBeDisabled()
@@ -41,16 +42,18 @@ describe('MagangHubCard form', () => {
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toBeDisabled()
   })
 
-  it('locks the date to today and has no Lokasi field', () => {
+  it('locks the date to today and has no Lokasi field', async () => {
     setup()
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     expect(screen.getByLabelText('Tanggal')).toHaveAttribute('readonly')
     expect(screen.queryByLabelText('Lokasi')).toBeNull()
   })
 
-  it('shows the coordinates exactly as sent, not rounded', () => {
+  it('shows the coordinates exactly as sent, not rounded', async () => {
     setup()
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
     expect(screen.getByLabelText('Longitude')).toHaveValue('112.785199930883')
   })
@@ -61,6 +64,7 @@ describe('MagangHubCard sending', () => {
     let finish: (r: any) => void = () => {}
     const s = setup({ answer: (m) => (m.type === 'send' ? new Promise((r) => { finish = r }) : { ok: true, token: 'x' }) })
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     fill(); await kirim()
     const btn = screen.getByRole('button', { name: /Mengirim|Kirim ke MagangHub/ })
     fireEvent.click(btn)
@@ -74,6 +78,7 @@ describe('MagangHubCard sending', () => {
     const s = setup()
     vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition: (ok: PositionCallback) => ok({ coords: { latitude: -7.25, longitude: 112.75, accuracy: 18 } } as GeolocationPosition) } })
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     fireEvent.click(screen.getByRole('button', { name: /Gunakan lokasi saya/ }))
     expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
     fill(); await kirim()
@@ -83,6 +88,7 @@ describe('MagangHubCard sending', () => {
   it('cancel sends nothing, and nothing ever goes to our server', async () => {
     const s = setup()
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     fill()
     fireEvent.click(await screen.findByRole('button', { name: 'Kirim log' }))
     expect(await screen.findByRole('dialog')).toHaveTextContent('Hadir')
@@ -97,6 +103,7 @@ describe('MagangHubCard sending', () => {
     let answer: any = { error: 'http', status: 422, message: 'Aktivitas terlalu pendek' }
     setup({ answer: (m) => (m.type === 'send' ? answer : { ok: true, token: 'x' }) })
     render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
     fill(); await kirim()
     expect(await screen.findByRole('alert')).toHaveTextContent('Aktivitas terlalu pendek')
     answer = { error: 'login' }
@@ -106,28 +113,43 @@ describe('MagangHubCard sending', () => {
 })
 
 describe('MagangHubCard gates', () => {
-  it('without the extension: cannot send, asks to install it', async () => {
-    setup({ installed: false })
+  it('Keluar forgets the MagangHub token and does not fetch it back silently', async () => {
+    const s = setup({ answer: () => ({ ok: true, token: 'again' }) })
     render(<MagangHubCard />)
-    fill()
-    expect(await screen.findByText('Pasang ekstensi dulu')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }))
+    expect(await screen.findByRole('button', { name: 'Hubungkan MagangHub' })).toBeInTheDocument()
+    expect(localStorage.getItem('maganghub.token')).toBeNull()
+    await new Promise((r) => setTimeout(r, 50))
+    expect(s!.mock.calls.some(([, m]) => m.type === 'token')).toBe(false)
+    expect(localStorage.getItem('maganghub.token')).toBeNull()
   })
 
-  it('without a token (and none from the extension): cannot send', async () => {
+  it('without a token: a connect step instead of the form, then the form', async () => {
     localStorage.removeItem('maganghub.token')
-    setup({ answer: () => ({ error: 'login' }) })
+    let tokenAnswer: any = { error: 'login' }
+    const s = setup({ answer: () => tokenAnswer })
     render(<MagangHubCard />)
-    fill()
-    expect(await screen.findByText('Sambungkan MagangHub dulu')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
+    const btn = await screen.findByRole('button', { name: 'Hubungkan MagangHub' })
+    expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
+    tokenAnswer = { ok: true, token: 'fresh' }
+    fireEvent.click(btn)
+    expect(await screen.findByRole('textbox', { name: 'Aktivitas' })).toBeInTheDocument()
+    expect(s).toHaveBeenCalledWith(expect.any(String), { type: 'token', interactive: true }, expect.any(Function))
   })
 
-  it('with an expired token: cannot send', async () => {
+  it('with an expired token: the connect step says so', async () => {
     setup({ status: 401, answer: () => ({ error: 'login' }) })
     render(<MagangHubCard />)
-    fill()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled())
+    expect(await screen.findByText('Token MagangHub kedaluwarsa')).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
+  })
+
+  it('without the extension and a token: install steps instead of the form', async () => {
+    localStorage.removeItem('maganghub.token')
+    setup({ installed: false })
+    render(<MagangHubCard />)
+    expect(await screen.findByRole('link', { name: /Unduh ekstensi/ })).toHaveAttribute('href', '/shelia-maganghub.zip')
+    expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
   })
 
   it('refreshes a missing token silently on load', async () => {
