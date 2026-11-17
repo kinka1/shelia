@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens: Metronic (KeenThemes) flavored palette.
+ * Consumed by tailwind.config.ts as hsl(var(--x) / <alpha-value>), so
+ * opacity modifiers like bg-primary/10 work. The sidebar family stays dark
+ * in both themes (Metronic demo1 keeps its dark sidebar on light pages).
+ */
+@layer base {
+  :root {
+    --background: 0 0% 98%;            /* #FAFAFA page canvas */
+    --foreground: 224 77% 12%;         /* #071437 */
+    --card: 0 0% 100%;
+    --card-foreground: 224 77% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 77% 12%;
+    --primary: 212 100% 42%;           /* admin 55%; 42% gives white text 4.5:1 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 12% 96%;          /* light gray action */
+    --secondary-foreground: 224 22% 38%; /* #4B5675 */
+    --muted: 240 12% 96%;
+    --muted-foreground: 224 15% 46%;   /* #646D87, >=4.5:1 on --background and --card */
+    --accent: 240 12% 96%;
+    --accent-foreground: 224 77% 12%;
+    --destructive: 346 94% 56%;        /* #F8285A */
+    --destructive-foreground: 0 0% 100%;
+    --success: 141 79% 43%;            /* #17C653 */
+    --success-foreground: 0 0% 100%;
+    --warning: 43 100% 48%;            /* #F6B100 */
+    --warning-foreground: 224 77% 12%;
+    --info: 259 81% 57%;               /* #7239EA */
+    --info-foreground: 0 0% 100%;
+
+    /*
+      Tinta, bukan isian. Token di atas adalah warna untuk MENGISI bidang
+      (keping ikon, potongan donat, batang), dan dipakai sebagai teks di atas
+      tint nada yang sama mereka gagal WCAG AA: angka hijau 36 piksel di atas
+      kartu `bg-success/10` cuma 2.04:1. Yang di bawah ini adalah warna yang
+      sama, digelapkan sampai lolos 4.5:1 di atas semua latar yang benar benar
+      dipakai teks bernada: kartu putih, latar halaman, tint /10 dan /15, dan
+      pil selisih (`bg-background/70` di atas tint). Kuning `warning` paling
+      parah (1.90:1 di atas putih), dan tintanya tetap amber gelap, bukan
+      navy, supaya angka telat masih terbaca sebagai peringatan.
+    */
+    --primary-ink: 212 100% 41%;       /* >=4.60:1 */
+    --success-ink: 141 70% 28%;        /* >=4.63:1 */
+    --warning-ink: 32 95% 32%;         /* #9F5704, >=4.77:1 */
+    --info-ink: 259 81% 54%;           /* >=5.17:1 */
+    --destructive-ink: 346 94% 40%;    /* >=4.66:1 */
+    --border: 240 12% 95%;             /* #F1F1F4 */
+    --input: 240 12% 91%;
+    --ring: 212 100% 55%;
+    --radius: 0.625rem;
+
+    --sidebar: 240 20% 15%;            /* #1E1E2D */
+    --sidebar-foreground: 237 11% 64%; /* #9899AC */
+    --sidebar-accent: 240 18% 20%;     /* #2A2A3C hover */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-active: 212 100% 55%;
+    --sidebar-border: 240 17% 22%;
+
+    /*
+      The Open Doodles source art hardcodes its accent fill as pink.
+      Skinned to the `--primary` hue (212) instead of a fixed brand color so
+      a full-page error/empty state reads as part of this theme, not a
+      pasted-in stock graphic. The SVGs read it through an inline
+      `style="fill:hsl(var(--illustration-accent))"`: the token is a bare
+      HSL triplet, and a `fill` presentation attribute does not take `var()`
+      in every browser. See docs/design-system.md "Illustrations".
+    */
+    --illustration-accent: 212 90% 74%;
+  }
+
+  .dark {
+    --background: 240 21% 7%;          /* #0F0F17 */
+    --foreground: 240 18% 97%;         /* #F5F5F8 */
+    --card: 240 20% 13%;               /* #1A1A27 */
+    --card-foreground: 240 18% 97%;
+    --popover: 240 20% 13%;
+    --popover-foreground: 240 18% 97%;
+    --primary: 212 100% 65%;
+    --primary-foreground: 224 77% 12%;
+    --secondary: 240 15% 17%;
+    --secondary-foreground: 240 18% 90%;
+    --muted: 240 15% 15%;
+    --muted-foreground: 237 11% 64%;
+    --accent: 240 15% 17%;
+    --accent-foreground: 240 18% 97%;
+    --destructive: 346 94% 62%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 141 70% 52%;
+    --success-foreground: 224 77% 12%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 224 77% 12%;
+    --info: 259 85% 68%;
+    --info-foreground: 224 77% 12%;
+
+    /*
+      Mode gelap sudah jauh lebih longgar, jadi tiga di antaranya memang sama
+      dengan tokennya. Ungu dan merah dicerahkan sedikit supaya tetap 4.5:1 di
+      atas tint /25 saat kartunya disorot tetikus.
+    */
+    --primary-ink: 212 100% 65%;       /* >=4.74:1 */
+    --success-ink: 141 70% 52%;        /* >=6.23:1 */
+    --warning-ink: 43 96% 56%;         /* >=6.52:1 */
+    --info-ink: 259 85% 73%;           /* >=4.68:1 */
+    --destructive-ink: 346 94% 66%;    /* >=4.55:1 */
+    --border: 240 17% 20%;             /* #2B2B3D */
+    --input: 240 17% 24%;
+    --ring: 212 100% 65%;
+
+    --sidebar: 240 21% 10%;
+    --sidebar-foreground: 237 11% 64%;
+    --sidebar-accent: 240 18% 16%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-active: 212 100% 65%;
+    --sidebar-border: 240 17% 18%;
+
+    --illustration-accent: 212 75% 45%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    /*
+      Warna latarnya ditulis di sini, bukan cuma di kerangka aplikasi: apa pun
+      yang membuat halaman lebih panjang daripada kerangkanya akan mengecat
+      sisanya putih di mode gelap.
+    */
+    @apply bg-background;
+    color: hsl(var(--foreground));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* react-day-picker: brand the accent to the design tokens */
+.rdp-brand {
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-accent-background-color: hsl(var(--primary) / 0.12);
+  --rdp-today-color: hsl(var(--primary));
+  font-size: 0.85rem;
+}
+
+/* Custom scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+

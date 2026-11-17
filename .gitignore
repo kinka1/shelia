@@ -24,3 +24,7 @@ WEB_ATTENDANCE_API.md
 
 # Deploy (test-shelia)
 *.tmp
+
+# web-app
+web-app/node_modules
+web-app/dist

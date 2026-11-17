@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    // Mirror of tsconfig.app.json aliases so path-alias-aware CLIs (shadcn)
+    // resolve "@/..." from the repo root; tsc -b ignores this block ("files": []).
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

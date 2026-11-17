@@ -1,0 +1,109 @@
+import { useState, type ReactNode } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
+import { Toaster } from '@/components/ui/sonner'
+import ThemeToggle from '@/components/ThemeToggle'
+import { cn } from '@/lib/utils'
+
+const SECTIONS = [
+  { title: 'Absensi', items: [{ to: '/', label: 'Absen', crumb: 'Absen' }] },
+  {
+    title: 'Riwayat',
+    items: [
+      { to: '/riwayat-shelia', label: 'Riwayat Shelia', crumb: 'Shelia' },
+      { to: '/riwayat-maganghub', label: 'Riwayat MagangHub', crumb: 'MagangHub' },
+    ],
+  },
+  { title: 'Alat', items: [{ to: '/log-api', label: 'Log API', crumb: 'Log API' }] },
+]
+
+const today = () =>
+  new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date())
+
+function Rail({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar p-3 text-sidebar-foreground">
+      <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
+        <i className="inline-block size-6 rounded-md bg-sidebar-active" />
+        Shelia
+      </div>
+      {SECTIONS.map((s) => (
+        <div key={s.title}>
+          <div className="px-2.5 pb-1.5 pt-3.5 text-[11px] uppercase tracking-[0.08em]">{s.title}</div>
+          {s.items.map((i) => (
+            <NavLink
+              key={i.to}
+              to={i.to}
+              end
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'group flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-white',
+                  isActive && 'bg-sidebar-accent font-semibold text-white',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <span className={cn('size-2 rounded-full bg-sidebar-foreground/50', isActive && 'bg-sidebar-active')} />
+                  {i.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      ))}
+    </nav>
+  )
+}
+
+export default function AppShell({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
+  const section = SECTIONS.find((s) => s.items.some((i) => i.to === pathname))
+  const item = section?.items.find((i) => i.to === pathname)
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <aside className="fixed inset-y-0 left-0 hidden w-60 lg:block">
+        <Rail />
+      </aside>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="w-60 border-sidebar-border bg-sidebar p-0">
+          <SheetTitle className="sr-only">Menu</SheetTitle>
+          <SheetDescription className="sr-only">Navigasi utama</SheetDescription>
+          <Rail onNavigate={() => setOpen(false)} />
+        </SheetContent>
+      </Sheet>
+      <div className="lg:pl-60">
+        <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-card px-5">
+          <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Buka menu" onClick={() => setOpen(true)}>
+            <Menu />
+          </Button>
+          {section && item && (
+            <span className="text-[13px] text-muted-foreground">
+              {section.title} / {item.crumb}
+            </span>
+          )}
+          <span className="flex-1" />
+          <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">{today()}</span>
+          <ThemeToggle />
+          {/* user menu slot */}
+          <span className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink">
+            S
+          </span>
+        </header>
+        <main className="flex flex-col gap-4 p-5">{children}</main>
+      </div>
+      <Toaster />
+    </div>
+  )
+}
