@@ -95,11 +95,11 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
       <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-1">
           <Label htmlFor="mh-lat" className={LABEL}>Latitude</Label>
-          <Input id="mh-lat" value={value.lat.toFixed(6)} readOnly aria-readonly className={READ_ONLY} />
+          <Input id="mh-lat" value={String(value.lat)} readOnly aria-readonly className={READ_ONLY} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="mh-lng" className={LABEL}>Longitude</Label>
-          <Input id="mh-lng" value={value.lng.toFixed(6)} readOnly aria-readonly className={READ_ONLY} />
+          <Input id="mh-lng" value={String(value.lng)} readOnly aria-readonly className={READ_ONLY} />
         </div>
       </div>
     </div>
