@@ -4,12 +4,8 @@ import Absen from '@/pages/Absen'
 import RiwayatShelia from '@/pages/RiwayatShelia'
 import RiwayatMagangHub from '@/pages/RiwayatMagangHub'
 import LogApi from '@/pages/LogApi'
-import LoginPage from '@/features/session/LoginPage'
-import { useSession } from '@/features/session/SessionProvider'
 
 export default function App() {
-  const { token } = useSession()
-  if (!token) return <LoginPage />
   return (
     <AppShell>
       <Routes>

@@ -30,10 +30,11 @@ export function saveSession(token: string, emp: object): void {
   storageSet(STORAGE.token, token)
   storageSet(STORAGE.employee, JSON.stringify(emp))
 }
-export function clearSession(): void {
+/** Forget the Shelia login. `everything` (Keluar) also drops this browser's other local data. */
+export function clearSession(everything = true): void {
   storageDel(STORAGE.token)
   storageDel(STORAGE.employee)
-  // Keluar and 401 expiry also drop the other local data of this browser.
+  if (!everything) return
   storageDel('maganghub.token')
   storageDel('shelia.history')
   clearLog()
@@ -84,7 +85,7 @@ export async function sheliaApi<T = any>(
       },
     )
     if (res.status === 401 && auth) {
-      clearSession()
+      clearSession(false) // only Shelia expired; MagangHub stays connected
       unauthorized.forEach((cb) => cb())
     }
     throw err

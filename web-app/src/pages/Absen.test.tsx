@@ -18,4 +18,8 @@ describe('sheliaItem (kartu status absen)', () => {
     expect([it_.tone, it_.value, it_.action]).toEqual(['done', 'Masuk 08:02 · pulang 17:05 (terlambat)', undefined])
   })
   it('masih memuat → null (skeleton)', () => expect(sheliaItem(null, true)).toBeNull())
+  it('belum login Shelia → todo dengan aksi login', () => {
+    const it_ = sheliaItem(null, false, false)!
+    expect([it_.tone, it_.value, it_.action]).toEqual(['todo', 'Belum login', 'Login'])
+  })
 })

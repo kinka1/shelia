@@ -68,4 +68,15 @@ describe('errorText', () => {
   it('omits NETWORK code', () => {
     expect(errorText(new ApiError('Putus', { code: 'NETWORK' }))).toBe('Putus')
   })
+
+  it('an expired Shelia login clears only Shelia, not the MagangHub token or history', async () => {
+    localStorage.setItem('maganghub.token', 'mh'); localStorage.setItem('shelia.history', '[]')
+    saveSession('t', { full_name: 'B' })
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 401 })))
+    await expect(sheliaApi('/x', { action: 'a' })).rejects.toBeTruthy()
+    expect(getToken()).toBeNull()
+    expect(localStorage.getItem('maganghub.token')).toBe('mh')
+    expect(localStorage.getItem('shelia.history')).toBe('[]')
+    vi.unstubAllGlobals()
+  })
 })

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from '@/App'
@@ -6,6 +6,7 @@ import { SessionProvider } from '@/features/session/SessionProvider'
 import { saveSession } from '@/lib/shelia'
 
 describe('AppShell', () => {
+  afterEach(() => vi.unstubAllGlobals())
   it('shows the rail links and marks the current page', () => {
     saveSession('t', { full_name: 'Budi', nik: '123', branch_name: 'Surabaya' })
     render(
@@ -20,5 +21,25 @@ describe('AppShell', () => {
     }
     expect(screen.getByRole('link', { name: 'Log API' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('heading', { name: 'Log API' })).toBeVisible()
+  })
+
+  it('opens without a Shelia login: Absen shows the login in the Shelia card, MagangHub still there', async () => {
+    localStorage.clear()
+    const f = vi.fn(async (_u: string) => new Response(JSON.stringify({ data: [] })))
+    vi.stubGlobal('fetch', f)
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    expect(screen.getByRole('heading', { name: 'Masuk ke Shelia' })).toBeInTheDocument()
+    expect(screen.getByLabelText('NIK')).toBeInTheDocument()
+    expect(screen.getByText('Log harian')).toBeInTheDocument()
+    expect(screen.getByText('Belum login')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Menu akun' })).toBeNull()
+    expect(f.mock.calls.some(([u]) => String(u).startsWith('/api/'))).toBe(false)
+  })
+
+  it('Riwayat Shelia asks for the Shelia login too', () => {
+    localStorage.clear()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')))
+    render(<MemoryRouter initialEntries={['/riwayat-shelia']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    expect(screen.getByLabelText('NIK')).toBeInTheDocument()
   })
 })

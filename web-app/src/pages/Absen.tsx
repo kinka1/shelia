@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { MagangHubCard } from '@/features/maganghub/MagangHubCard'
 import { SheliaCard, sheliaDone } from '@/features/shelia/SheliaCard'
 import { useToday } from '@/features/shelia/useToday'
+import { useSession } from '@/features/session/SessionProvider'
+import LoginPage from '@/features/session/LoginPage'
 import { fmtTime } from '@/lib/attendance'
 import { cn } from '@/lib/utils'
 
@@ -26,7 +28,8 @@ function goTo(id: string) {
   el.querySelector<HTMLElement>('textarea:not(:disabled), button:not(:disabled)')?.focus({ preventScroll: true })
 }
 
-export function sheliaItem(today: any, loading: boolean): Item | null {
+export function sheliaItem(today: any, loading: boolean, loggedIn = true): Item | null {
+  if (!loggedIn) return { name: 'Shelia', tone: 'todo', value: 'Belum login', action: 'Login', target: 'form-shelia' }
   if (!today) return loading ? null : { name: 'Shelia', tone: 'todo', value: 'Status belum dimuat', target: 'form-shelia' }
   const s: any[] = Array.isArray(today.sessions) ? today.sessions : []
   const last = s[s.length - 1]
@@ -94,13 +97,14 @@ function TodayStatus({ shelia, sentAt, loading }: { shelia: Item | null; sentAt:
 }
 
 export default function Absen() {
-  const shelia = useToday()
+  const { token } = useSession()
+  const shelia = useToday(!!token)
   const [sentAt, setSentAt] = useState<string | null>(null)
   return (
     <div className="space-y-5">
-      <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading)} sentAt={sentAt} loading={shelia.loading} />
+      <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading, !!token)} sentAt={sentAt} loading={!!token && shelia.loading} />
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        <Card id="form-shelia" className="scroll-mt-20 p-5 shadow-none"><SheliaCard {...shelia} /></Card>
+        <Card id="form-shelia" className="scroll-mt-20 p-5 shadow-none">{token ? <SheliaCard {...shelia} /> : <LoginPage />}</Card>
         <Card id="form-maganghub" className="scroll-mt-20 p-5 shadow-none"><MagangHubCard onSentAt={setSentAt} /></Card>
       </div>
     </div>

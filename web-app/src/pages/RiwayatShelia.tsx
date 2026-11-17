@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { useToday } from '@/features/shelia/useToday'
+import { useSession } from '@/features/session/SessionProvider'
+import LoginPage from '@/features/session/LoginPage'
 import { readHistory, type HistoryRow } from '@/lib/sheliaHistory'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
@@ -23,7 +25,8 @@ const STATUS: Record<HistoryRow['status'], [string, string]> = {
 }
 
 export default function RiwayatShelia() {
-  const { today, loading, reload } = useToday()
+  const { token } = useSession()
+  const { today, loading, reload } = useToday(!!token)
   const [rows, setRows] = useState<HistoryRow[]>(readHistory)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -37,6 +40,13 @@ export default function RiwayatShelia() {
     return q ? rows.filter((r) => `${fmtDate(r.date)} ${r.shift}`.toLowerCase().includes(q)) : rows
   }, [rows, query])
   const visible = filtered.slice((page - 1) * perPage, page * perPage)
+
+  if (!token) return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold tracking-[-0.02em]">Riwayat Shelia</h1>
+      <div className="rounded-lg border bg-card p-5"><LoginPage /></div>
+    </div>
+  )
 
   return (
     <div className="space-y-4">

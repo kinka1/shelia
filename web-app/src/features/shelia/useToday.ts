@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { CONFIG, errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { recordToday } from '@/lib/sheliaHistory'
 
-export function useToday() {
+/** Shelia's status for today; does nothing until there is a Shelia login. */
+export function useToday(enabled = true) {
   const [today, setToday] = useState<any>(null)
   const [shifts, setShifts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,6 +36,6 @@ export function useToday() {
     }
   }, [])
 
-  useEffect(() => { void reload() }, [reload])
+  useEffect(() => { if (enabled) void reload() }, [reload, enabled])
   return { today, shifts, loading, reload, error }
 }

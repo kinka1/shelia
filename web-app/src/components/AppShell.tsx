@@ -76,7 +76,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
 export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
-  const { employee, logout } = useSession()
+  const { token, employee, logout } = useSession()
   const name = employee?.full_name || 'Karyawan'
   const section = SECTIONS.find((s) => s.items.some((i) => i.to === pathname))
   const item = section?.items.find((i) => i.to === pathname)
@@ -106,7 +106,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span className="flex-1" />
           <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">{today()}</span>
           <ThemeToggle />
-          <DropdownMenu>
+          {token && <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Menu akun"
               className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink"
@@ -123,7 +123,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => void logout()}>Keluar</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu>}
         </header>
         <main className="flex flex-col gap-4 p-5">{children}</main>
       </div>

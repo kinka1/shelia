@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { errorText, type ApiError } from '@/lib/shelia'
@@ -32,12 +31,10 @@ export default function LoginPage() {
 
   const message = error || expiredMessage
   return (
-    <div className="grid min-h-screen place-items-center bg-background p-5">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Masuk ke Shelia</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="max-w-sm">
+      <h2 className="mb-3 text-[15px] font-semibold">Masuk ke Shelia</h2>
+      <div>
+        <div>
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
             {message && (
               <div
@@ -80,8 +77,8 @@ export default function LoginPage() {
               {busy ? 'Memproses…' : 'Masuk'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
