@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import manifest from '../../../extension/manifest.json'
 import { ALLOWED_ORIGINS, MH_SITE, pageSend, pageToken, todayWIB, validateBody } from '../../../extension/mh.js'
 
 const NOW = new Date('2026-11-17T20:00:00Z') // 03:00 WIB on the 18th
@@ -10,7 +11,8 @@ describe('extension mh.js', () => {
 
   it('knows MagangHub and only our origins', () => {
     expect(MH_SITE).toBe('https://monev.maganghub.kemnaker.go.id')
-    expect(ALLOWED_ORIGINS).toEqual(['https://test-shelia.holo.my.id', 'http://localhost:4173'])
+    expect(ALLOWED_ORIGINS).toEqual(['https://test-shelia.holo.my.id'])
+    expect(manifest.externally_connectable.matches).toEqual(['https://test-shelia.holo.my.id/*'])
     expect(todayWIB(NOW)).toBe('2026-11-18')
   })
 

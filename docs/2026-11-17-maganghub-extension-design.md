@@ -28,7 +28,7 @@ user's laptop, with their own MagangHub login — never through the VPS.
 
 ## Constraints
 - Chrome Manifest V3. Host permission only `https://monev.maganghub.kemnaker.go.id/*`.
-  `externally_connectable` only `https://test-shelia.holo.my.id/*` (plus `http://localhost:4173/*`
+  `externally_connectable` only `https://test-shelia.holo.my.id/*`; localhost was dropped after review: any local server could otherwise read the token
   for local testing). Fixed extension ID via a `key` in the manifest, so the page knows whom to call.
 - The send runs in MagangHub's page (MAIN world): token from `sessionStorage.monev_access_token`,
   build id from `window.__NUXT__.config.public.buildId`, `fetch(POST /api/v1/attendances,

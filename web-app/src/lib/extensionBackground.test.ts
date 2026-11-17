@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { handle } from '../../../extension/background.js'
+import { DEFAULTS, handle } from '../../../extension/background.js'
 import { pageSend, pageToken, todayWIB } from '../../../extension/mh.js'
 
 const SENDER = { origin: 'https://test-shelia.holo.my.id', tab: { id: 1, windowId: 9 } }
@@ -52,6 +52,7 @@ describe('extension worker', () => {
     expect(await handle({ type: 'token', interactive: false }, SENDER, c, FAST)).toEqual({ ok: true, token: 'tok' })
     expect(c.tabs.create).not.toHaveBeenCalled()
     expect(c.tabs.remove).not.toHaveBeenCalled()
+    expect(c.tabs.query).toHaveBeenCalledWith({ url: 'https://monev.maganghub.kemnaker.go.id/*', discarded: false }) // a sleeping tab can't run scripts
     expect(c.scripting.executeScript.mock.calls[0][0]).toMatchObject({ target: { tabId: 7 }, world: 'MAIN' })
   })
 
@@ -115,5 +116,8 @@ describe('extension worker', () => {
     c.fireUpdated(8)
     expect(await p).toEqual({ error: 'login' })
     expect(c.scripting.executeScript.mock.calls.some(([a]: any) => a.func === pageSend)).toBe(false)
+  })
+  it('a whole request fits in Chrome\'s 5-minute limit for one event', () => {
+    expect(DEFAULTS.loadWaitMs + DEFAULTS.tokenWaitMs + DEFAULTS.loginWaitMs + 1_000).toBeLessThanOrEqual(270_000)
   })
 })

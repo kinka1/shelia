@@ -2,7 +2,7 @@
 // MagangHub's page, so they must not use anything outside their own body.
 
 export const MH_SITE = 'https://monev.maganghub.kemnaker.go.id'
-export const ALLOWED_ORIGINS = ['https://test-shelia.holo.my.id', 'http://localhost:4173']
+export const ALLOWED_ORIGINS = ['https://test-shelia.holo.my.id']
 const TEXTS = ['activity_log', 'lesson_learned', 'obstacles']
 
 export const todayWIB = (now = new Date()) => new Date(now.getTime() + 7 * 3600_000).toISOString().slice(0, 10)

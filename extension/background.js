@@ -3,7 +3,8 @@
 // MagangHub needs a login, its own login page is brought forward for the user.
 import { ALLOWED_ORIGINS, MH_SITE, pageSend, pageToken, validateBody } from './mh.js'
 
-const DEFAULTS = { tokenWaitMs: 10_000, loginWaitMs: 300_000, pollMs: 20_000 }
+// Chrome may stop a worker whose single event runs past 5 minutes, so the whole request stays under 4.5.
+export const DEFAULTS = { loadWaitMs: 15_000, tokenWaitMs: 10_000, loginWaitMs: 240_000, pollMs: 20_000 }
 
 export async function handle(msg, sender, chrome, opts = {}) {
   const o = { ...DEFAULTS, ...opts }
@@ -18,7 +19,7 @@ export async function handle(msg, sender, chrome, opts = {}) {
   } else if (!msg || msg.type !== 'token') return { error: 'invalid' }
   const interactive = msg.type === 'send' || !!msg.interactive
 
-  const { tab, created } = await openMh(chrome)
+  const { tab, created } = await openMh(chrome, o.loadWaitMs)
   let raised = false
   try {
     let token = await run(chrome, tab.id, pageToken, [o.tokenWaitMs])
@@ -47,10 +48,11 @@ export async function handle(msg, sender, chrome, opts = {}) {
   }
 }
 
-async function openMh(chrome) {
-  const [open] = await chrome.tabs.query({ url: MH_SITE + '/*' })
+async function openMh(chrome, loadWaitMs) {
+  // discarded (sleeping) tabs can't run scripts and would look logged out
+  const [open] = await chrome.tabs.query({ url: MH_SITE + '/*', discarded: false })
   if (open) return { tab: open, created: false }
-  const loaded = nextEvent(chrome, null, 15_000)
+  const loaded = nextEvent(chrome, null, loadWaitMs)
   const tab = await chrome.tabs.create({ url: MH_SITE + '/dashboard', active: false })
   loaded.watch(tab.id)
   await loaded.done
