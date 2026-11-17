@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Check, RefreshCw } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -14,7 +13,7 @@ import {
 } from '@/lib/attendance'
 import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
-import { Sessions } from './Sessions'
+import { Sessions, StatusPill } from './Sessions'
 import { useToday } from './useToday'
 
 const STEPS = ['1 · Shift', '2 · Foto wajah', '3 · Kirim']
@@ -112,12 +111,15 @@ export function SheliaCard() {
   }
 
   const site = today?.site
+  const siteText = site
+    ? (site.name || '-') + (site.business_site_name && site.business_site_name !== site.name ? ` (${site.business_site_name})` : '')
+    : today?.setup?.geofence_configured === null ? 'Pengecekan lokasi tidak aktif' : '-'
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-2">
           <CardTitle className="text-base">Shelia</CardTitle>
-          {today && <Badge variant="secondary">{STATUS_LABEL[today.status] || today.status || '-'}</Badge>}
+          {today && <StatusPill status={today.status} label={STATUS_LABEL[today.status] || today.status || '-'} />}
         </div>
         <Button variant="ghost" size="icon" aria-label="Muat ulang" disabled={loading} onClick={() => void reload()}>
           <RefreshCw className={loading ? 'animate-spin' : ''} />
@@ -132,8 +134,8 @@ export function SheliaCard() {
               <p>{today.message || '-'}</p>
               <p className="text-muted-foreground">
                 {today.work_date || '-'}
-                {site ? ` · ${site.name || '-'}` : ''}
-                {today.distance_meters != null ? ` · ${fmtMeters(today.distance_meters)} ${today.is_outside_location ? 'di luar area' : 'di dalam area'}` : ''}
+                {' · '}{siteText}
+                {today.distance_meters != null ? ` · ${fmtMeters(today.distance_meters)}${site?.radius_meters ? ` (radius ${fmtMeters(site.radius_meters)})` : ''} ${today.is_outside_location ? 'di luar area' : 'di dalam area'}` : ''}
               </p>
             </div>
             {today.missed_check_out && (

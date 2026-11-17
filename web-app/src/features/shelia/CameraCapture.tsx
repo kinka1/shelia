@@ -9,6 +9,7 @@ export function CameraCapture({ photo, onPhoto, onError }: {
 }) {
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
+  const alive = useRef(true)
   const [live, setLive] = useState(false)
   const [url, setUrl] = useState<string | null>(null)
 
@@ -24,7 +25,16 @@ export function CameraCapture({ photo, onPhoto, onError }: {
     stream.current = null
     setLive(false)
   }
-  useEffect(() => stop, [])
+  useEffect(() => {
+    alive.current = true
+    return () => { alive.current = false; stop() }
+  }, [])
+
+  // srcObject dipasang begitu elemen video ada, bukan lewat timer.
+  const attach = (el: HTMLVideoElement | null) => {
+    video.current = el
+    if (el && stream.current) { el.srcObject = stream.current; void el.play().catch(() => {}) }
+  }
 
   async function open() {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -33,16 +43,12 @@ export function CameraCapture({ photo, onPhoto, onError }: {
     }
     try {
       stop()
-      stream.current = await navigator.mediaDevices.getUserMedia({
+      const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false,
       })
+      if (!alive.current) { s.getTracks().forEach((t) => t.stop()); return }
+      stream.current = s
       setLive(true)
-      // elemen video baru dirender setelah setLive
-      requestAnimationFrame(async () => {
-        if (!video.current) return
-        video.current.srcObject = stream.current
-        await video.current.play().catch(() => {})
-      })
     } catch (e: any) {
       stop()
       onError(`Kamera tidak bisa dibuka (${e?.name || e?.message}). Pakai tombol "Unggah foto".`)
@@ -72,7 +78,7 @@ export function CameraCapture({ photo, onPhoto, onError }: {
   return (
     <div className="space-y-2">
       <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md border bg-muted text-sm text-muted-foreground">
-        {live ? <video ref={video} playsInline muted className="h-full w-full object-cover" />
+        {live ? <video ref={attach} playsInline muted className="h-full w-full object-cover" />
           : url ? <img src={url} alt="Foto wajah" className="h-full w-full object-cover" />
           : 'Belum ada foto'}
       </div>

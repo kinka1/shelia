@@ -35,6 +35,10 @@ describe('buildAttendForm', () => {
     const f = buildAttendForm({ isIn: true, bypassToken: 'bt', photo: new Blob(['x']), photoName: 'a.jpg' })
     expect(f.get('face_bypass_token')).toBe('bt')
     expect(f.has('file_photo')).toBe(true)
+    expect(f.has('face_token')).toBe(false)
+  })
+  it('check-in never sends attendance_id', () => {
+    expect(buildAttendForm({ isIn: true, attendanceId: 'a9' }).has('attendance_id')).toBe(false)
   })
   it('check-out has attendance_id and reason when given', () => {
     const f = buildAttendForm({ isIn: false, attendanceId: 'a9', reason: 'lupa absen' })
