@@ -16,8 +16,7 @@ const SECTIONS = [
   {
     title: 'Riwayat',
     items: [
-      { to: '/riwayat-shelia', label: 'Riwayat Shelia', crumb: 'Shelia' },
-      { to: '/riwayat-maganghub', label: 'Riwayat MagangHub', crumb: 'MagangHub' },
+      { to: '/riwayat', label: 'Riwayat', crumb: 'Riwayat' },
     ],
   },
   { title: 'Alat', items: [{ to: '/log-api', label: 'Log API', crumb: 'Log API' }] },

@@ -14,7 +14,6 @@ import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
 import { SessionNotes } from './Sessions'
 import type { useToday } from './useToday'
-import { rememberShift } from '@/lib/sheliaHistory'
 import { useSession } from '@/features/session/SessionProvider'
 import { StatusPill } from './Sessions'
 
@@ -104,7 +103,6 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         }),
       })
       // face_token sekali pakai; check-out butuh verifikasi wajah baru.
-      if (isIn && needShift && shift) rememberShift(today.work_date, shift.name)
       setFaceToken(null); setBypass(null); setPhoto(null); setReason('')
       toast.success(successText(isIn, res))
       await reload()

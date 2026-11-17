@@ -17,7 +17,7 @@ describe('AppShell', () => {
         </SessionProvider>
       </MemoryRouter>,
     )
-    for (const name of ['Absen', 'Riwayat Shelia', 'Riwayat MagangHub', 'Log API']) {
+    for (const name of ['Absen', 'Riwayat', 'Log API']) {
       expect(screen.getByRole('link', { name })).toBeInTheDocument()
     }
     expect(screen.getByRole('link', { name: 'Log API' })).toHaveAttribute('aria-current', 'page')
@@ -37,17 +37,19 @@ describe('AppShell', () => {
     expect(f.mock.calls.some(([u]) => String(u).startsWith('/api/'))).toBe(false)
   })
 
-  it('Riwayat Shelia, like Riwayat MagangHub, points to the login on Absen', () => {
+  it('one Riwayat item; the old Riwayat links open the combined page', async () => {
     localStorage.clear()
-    localStorage.setItem('shelia.history', JSON.stringify([{ date: '2026-11-16', shift: 'Pagi', checkIn: '08:00', checkOut: '17:00', status: 'hadir' }]))
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')))
-    render(<MemoryRouter initialEntries={['/riwayat-shelia']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
-    expect(screen.getByText('Shelia belum login')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Login di halaman Absen' })).toHaveAttribute('href', '/')
-    expect(screen.queryByLabelText('NIK')).toBeNull()
-    expect(screen.queryByText('Pagi')).toBeNull()
+    for (const old of ['/riwayat-shelia', '/riwayat-maganghub']) {
+      const { unmount } = render(<MemoryRouter initialEntries={[old]}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+      expect(screen.getByRole('heading', { level: 1, name: 'Riwayat' })).toBeInTheDocument()
+      expect(await screen.findByText('Shelia belum login')).toBeInTheDocument()
+      unmount()
+    }
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    const links = screen.getAllByRole('link').filter((l) => /riwayat/i.test(l.getAttribute('href') ?? ''))
+    expect(links.map((l) => [l.textContent, l.getAttribute('href')])).toEqual([['Riwayat', '/riwayat']])
   })
-
   it('Shelia card shows Terhubung and Keluar; the profile menu has no Keluar', async () => {
     saveSession('t', { full_name: 'Budi', nik: '123', branch_name: 'Surabaya' })
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: { next_action: 'none', sessions: [] } }))))

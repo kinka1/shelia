@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CONFIG, errorText, sheliaApi, type ApiError } from '@/lib/shelia'
-import { recordToday } from '@/lib/sheliaHistory'
 
 /** Shelia's status for today; does nothing until there is a Shelia login. */
 export function useToday(enabled = true) {
@@ -28,7 +27,6 @@ export function useToday(enabled = true) {
       }
       setToday(t)
       setShifts(list)
-      recordToday(t)
     } catch (e) {
       if ((e as ApiError).status !== 401) setError(errorText(e as ApiError))
     } finally {
