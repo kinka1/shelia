@@ -46,7 +46,7 @@ describe('monthDays', () => {
     expect(monthDays('2026-10', [], [], '2026-11-17').filter((d) => d.bucket === 'tidak_hadir')).toHaveLength(0)
   })
   it('counts: work days so far, hadir includes late, days with a log', () => {
-    expect(monthCounts(days, '2026-11-17')).toEqual({ hadir: 2, workDays: 12, terlambat: 1, tidakHadir: 0, logs: 1 })
+    expect(monthCounts(days, '2026-11-17')).toEqual({ hadir: 2, workDays: 12, terlambat: 1, tidakHadir: 0, logs: 1, disetujui: 0, ditolak: 0 })
   })
 })
 
@@ -108,5 +108,21 @@ describe('MagangHub paging, as the real API answers', () => {
     const r = await fetchMhMonth('2026-11')
     expect(r).toEqual({ status: 'ok', logs: [expect.objectContaining({ date: '2026-11-16' })] })
     expect(f).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('MagangHub half of each day', () => {
+  const logs = [{ date: '2026-11-03', status: 'APPROVED' }, { date: '2026-11-04', status: 'PENDING' }, { date: '2026-11-05', status: 'REJECTED' }, { date: '2026-11-06', status: 'SOMETHING' }]
+  const days = monthDays('2026-11', [], logs, '2026-11-17')
+  const mh = (d: number) => days[d - 1].mh
+  it('review status per day; a weekday without log up to today is Belum dikirim; weekends and the future stay blank', () => {
+    expect([mh(3), mh(4), mh(5), mh(6)]).toEqual(['disetujui', 'menunggu', 'ditolak', 'menunggu'])
+    expect(mh(9)).toBe('belum_kirim')
+    expect(mh(17)).toBe('belum_kirim')
+    expect(mh(7)).toBeNull()
+    expect(mh(18)).toBeNull()
+  })
+  it('counts sent, approved and rejected', () => {
+    expect(monthCounts(days, '2026-11-17')).toMatchObject({ logs: 4, disetujui: 1, ditolak: 1 })
   })
 })

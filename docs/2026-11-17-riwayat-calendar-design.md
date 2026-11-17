@@ -48,3 +48,15 @@ admin panel's status words, so a day reads as "did I attend, and did I send my l
 
 ## Left to the builder
 Component split, exact Tailwind classes (match the admin panel card and tones), loading skeleton.
+
+## Addendum (approved): balance Shelia and MagangHub
+Users found the page Shelia-heavy and busy. Each day square is split in two equal halves:
+top = Shelia (same buckets), bottom = MagangHub: Disetujui (APPROVED, green), Menunggu review
+(PENDING/SUBMITTED/WAITING/other, yellow), Ditolak (REJECTED, red), Belum dikirim (no log on a
+weekday up to today, red outline). Weekends and future days without a log: blank bottom.
+Legend: two labelled rows. Shelia: Hadir, Terlambat, Izin/Cuti/Dinas, Tidak hadir (+ Tidak ada
+catatan / Belum absen only when shown). MagangHub: Disetujui, Menunggu review, Ditolak, Belum
+dikirim. "Hari mendatang" leaves the legend (blank squares explain themselves).
+Totals: two equal columns. Shelia: Hadir x dari y, Terlambat, Tidak hadir. MagangHub: Terkirim
+x dari y, Disetujui, Ditolak. A source that isn't connected shows "–" and a neutral half.
+Day label: "3 November: Shelia Hadir, MagangHub Disetujui".

@@ -7,8 +7,8 @@ export type LogTexts = { activity_log: string; lesson_learned: string; obstacles
 
 // DeepSeek's current models (api-docs.deepseek.com, checked 2026-11-17; deepseek-chat was retired 2026-07-24).
 export const MODELS = [
-  { id: 'deepseek-flash', label: 'deepseek-flash (Rekomendasi: cepat dan murah)' },
-  { id: 'deepseek-v4-pro', label: 'deepseek-v4-pro (lebih teliti, ±4× lebih mahal)' },
+  { id: 'deepseek-flash', label: 'deepseek-flash · V4.1 Flash (Rekomendasi: terbaru, cepat dan murah)' },
+  { id: 'deepseek-v4-pro', label: 'deepseek-v4-pro · V4 Pro (lebih teliti, ±4× lebih mahal)' },
 ] as const
 export type ModelId = (typeof MODELS)[number]['id']
 export const DEFAULT_MODEL: ModelId = 'deepseek-flash'

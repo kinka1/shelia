@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { MhStatusPill, fmtDate } from '@/features/maganghub/mhFormat'
 import { useSession } from '@/features/session/SessionProvider'
 import { todayWIB } from '@/lib/dailyLog'
-import { BUCKET, bucketOf, fetchMhMonth, fetchSheliaMonth, monthCounts, monthDays, weekday, type Bucket, type SheliaRow } from '@/lib/riwayat'
+import { BUCKET, MH_BUCKET, bucketOf, fetchMhMonth, fetchSheliaMonth, monthCounts, monthDays, weekday, type Bucket, type MhBucket, type SheliaRow } from '@/lib/riwayat'
 import type { MhLog, MhStatus } from '@/lib/maganghub'
 import { cn } from '@/lib/utils'
 
@@ -19,22 +19,31 @@ const shift = (p: string, by: number) => {
 }
 const hhmm = (t?: string | null) => (t ? t.slice(11, 16) || '-' : '-')
 
-// Copied from the admin panel's MonthCalendar: written out in full so Tailwind finds them.
-const CELL: Record<Bucket, string> = {
-  hadir: 'border-success/40 bg-success/10 text-success-ink dark:bg-success/15',
-  terlambat: 'border-warning/50 bg-warning/15 text-warning-ink dark:bg-warning/20',
-  izin: 'border-info/40 bg-info/10 text-info-ink dark:bg-info/15',
-  cuti: 'border-info/40 bg-info/10 text-info-ink dark:bg-info/15',
-  dinas: 'border-info/40 bg-info/10 text-info-ink dark:bg-info/15',
-  tidak_hadir: 'border-destructive/40 bg-destructive/10 text-destructive-ink dark:bg-destructive/15',
-  belum: 'border-muted-foreground/25 bg-transparent text-muted-foreground',
-  nanti: 'border-muted-foreground/25 bg-transparent text-muted-foreground',
-  kosong: 'border-dotted border-muted-foreground/60 bg-transparent text-muted-foreground',
-  libur: 'border-transparent bg-transparent font-normal text-muted-foreground',
+// Each day is split in two equal halves: top = Shelia, bottom = MagangHub. Same colour language for
+// both (green good, yellow waiting/late, red problem, grey nothing recorded); written out in full so
+// Tailwind finds them.
+const TOP: Record<Bucket, string> = {
+  hadir: 'bg-success/15 text-success-ink dark:bg-success/20',
+  terlambat: 'bg-warning/20 text-warning-ink dark:bg-warning/25',
+  izin: 'bg-info/15 text-info-ink dark:bg-info/20',
+  cuti: 'bg-info/15 text-info-ink dark:bg-info/20',
+  dinas: 'bg-info/15 text-info-ink dark:bg-info/20',
+  tidak_hadir: 'bg-destructive/15 text-destructive-ink dark:bg-destructive/20',
+  kosong: 'bg-muted text-muted-foreground',
+  belum: 'text-muted-foreground',
+  nanti: 'text-muted-foreground',
+  libur: 'font-normal text-muted-foreground',
 }
-// Always the attendance words; Belum absen and Hari mendatang only when the month has such a day.
-const LEGEND: Bucket[] = ['hadir', 'terlambat', 'izin', 'cuti', 'dinas', 'tidak_hadir', 'kosong', 'belum', 'nanti']
-const ONLY_IF_SHOWN: Bucket[] = ['belum', 'nanti']
+const BOTTOM: Record<MhBucket, [string, string]> = { // [fill, glyph so it never relies on colour alone]
+  disetujui: ['bg-success/40 text-success-ink dark:bg-success/35', '✓'],
+  menunggu: ['bg-warning/45 text-warning-ink dark:bg-warning/35', '…'],
+  ditolak: ['bg-destructive/35 text-destructive-ink dark:bg-destructive/35', '✕'],
+  belum_kirim: ['bg-muted text-muted-foreground', '–'],
+}
+// Izin, Cuti and Dinas share a colour, so the legend names them once.
+const SHELIA_LEGEND: [Bucket, string][] = [['hadir', 'Hadir'], ['terlambat', 'Terlambat'], ['izin', 'Izin/Cuti/Dinas'], ['tidak_hadir', 'Tidak hadir']]
+const SHELIA_IF_SHOWN: Bucket[] = ['kosong', 'belum'] // only when the month has such a day
+const MH_LEGEND: MhBucket[] = ['disetujui', 'menunggu', 'ditolak', 'belum_kirim']
 
 type Data = { period: string; shelia: SheliaRow[] | { error: string } | null; mh: { status: MhStatus; logs: MhLog[]; error?: string } }
 
@@ -72,6 +81,8 @@ export default function Riwayat() {
   const counts = monthCounts(days, today)
   const noShelia = !ready || !Array.isArray(ready.shelia) // counts unknown, not zero
   const shown = (n: number) => (noShelia ? '–' : n)
+  const mhOk = ready?.mh.status === 'ok'
+  const mhShown = (n: number) => (mhOk ? n : '–')
   const selected = picked ?? (period === current ? today : `${period}-01`)
   const day = days.find((d) => d.date === selected)
   const title = monthTitle(period)
@@ -116,44 +127,66 @@ export default function Riwayat() {
               </div>
               <ul aria-label={`Kalender ${title}`} className="grid grid-cols-7 gap-1">
                 {days.map((d) => {
-                  const name = `${nameOf(d.date)}: ${BUCKET[d.bucket].label}${d.log ? ', log MagangHub terkirim' : ''}`
+                  const mh = mhOk ? d.mh : null
+                  const parts = [!noShelia && `Shelia ${BUCKET[d.bucket].label}`, mh && `MagangHub ${MH_BUCKET[mh]}`].filter(Boolean)
+                  const name = `${nameOf(d.date)}${parts.length ? `: ${parts.join(', ')}` : ''}`
                   return (
                     <li key={d.date} style={{ gridColumnStart: weekday(d.date) + 1 }}>
                       <button type="button" aria-label={name} title={name} aria-pressed={d.date === selected}
                         aria-current={d.date === today ? 'date' : undefined} onClick={() => setPicked(d.date)}
-                        className={cn('relative flex aspect-square w-full items-center justify-center rounded-md border text-sm font-semibold tabular-nums',
-                          CELL[d.bucket], d.date === today && 'ring-2 ring-foreground ring-offset-1 ring-offset-card',
+                        className={cn('flex aspect-square w-full flex-col overflow-hidden rounded-md border border-border text-sm font-semibold tabular-nums',
+                          d.date === today && 'ring-2 ring-foreground ring-offset-1 ring-offset-card',
                           d.date === selected && 'outline outline-2 outline-offset-2 outline-primary')}>
-                        {Number(d.date.slice(8))}
-                        {d.log && <span aria-hidden className="absolute right-0.5 top-0 text-[11px] leading-none text-success-ink">✓</span>}
+                        <span aria-hidden className={cn('flex flex-1 items-center justify-center', !noShelia && TOP[d.bucket])}>{Number(d.date.slice(8))}</span>
+                        <span aria-hidden className={cn('flex flex-1 items-center justify-center text-xs', mh && BOTTOM[mh][0])}>{mh && BOTTOM[mh][1]}</span>
                       </button>
                     </li>
                   )
                 })}
               </ul>
-              <ul aria-label="Keterangan" className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                {LEGEND.filter((b) => !ONLY_IF_SHOWN.includes(b) || days.some((d) => d.bucket === b)).map((b) => (
-                  <li key={b} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span aria-hidden className={cn('size-4 rounded-sm border', CELL[b])} />{BUCKET[b].label}
-                  </li>
-                ))}
-                <li className="text-xs text-muted-foreground">✓ Log MagangHub terkirim</li>
-              </ul>
+              <div className="space-y-1.5 pt-1 text-xs text-muted-foreground">
+                <ul aria-label="Keterangan Shelia" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <li className="w-20 font-semibold text-foreground">Shelia (atas)</li>
+                  {[...SHELIA_LEGEND, ...SHELIA_IF_SHOWN.filter((b) => days.some((d) => d.bucket === b)).map((b) => [b, BUCKET[b].label] as [Bucket, string])].map(([b, label]) => (
+                    <li key={b} className="flex items-center gap-1.5">
+                      <span aria-hidden className={cn('size-4 rounded-sm border border-border', TOP[b])} />{label}
+                    </li>
+                  ))}
+                </ul>
+                <ul aria-label="Keterangan MagangHub" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <li className="w-20 font-semibold text-foreground">MagangHub (bawah)</li>
+                  {MH_LEGEND.map((b) => (
+                    <li key={b} className="flex items-center gap-1.5">
+                      <span aria-hidden className={cn('flex size-4 items-center justify-center rounded-sm border border-border text-[10px] font-semibold', BOTTOM[b][0])}>{BOTTOM[b][1]}</span>{MH_BUCKET[b]}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            <dl className="flex flex-col gap-3 lg:min-w-0 lg:flex-1 lg:border-l lg:pl-4">
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Hadir</dt>
-                <dd className="text-lg font-semibold tabular-nums">{shown(counts.hadir)} dari {counts.workDays} hari kerja</dd>
-              </div>
-              {([['Terlambat', shown(counts.terlambat), 'text-warning-ink'], ['Tidak hadir', shown(counts.tidakHadir), 'text-destructive-ink'], ['Log MagangHub terkirim', counts.logs, 'text-success-ink']] as const).map(([label, n, ink]) => (
-                <div key={label} className="flex items-baseline justify-between gap-3 border-t pt-3">
-                  <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                  <dd className={cn('text-lg font-semibold tabular-nums', typeof n === 'number' && n > 0 ? ink : 'text-foreground')}>{n}</dd>
+            <div className="grid grid-cols-2 gap-4 lg:min-w-0 lg:flex-1 lg:border-l lg:pl-4">
+              {([
+                ['Ringkasan Shelia', 'Shelia', 'Hadir', shown(counts.hadir), [['Terlambat', shown(counts.terlambat), 'text-warning-ink'], ['Tidak hadir', shown(counts.tidakHadir), 'text-destructive-ink']]],
+                ['Ringkasan MagangHub', 'MagangHub', 'Terkirim', mhShown(counts.logs), [['Disetujui', mhShown(counts.disetujui), 'text-success-ink'], ['Ditolak', mhShown(counts.ditolak), 'text-destructive-ink']]],
+              ] as const).map(([group, head, main, n, rest]) => (
+                <div key={group} role="group" aria-label={group} className="flex min-w-0 flex-col gap-3">
+                  <h3 className="text-xs font-semibold">{head}</h3>
+                  <dl className="flex flex-col gap-3">
+                  <div>
+                    <dt className="text-xs font-medium text-muted-foreground">{main}</dt>
+                    <dd className="text-lg font-semibold tabular-nums">{n} dari {counts.workDays} hari kerja</dd>
+                  </div>
+                  {rest.map(([label, v, ink]) => (
+                    <div key={label} className="flex items-baseline justify-between gap-3 border-t pt-3">
+                      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+                      <dd className={cn('text-lg font-semibold tabular-nums', typeof v === 'number' && v > 0 ? ink : 'text-foreground')}>{v}</dd>
+                    </div>
+                  ))}
+                  </dl>
                 </div>
               ))}
-              <p className="border-t pt-3 text-xs text-muted-foreground">Hari kerja Senin–Jumat sampai hari ini.</p>
-            </dl>
+              <p className="col-span-2 border-t pt-3 text-xs text-muted-foreground">Hari kerja Senin–Jumat sampai hari ini.</p>
+            </div>
           </div>
         )}
       </section>

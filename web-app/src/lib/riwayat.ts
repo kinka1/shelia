@@ -47,7 +47,15 @@ export function bucketOf(status?: string | null, checkInStatus?: string | null):
 // Order when a day has several sessions: the first one present in this list wins.
 const RANK: Bucket[] = ['terlambat', 'hadir', 'dinas', 'cuti', 'izin', 'tidak_hadir']
 
-export type CalDay = { date: string; bucket: Bucket; sessions: SheliaRow[]; log: MhLog | null }
+/** The MagangHub half of a day: the log's review status, or Belum dikirim on a weekday without one. */
+export type MhBucket = 'disetujui' | 'menunggu' | 'ditolak' | 'belum_kirim'
+export const MH_BUCKET: Record<MhBucket, string> = {
+  disetujui: 'Disetujui', menunggu: 'Menunggu review', ditolak: 'Ditolak', belum_kirim: 'Belum dikirim',
+}
+const mhBucketOf = (status?: string): MhBucket =>
+  status === 'APPROVED' ? 'disetujui' : status === 'REJECTED' ? 'ditolak' : 'menunggu' // any other review state is still waiting
+
+export type CalDay = { date: string; bucket: Bucket; mh: MhBucket | null; sessions: SheliaRow[]; log: MhLog | null }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 /** 0 = Monday … 6 = Sunday, from the date parts (no time zone involved). */
@@ -71,7 +79,8 @@ export function monthDays(period: string, rows: SheliaRow[], logs: MhLog[], toda
     else if (date > today) bucket = 'nanti'
     else if (date === today) bucket = 'belum'
     else bucket = 'kosong'
-    return { date, bucket, sessions, log }
+    const mh = log ? mhBucketOf(log.status) : weekday(date) < 5 && date <= today ? 'belum_kirim' : null
+    return { date, bucket, mh, sessions, log }
   })
 }
 
@@ -84,6 +93,8 @@ export function monthCounts(days: CalDay[], today: string) {
     terlambat: has('terlambat'),
     tidakHadir: has('tidak_hadir'),
     logs: days.filter((d) => d.log).length,
+    disetujui: days.filter((d) => d.mh === 'disetujui').length,
+    ditolak: days.filter((d) => d.mh === 'ditolak').length,
   }
 }
 
