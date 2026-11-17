@@ -56,12 +56,14 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   useEffect(() => { void check() }, [date]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const left = remainingFields(v)
+  // The token is what proves this is your MagangHub account, so no token, no send.
+  const canSend = mh.status === 'ok'
   const [connKey, connLabel] = CONN[mh.status]
 
   // The log is sent from MagangHub's own page (bookmark "→ Kirim log"), so here we only prepare and open it.
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!left) setConfirming(true)
+    if (!left && canSend) setConfirming(true)
   }
 
   function openMagangHub() {
@@ -131,10 +133,11 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {waiting ? <span role="status" className="text-xs text-primary-ink">Kirim dari tab MagangHub dengan bookmark → Kirim log</span>
+              {!canSend ? <span className="text-xs text-warning-ink">{mh.status === 'expired' ? 'Token kedaluwarsa, perbarui dulu' : 'Sambungkan MagangHub dulu'}</span>
+                : waiting ? <span role="status" className="text-xs text-primary-ink">Kirim dari tab MagangHub dengan bookmark → Kirim log</span>
                 : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={left > 0}>Kirim log</Button>
+              <Button type="submit" disabled={left > 0 || !canSend}>Kirim log</Button>
             </>
           )}
         </div>

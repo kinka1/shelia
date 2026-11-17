@@ -122,6 +122,27 @@ describe('MagangHubCard send via MagangHub', () => {
     expect(urls).toHaveLength(1)
   })
 
+  it('cannot send without a working MagangHub token', async () => {
+    const urls = opened()
+    localStorage.removeItem('maganghub.token')
+    render(<MagangHubCard />)
+    fill()
+    const btn = screen.getByRole('button', { name: 'Kirim log' })
+    expect(btn).toBeDisabled()
+    expect(screen.getByText('Sambungkan MagangHub dulu')).toBeInTheDocument()
+    fireEvent.submit(btn.closest('form')!)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(urls).toHaveLength(0)
+  })
+
+  it('cannot send with an expired token', async () => {
+    opened()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 401 })))
+    render(<MagangHubCard />)
+    fill()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled())
+  })
+
   it('no longer shows or sends a Lokasi field', () => {
     opened()
     render(<MagangHubCard />)
