@@ -15,7 +15,7 @@
 - `externally_connectable.matches`: `https://test-shelia.holo.my.id/*`, `http://localhost:4173/*`.
 - Fixed ID via manifest `key` (public key only; never commit a private key).
 - Payload: only `date, status, activity_log, lesson_learned, obstacles, latitude?, longitude?`; `date` == today WIB; `status` == `PRESENT`; each text `trim().length >= 100`; lat/lng only when both finite numbers.
-- POST `https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances`, `credentials: 'include'`, headers `Content-Type: application/json`, `Authorization: Bearer <sessionStorage.monev_access_token>`, `X-Frontend-Build-ID` from `window.__NUXT__.config.public.buildId` when present.
+- POST `https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances/with-daily-log` (was `/attendances` until MagangHub changed it, 2026-11-18), `credentials: 'include'`, headers `Content-Type: application/json`, `Authorization: Bearer <sessionStorage.monev_access_token>`, `X-Frontend-Build-ID` from `window.__NUXT__.config.public.buildId` when present.
 - Never read or fill passwords/OTPs. After a login was needed, a send is NOT performed: return `{ error: 'login' }`.
 - Close only tabs the extension created. Silent (`interactive: false`) requests never activate a tab.
 - No changes to nginx/VPS; the extension is not deployed, the user loads it unpacked.

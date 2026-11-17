@@ -42,7 +42,7 @@ describe('extension mh.js', () => {
     const fetch = vi.fn(async () => new Response(JSON.stringify({ message: 'bad' }), { status: 422 }))
     vi.stubGlobal('fetch', fetch)
     expect(await pageSend(good)).toEqual({ status: 422, message: 'bad' })
-    expect(fetch).toHaveBeenCalledWith('https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances', {
+    expect(fetch).toHaveBeenCalledWith('https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances/with-daily-log', {
       method: 'POST', credentials: 'include', body: JSON.stringify(good),
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer tok', 'X-Frontend-Build-ID': 'b1' },
     })

@@ -30,13 +30,13 @@ export async function pageToken(waitMs) {
   }
 }
 
-/** In MagangHub's page: the same POST its own form makes. */
+/** In MagangHub's page: the same POST its own form makes for a Hadir day (attendance + daily log in one). */
 export async function pageSend(body) {
   const t = sessionStorage.getItem('monev_access_token')
   const c = (window.__NUXT__ && window.__NUXT__.config && window.__NUXT__.config.public) || {}
   const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }
   if (c.buildId) headers['X-Frontend-Build-ID'] = c.buildId
-  const r = await fetch('https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(body) })
+  const r = await fetch('https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances/with-daily-log', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(body) })
   const j = await r.json().catch(() => ({}))
   return { status: r.status, message: j.message || j.error || '' }
 }

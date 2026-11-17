@@ -35,7 +35,7 @@ user's laptop, with their own MagangHub login — never through the VPS.
   `externally_connectable` only `https://test-shelia.holo.my.id/*` (localhost was dropped after
   review: any local server could otherwise read the token). Fixed extension ID via a `key` in the manifest, so the page knows whom to call.
 - The send runs in MagangHub's page (MAIN world): token from `sessionStorage.monev_access_token`,
-  build id from `window.__NUXT__.config.public.buildId`, `fetch(POST /api/v1/attendances,
+  build id from `window.__NUXT__.config.public.buildId`, `fetch(POST /api/v1/attendances/with-daily-log (changed 2026-11-18; plain /attendances now refuses PRESENT),
   credentials: include)`. A new MagangHub tab logs itself in from the session cookie (observed).
 - Same payload checks as the bookmark: date == today WIB, status PRESENT, the three texts ≥ 100
   characters, only `date, status, activity_log, lesson_learned, obstacles, latitude?, longitude?`.
