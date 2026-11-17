@@ -18,3 +18,8 @@ shift yang dipilih di test-shelia; awalnya 08:00 / 17:00). Pengingat tidak muncu
 selesai hari ini. Klik notifikasi membuka halaman Absen; kalau log belum dikirim, Generate berjalan
 otomatis bila Pengaturan Generate sudah diisi. Hanya jam dan status selesai/belum yang disimpan di
 ekstensi, tidak ada token. Chrome harus menyala agar pengingat muncul.
+
+Setiap kali ekstensi dipasang atau di-reload, muncul satu notifikasi "Pengingat absen aktif" berisi
+jadwal pengingat berikutnya. Kalau notifikasi itu tidak muncul, buka System Settings → Notifications →
+Google Chrome di Mac: nyalakan Allow notifications, dan pilih gaya Alerts (bukan Banners) supaya
+notifikasi tetap di layar sampai ditutup. Cek juga Focus / Do Not Disturb tidak sedang aktif.

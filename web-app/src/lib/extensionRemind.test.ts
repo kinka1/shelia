@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { handle } from '../../../extension/background.js'
-import { nextAt, onAlarm, onClick, pending } from '../../../extension/remind.js'
+import { installed, nextAt, onAlarm, onClick, pending } from '../../../extension/remind.js'
 
 const SENDER = { origin: 'https://test-shelia.holo.my.id', tab: { id: 1, windowId: 9 } }
 const at = (iso: string) => new Date(iso)
@@ -95,5 +95,21 @@ describe('clicking a notification', () => {
     const c = fake()
     await onClick('masuk', c, at('2026-11-17T00:45:00Z'))
     expect(c.tabs.create).toHaveBeenCalledWith({ url: 'https://test-shelia.holo.my.id/' })
+  })
+})
+
+describe('the reminder actually shows on macOS', () => {
+  it('is a plain notification: requireInteraction ones are reported to never appear on macOS', async () => {
+    const c = fake()
+    await onAlarm({ name: 'pulang' }, c, at('2026-11-17T09:45:00Z'))
+    expect(c.notifications.create.mock.calls[0][1]).not.toHaveProperty('requireInteraction')
+  })
+  it('on install or update: schedules, then shows one notification naming the next reminder', async () => {
+    const c = fake()
+    await installed(c, at('2026-11-17T09:51:00Z')) // Tue 16:51 WIB, just after the 16:45 reminder
+    expect(c.alarms.create).toHaveBeenCalledTimes(2)
+    expect(c.notifications.create).toHaveBeenCalledWith('aktif', expect.objectContaining({
+      title: 'Pengingat absen aktif', message: 'Berikutnya Rabu 07:45: absen masuk.',
+    }))
   })
 })

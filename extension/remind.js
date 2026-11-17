@@ -8,6 +8,10 @@ const BEFORE = 15
 export const DEFAULT_SCHEDULE = { masuk: '08:00', pulang: '17:00' } // event times until the site sends a shift
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
 const KINDS = ['masuk', 'pulang']
+const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+// Plain on purpose: requireInteraction notifications are reported to never show on macOS.
+// How long it stays on screen is the macOS setting for Chrome (Banners or Alerts).
+const NOTE = { type: 'basic', iconUrl: 'icon.png' }
 
 /** The next Monday–Friday instant, 15 minutes before `event` (HH:MM, Jakarta), strictly after now. */
 export function nextAt(event, now = new Date()) {
@@ -32,6 +36,15 @@ const load = async (chrome) => (await chrome.storage.local.get('remind')).remind
 export async function schedule(chrome, now = new Date()) {
   const times = { ...DEFAULT_SCHEDULE, ...(await load(chrome)).schedule }
   for (const k of KINDS) chrome.alarms.create(k, { when: nextAt(times[k], now) })
+  return times
+}
+
+/** Install or update: schedule, and show one notification now, so a blocked notification shows up today, not at the next reminder. */
+export async function installed(chrome, now = new Date()) {
+  const times = await schedule(chrome, now)
+  const [k, t] = KINDS.map((k) => [k, nextAt(times[k], now)]).sort((a, b) => a[1] - b[1])[0]
+  const w = new Date(t + WIB) // Jakarta wall clock, read with UTC getters
+  chrome.notifications.create('aktif', { ...NOTE, title: 'Pengingat absen aktif', message: `Berikutnya ${DAYS[w.getUTCDay()]} ${w.toISOString().slice(11, 16)}: absen ${k}.` })
 }
 
 /** { schedule: {masuk, pulang} } and/or { status: {date, masuk, pulang, log} } from the site. */
@@ -55,7 +68,7 @@ export async function onAlarm(alarm, chrome, now = new Date()) {
   const event = { ...DEFAULT_SCHEDULE, ...r.schedule }[alarm.name]
   if (open.length) {
     chrome.notifications.create(alarm.name, {
-      type: 'basic', iconUrl: 'icon.png', priority: 2, requireInteraction: true,
+      ...NOTE,
       title: alarm.name === 'masuk' ? `Absen masuk sebelum ${event}` : `Absen pulang mulai ${event}`,
       message: `Belum: ${open.join(', ')}.`,
     })

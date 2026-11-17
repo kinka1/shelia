@@ -2,7 +2,7 @@
 // open one in the background and close it afterwards. Passwords and OTPs are never touched: when
 // MagangHub needs a login, its own login page is brought forward for the user.
 import { ALLOWED_ORIGINS, MH_SITE, pageSend, pageToken, validateBody } from './mh.js'
-import { onAlarm, onClick, onRemind, schedule } from './remind.js'
+import { installed, onAlarm, onClick, onRemind, schedule } from './remind.js'
 
 // Chrome may stop a worker whose single event runs past 5 minutes, so the whole request stays under 4.5.
 export const DEFAULTS = { loadWaitMs: 15_000, tokenWaitMs: 10_000, loginWaitMs: 240_000, pollMs: 20_000 }
@@ -113,7 +113,7 @@ export async function reloadShelia(chrome) {
 }
 
 if (globalThis.chrome && chrome.runtime && chrome.runtime.onMessageExternal) {
-  chrome.runtime.onInstalled.addListener(() => { void reloadShelia(chrome); void schedule(chrome) })
+  chrome.runtime.onInstalled.addListener(() => { void reloadShelia(chrome); void installed(chrome) })
   chrome.runtime.onStartup.addListener(() => { void schedule(chrome) })
   chrome.alarms.onAlarm.addListener((a) => { void onAlarm(a, chrome) })
   chrome.notifications.onClicked.addListener((id) => { void onClick(id, chrome) })
