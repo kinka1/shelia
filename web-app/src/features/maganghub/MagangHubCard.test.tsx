@@ -124,6 +124,21 @@ describe('MagangHubCard gates', () => {
     expect(localStorage.getItem('maganghub.token')).toBeNull()
   })
 
+  it('Keluar survives a reload: no quiet re-fetch until Hubungkan is clicked', async () => {
+    const s = setup({ answer: () => ({ ok: true, token: 'again' }) })
+    const first = render(<MagangHubCard />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }))
+    first.unmount()
+    render(<MagangHubCard />) // the page reloaded
+    const btn = await screen.findByRole('button', { name: 'Hubungkan MagangHub' })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(s!.mock.calls.some(([, m]) => m.type === 'token')).toBe(false)
+    expect(localStorage.getItem('maganghub.token')).toBeNull()
+    fireEvent.click(btn)
+    expect(await screen.findByLabelText('Tanggal')).toBeInTheDocument()
+    expect(localStorage.getItem('maganghub.token')).toBe('again')
+  })
+
   it('without a token: a connect step instead of the form, then the form', async () => {
     localStorage.removeItem('maganghub.token')
     let tokenAnswer: any = { error: 'login' }

@@ -7,8 +7,11 @@ export type MhStatus = 'none' | 'ok' | 'expired'
 export interface MhLog { date: string; clock_in?: string; status?: string; state?: string; created_at?: string; activity_log?: string; lesson_learned?: string; obstacles?: string }
 
 export const getMhToken = (): string | null => { try { return localStorage.getItem(MH_KEY) } catch { return null } }
-export const setMhToken = (t: string): void => { try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ } }
-export const clearMhToken = (): void => { try { localStorage.removeItem(MH_KEY) } catch { /* storage blocked */ } }
+// Set by Keluar so no quiet re-fetch brings the token back; cleared when a token is saved again.
+const OUT_KEY = 'maganghub.keluar'
+export const mhSignedOut = (): boolean => { try { return localStorage.getItem(OUT_KEY) === '1' } catch { return false } }
+export const setMhToken = (t: string): void => { try { localStorage.setItem(MH_KEY, t); localStorage.removeItem(OUT_KEY) } catch { /* storage blocked */ } }
+export const signOutMh = (): void => { try { localStorage.removeItem(MH_KEY); localStorage.setItem(OUT_KEY, '1') } catch { /* storage blocked */ } }
 
 export function tokenExpiry(token: string): Date | null {
   try {
