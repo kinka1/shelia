@@ -53,7 +53,7 @@ export function buildAttendForm(a: {
 
 export function shiftLabel(s: any): string {
   const hhmm = (t: unknown) => (typeof t === 'string' ? t.slice(0, 5) : '?')
-  return `${s.name} (masuk ${hhmm(s.check_in_start)}–${hhmm(s.check_in_end)}, pulang ${hhmm(s.check_out_start)}–${hhmm(s.check_out_end)})`
+  return `${s.name} (masuk ${hhmm(s.check_in_start)}-${hhmm(s.check_in_end)}, pulang ${hhmm(s.check_out_start)}-${hhmm(s.check_out_end)})`
 }
 
 // "2026-11-16 07:52:00" -> "07:52", atau "17/11 01:10" bila beda tanggal dengan workDate.
