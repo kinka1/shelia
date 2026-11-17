@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -142,7 +142,7 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         <StatusPill status="closed" label="Terhubung" />
         {done && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         <Button variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold" disabled={loading} onClick={() => void reload()}>
-          <RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden /> {loading ? 'Memuat…' : 'Muat ulang status'}
+          {loading ? 'Memuat…' : 'Muat ulang status'}
         </Button>
         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => void logout()}>Keluar</Button>
       </div>
