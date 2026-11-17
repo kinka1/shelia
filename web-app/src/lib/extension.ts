@@ -38,16 +38,20 @@ export const extToken = async (interactive: boolean): Promise<ExtResult> =>
 export const extSend = async (body: object): Promise<ExtResult> =>
   (await call({ type: 'send', body }, LONG)) ?? { error: 'missing' }
 
-/** Installed extension version, or null. Looked up on load and whenever the tab comes back into
- *  view; the extension itself reloads this page after it is installed. */
+export const EXT_POLL_MS = 3000
+
+/** Installed extension version; null when absent, undefined while the first check runs.
+ *  Re-checked every few seconds while the tab is visible (a hello costs ~1 ms), so removing or
+ *  disabling it shows up without a reload; the extension reloads this page after an install. */
 export function useExtension() {
-  const [version, setVersion] = useState<string | null>(null)
+  const [version, setVersion] = useState<string | null | undefined>(undefined)
   const recheck = useCallback(() => extAvailable().then((v) => { setVersion(v?.version ?? null); return v }), [])
   useEffect(() => {
     void recheck()
     const again = () => { if (document.visibilityState === 'visible') void recheck() }
+    const timer = setInterval(again, EXT_POLL_MS)
     document.addEventListener('visibilitychange', again)
-    return () => document.removeEventListener('visibilitychange', again)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', again) }
   }, [recheck])
   return { version, recheck }
 }

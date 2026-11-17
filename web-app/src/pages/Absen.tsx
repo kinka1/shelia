@@ -50,45 +50,39 @@ export function mhItem(sentAt: string | null, connected: boolean): Item {
 
 function TodayStatus({ shelia, mh, loading }: { shelia: Item | null; mh: Item; loading: boolean }) {
   const items = shelia ? [shelia, mh] : null
-  const n = items ? items.filter((i) => i.tone !== 'todo').length : 0
-  const all = !!items && items.every((i) => i.tone === 'done')
+  const n = items ? items.filter((i) => i.tone === 'done').length : 0
   const next = items?.find((i) => i.action)
   const date = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(Date.now())
 
+  // One white card: header, then the two statuses side by side, split by a divider (no inner cards).
   return (
-    <Card
-      aria-labelledby="status-title"
-      className={cn('p-5 shadow-sm sm:p-6', all ? 'border-success/40 bg-success/[0.06]' : 'border-primary/30 bg-primary/[0.04]')}
-    >
+    <Card aria-labelledby="status-title" className="gap-0 p-0 shadow-none">
       <section aria-live="polite">
-        <div className="flex flex-wrap items-baseline gap-x-2">
-          <h1 id="status-title" className="text-xl font-semibold tracking-[-0.02em]">Status absen hari ini</h1>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-5 py-4">
+          <h1 id="status-title" className="text-[15px] font-semibold">Status absen hari ini</h1>
           <span className="text-[13px] text-muted-foreground">{date}</span>
+          <span className="flex-1" />
+          {items && <span className="text-xs font-semibold text-muted-foreground">{n} dari 2 selesai</span>}
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-1.5" aria-hidden>
-          {[0, 1].map((i) => (
-            <span key={i} className={cn('h-1.5 rounded-full', i < n ? (all ? 'bg-success' : 'bg-primary') : 'bg-border')} />
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           {!items
-            ? [0, 1].map((i) => <Skeleton key={i} className="h-[88px] rounded-lg" />)
+            ? [0, 1].map((i) => <div key={i} className="px-5 py-4"><Skeleton className="h-14 w-full" /></div>)
             : items.map((it) => {
                 const t = TONE[it.tone]
                 return (
-                  <div key={it.name} className="flex gap-3 rounded-lg border bg-card p-4">
-                    <span className={cn('grid size-10 shrink-0 place-items-center rounded-full', t.ring)}>
-                      <t.icon className={cn('size-5', t.ink)} aria-hidden />
+                  <div key={it.name} className="flex items-center gap-3 px-5 py-4">
+                    <span className={cn('grid size-9 shrink-0 place-items-center rounded-md', t.ring)}>
+                      <t.icon className={cn('size-[18px]', t.ink)} aria-hidden />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-muted-foreground">{it.name}</p>
-                      <p className={cn('text-xl font-semibold leading-snug', t.ink)}>{it.value}</p>
-                      {it.action && (
-                        <Button size="sm" variant={it === next ? 'default' : 'outline'} className="mt-3 h-9" onClick={() => goTo(it.target)}>
-                          {it.action}
-                        </Button>
-                      )}
+                      <p className="text-xs text-muted-foreground">{it.name}</p>
+                      <p className={cn('text-base font-semibold leading-snug', t.ink)}>{it.value}</p>
                     </div>
+                    {it.action && (
+                      <Button size="sm" variant={it === next ? 'default' : 'outline'} className="h-8" onClick={() => goTo(it.target)}>
+                        {it.action}
+                      </Button>
+                    )}
                   </div>
                 )
               })}

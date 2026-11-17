@@ -100,6 +100,8 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           <span className="flex-1" />
           <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>Lihat</Button>
         </div>
+      ) : ext.version === undefined ? (
+        <p className="mt-3 text-[13px] text-muted-foreground">Memeriksa ekstensi…</p>
       ) : !canSend ? (
         <MhConnectPanel installed={!!ext.version} expired={mh.status === 'expired'} onRefresh={mh.refresh} />
       ) : (<>

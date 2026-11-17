@@ -139,6 +139,14 @@ describe('MagangHubCard gates', () => {
     expect(localStorage.getItem('maganghub.token')).toBe('again')
   })
 
+  it('does not flash the install steps while checking for the extension', async () => {
+    localStorage.removeItem('maganghub.token')
+    setup({ answer: () => ({ error: 'login' }) })
+    render(<MagangHubCard />)
+    expect(screen.queryByText('Pasang ekstensi dulu')).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Hubungkan MagangHub' })).toBeInTheDocument()
+  })
+
   it('without a token: a connect step instead of the form, then the form', async () => {
     localStorage.removeItem('maganghub.token')
     let tokenAnswer: any = { error: 'login' }

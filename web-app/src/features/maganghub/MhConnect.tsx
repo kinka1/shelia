@@ -33,7 +33,10 @@ function InstallSteps() {
       </li>
       <li>Nyalakan <b>Developer mode</b>, klik <b>Load unpacked</b>, pilih folder hasil ekstrak.</li>
     </ol>
-    <p className="text-xs text-muted-foreground">Halaman ini dimuat ulang otomatis setelah ekstensi terpasang.</p>
+    <p className="text-xs text-muted-foreground">
+      Halaman ini dimuat ulang otomatis setelah ekstensi terpasang. Baru menyalakan lagi ekstensi yang dimatikan?{' '}
+      <button type="button" className={LINK} onClick={() => location.reload()}>Muat ulang halaman</button>
+    </p>
   </>)
 }
 
