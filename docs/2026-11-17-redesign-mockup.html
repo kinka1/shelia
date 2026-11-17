@@ -1,0 +1,225 @@
+<style>
+  .mx{--bg:hsl(0 0% 98%);--card:#fff;--ink:hsl(224 77% 12%);--muted:hsl(224 15% 40%);--line:hsl(240 12% 91%);--blue:hsl(212 100% 50%);--blueink:hsl(212 100% 38%);--greenink:hsl(141 70% 26%);--amberink:hsl(32 95% 30%);--roseink:hsl(346 94% 38%);--rail:hsl(240 20% 15%);--railt:hsl(237 14% 78%);
+    font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;min-height:520px;text-align:left;margin-bottom:8px}
+  .mx *{box-sizing:border-box}
+  .mx .rail{width:210px;background:var(--rail);color:var(--railt);padding:16px 12px;flex:none}
+  .mx .brand{color:#fff;font-weight:700;font-size:15px;padding:4px 8px 16px;display:flex;gap:10px;align-items:center}
+  .mx .brand i{width:24px;height:24px;border-radius:6px;background:var(--blue);display:inline-block}
+  .mx .sec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 6px;color:var(--railt)}
+  .mx .it{height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:8px;font-size:14px}
+  .mx .it.on{background:hsl(240 18% 22%);color:#fff;font-weight:600}
+  .mx .it.on .dot{background:var(--blue)}
+  .mx .dot{width:8px;height:8px;border-radius:50%;background:hsl(237 11% 45%)}
+  .mx .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .mx .top{height:56px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 20px;gap:12px}
+  .mx .crumb{color:var(--muted);font-size:13px}
+  .mx .sp{flex:1}
+  .mx .av{width:32px;height:32px;border-radius:50%;background:hsl(212 100% 50%/.12);color:var(--blueink);display:grid;place-items:center;font-weight:600;font-size:12px}
+  .mx .body{padding:20px;display:flex;flex-direction:column;gap:16px}
+  .mx h1{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:0}
+  .mx .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .mx .row{display:flex;gap:16px;align-items:flex-start}
+  .mx .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0;flex:1}
+  .mx .ct{font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px}
+  .mx .cd{color:var(--muted);font-size:13px;margin:2px 0 12px}
+  .mx .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border-radius:6px;padding:4px 8px;white-space:nowrap}
+  .mx .ok{background:hsl(141 79% 43%/.12);color:var(--greenink)}
+  .mx .wa{background:hsl(43 100% 48%/.16);color:var(--amberink)}
+  .mx .no{background:hsl(346 94% 56%/.10);color:var(--roseink)}
+  .mx .in{background:hsl(259 81% 57%/.10);color:hsl(259 70% 42%)}
+  .mx .mu{background:hsl(240 12% 94%);color:var(--muted)}
+  .mx .btn{height:36px;padding:0 14px;border-radius:6px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .mx .btn.p{background:hsl(212 100% 42%);border-color:hsl(212 100% 42%);color:#fff}
+  .mx .steps{display:flex;gap:8px;margin:0 0 14px}
+  .mx .st{flex:1;font-size:12px;color:var(--muted);border-top:3px solid var(--line);padding-top:6px}
+  .mx .st.d{border-color:hsl(141 79% 43%);color:var(--greenink)} .mx .st.a{border-color:var(--blue);color:var(--blueink);font-weight:600}
+  .mx label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 4px}
+  .mx .field{border:1px solid hsl(240 12% 86%);border-radius:6px;min-height:36px;padding:7px 12px;display:flex;align-items:center;font-size:14px;margin-bottom:10px;background:#fff}
+  .mx .field.ro{background:hsl(240 12% 97%);color:var(--muted)}
+  .mx .field.ta{min-height:70px;align-items:flex-start;color:var(--muted);margin-bottom:4px}
+  .mx .cnt{font-size:12px;color:var(--muted);margin:0 0 10px;font-variant-numeric:tabular-nums}
+  .mx .cnt.wa-t{color:var(--amberink)} .mx .cnt.ok-t{color:var(--greenink)}
+  .mx .two{display:flex;gap:10px} .mx .two>div{flex:1}
+  .mx .cam{height:150px;border-radius:8px;background:hsl(240 12% 95%);display:grid;place-items:center;color:var(--muted);font-size:13px;margin-bottom:12px;border:1px dashed hsl(240 12% 82%)}
+  .mx table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .mx th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);background:hsl(240 12% 98%)}
+  .mx td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .mx .tn{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .mx .tb{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+  .mx .search{flex:1;max-width:260px;border:1px solid hsl(240 12% 86%);border-radius:6px;height:36px;padding:0 12px;display:flex;align-items:center;color:var(--muted);font-size:13px}
+  .mx .note{font-size:13px;color:var(--muted);background:hsl(212 100% 50%/.06);border:1px solid hsl(212 100% 50%/.18);border-radius:8px;padding:8px 12px}
+  .mx .foot{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .mx .log{font:12px/1.55 ui-monospace,Menlo,monospace;color:var(--muted);background:hsl(240 12% 97%);border-radius:6px;padding:8px 10px;margin-top:12px}
+  .mx .log b{color:var(--ink);font-weight:600}
+  .mx .pager{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);margin:12px -16px -16px;padding:12px 16px}
+  .mx .pl,.mx .pr{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+  .mx .sel{height:32px;width:72px;border:1px solid hsl(240 12% 86%);border-radius:6px;display:inline-flex;align-items:center;padding:0 10px;color:var(--ink)}
+  .mx .pj{display:inline-flex;align-items:center;gap:6px;margin-right:4px}
+  .mx .pin{height:36px;width:48px;border:1px solid hsl(240 12% 86%);border-radius:6px;display:inline-grid;place-items:center;color:var(--ink)}
+  .mx .pb{min-width:36px;height:36px;border-radius:6px;display:inline-grid;place-items:center;color:var(--ink);font-variant-numeric:tabular-nums}
+  .mx .pb.on{background:hsl(212 100% 42%);color:#fff;font-weight:600}
+  .mx table.ml{table-layout:fixed}
+  .mx .clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45}
+  .mx tr.sel td{background:hsl(212 100% 50%/.05)}
+  .mx .eye{color:var(--blueink);font-weight:600;font-size:13px}
+  .mx .main{position:relative}
+  .mx .scrim{position:absolute;inset:0;background:hsl(224 77% 12%/.25);display:none}
+  .mx.open .scrim{display:block}
+  .mx .sheet{display:none;position:absolute;top:0;right:0;bottom:0;width:360px;background:#fff;border-left:1px solid var(--line);box-shadow:-12px 0 32px hsl(224 77% 12%/.10);flex-direction:column}
+  .mx.open .sheet{display:flex}
+  .mx .sh-h{display:flex;align-items:flex-start;gap:8px;padding:16px;border-bottom:1px solid var(--line)}
+  .mx .x{width:32px;height:32px;display:grid;place-items:center;border-radius:6px;color:var(--muted)}
+  .mx .sh-b{padding:16px;overflow:auto;flex:1}
+  .mx .sh-b label{margin-top:4px}
+  .mx .sh-b p{margin:0 0 14px;font-size:14px;line-height:1.6}
+  .mx .sh-f{display:flex;padding:12px 16px;border-top:1px solid var(--line)}
+  .lg{display:flex;gap:16px;align-items:stretch}
+  .mx .seg{display:inline-flex;background:hsl(240 12% 95%);border-radius:8px;padding:3px;gap:2px}
+  .mx .seg span{font-size:13px;padding:5px 12px;border-radius:6px;color:var(--muted)} .mx .seg span.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px hsl(0 0% 0%/.08)}
+  .mx .grp{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;display:flex;align-items:center;gap:8px}
+  .mx .grp:first-child{margin-top:0}
+  .mx .grp i{flex:1;height:1px;background:var(--line)}
+  .mx .req{display:grid;grid-template-columns:52px 1fr auto;gap:2px 10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fff}
+  .mx .req.on{border-color:hsl(212 100% 50%/.45);background:hsl(212 100% 50%/.04);box-shadow:0 0 0 3px hsl(212 100% 50%/.10)}
+  .mx .m{font:600 11px/1 ui-monospace,Menlo,monospace;padding:4px 0;border-radius:4px;text-align:center}
+  .mx .m.get{background:hsl(141 79% 43%/.12);color:var(--greenink)} .mx .m.post{background:hsl(212 100% 50%/.10);color:var(--blueink)}
+  .mx .rt{font-size:14px;font-weight:600}
+  .mx .rp{grid-column:2/4;font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--muted)}
+  .mx .rm{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .mx .dt{flex:1.25;display:flex;flex-direction:column}
+  .mx .sum{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:8px;margin-bottom:12px}
+  .mx .sum.bad{background:hsl(346 94% 56%/.07);border:1px solid hsl(346 94% 56%/.25)}
+  .mx .sum b{display:block;font-size:14px} .mx .sum span{font-size:13px;color:var(--ink)}
+  .mx .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .mx .meta div{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .mx .meta small{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .mx .meta strong{font-size:14px;font-variant-numeric:tabular-nums}
+  .mx .ut{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .mx .ut span{font-size:13.5px;padding:8px 0;color:var(--muted)} .mx .ut span.on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--blue)}
+  .mx pre.js{margin:0;background:hsl(240 20% 13%);color:hsl(240 18% 92%);border-radius:8px;padding:12px 14px;font:12.5px/1.6 ui-monospace,Menlo,monospace;overflow:auto;position:relative}
+  .mx pre.js .k{color:hsl(212 100% 75%)} .mx pre.js .s{color:hsl(141 55% 65%)} .mx pre.js .n{color:hsl(43 100% 65%)}
+  .mx pre.js .r{background:hsl(240 18% 26%);color:hsl(237 14% 80%);border-radius:4px;padding:0 6px}
+  .mx .copy{position:absolute;top:8px;right:8px;font:500 12px Inter,sans-serif;background:hsl(240 18% 24%);color:#fff;border-radius:6px;padding:4px 10px}
+  .mx .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .pg{margin:28px 0 8px;font-size:16px;font-weight:600}
+  .pgd{margin:0 0 10px;color:#666;font-size:14px}
+</style>
+
+<h2>Revision 8: Log API page added (page 4)</h2>
+<p class="subtitle">New at the bottom: the Log API page. On page 3, click any row or <b>Lihat</b> to open the full-text panel, and ✕ or the dimmed area to close it. Both history pages get the same pager as the admin panel. Riwayat MagangHub shows all three aspects: each clamped to two lines in the table, full text in a side panel when you click a row.</p>
+
+<p class="pg">Page 1 · Absen (both forms on one page)</p>
+<p class="pgd">Shelia check-in on the left as 3 steps; MagangHub daily log on the right with Aktivitas, Pembelajaran and Kendala as three equal fields. Status and location stay locked to Hadir / Surabaya.</p>
+<div class="mx">
+  <div class="rail"><div class="brand"><i></i>Shelia Test</div>
+    <div class="sec">Absensi</div>
+    <div class="it on"><span class="dot"></span>Absen</div>
+    <div class="sec">Riwayat</div>
+    <div class="it"><span class="dot"></span>Riwayat Shelia</div><div class="it"><span class="dot"></span>Riwayat MagangHub</div>
+    <div class="sec">Alat</div><div class="it"><span class="dot"></span>Log API</div></div>
+  <div class="main">
+    <div class="top"><span class="crumb">Absensi / Absen</span><span class="sp"></span><span class="badge mu">Selasa, 17 Nov 2026</span><span class="av">AP</span></div>
+    <div class="body">
+      <div><h1>Absen hari ini</h1><div class="sub">Shelia: belum masuk. MagangHub: belum diisi.</div></div>
+      <div class="row">
+        <div class="card">
+          <div class="ct">Shelia<span class="sp"></span><span class="badge wa">Belum masuk</span></div>
+          <div class="cd">Shift pagi 08:00 - 17:00 · verifikasi wajah wajib</div>
+          <div class="steps"><div class="st d">1 · Shift dipilih</div><div class="st a">2 · Foto wajah</div><div class="st">3 · Kirim</div></div>
+          <div class="cam">Kamera aktif. Posisikan wajah di tengah bingkai.</div>
+          <div style="display:flex;gap:8px"><span class="btn">Unggah foto</span><span class="sp"></span><span class="btn p">Ambil foto</span></div>
+        </div>
+        <div class="card">
+          <div class="ct">MagangHub<span class="sp"></span><span class="badge ok">Terhubung</span><span class="btn" style="height:30px;font-size:13px">Perbarui token</span></div>
+          <div class="cd">Log harian · token berlaku sampai 17:42</div>
+          <div class="two"><div><label>Tanggal</label><div class="field">17/11/2026</div></div><div><label>Status</label><div class="field ro">Hadir</div></div></div>
+          <label>Lokasi</label><div class="field ro">Surabaya</div>
+          <label>Aktivitas</label><div class="field ta">Merapikan alur verifikasi wajah dan menguji respons API absensi bersama tim</div><div class="cnt wa-t">78 / 100 karakter · kurang 22</div>
+          <label>Pembelajaran</label><div class="field ta" style="color:var(--ink)">Memahami bahwa token wajah hanya berlaku dua menit sehingga foto harus diambil tepat sebelum absen dikirim, dan cara membaca kode galat dari server.</div><div class="cnt ok-t">✓ 142 karakter</div>
+          <label>Kendala</label><div class="field ta">Ceritakan hambatan hari ini, minimal 100 karakter.</div><div class="cnt">0 / 100 karakter</div>
+          <div style="display:flex;align-items:center;gap:10px"><span class="cnt" style="margin:0">Lengkapi 2 isian lagi</span><span class="sp"></span><span class="btn p" style="opacity:.5">Kirim log</span></div>
+        </div>
+      </div>
+    </div></div></div>
+
+<p class="pg">Page 2 · Riwayat Shelia</p>
+<p class="pgd">Today's sessions live, plus the days this browser has seen. Same pager as the admin panel.</p>
+<div class="mx">
+  <div class="rail"><div class="brand"><i></i>Shelia Test</div><div class="sec">Absensi</div><div class="it"><span class="dot"></span>Absen</div>
+    <div class="sec">Riwayat</div><div class="it on"><span class="dot"></span>Riwayat Shelia</div><div class="it"><span class="dot"></span>Riwayat MagangHub</div><div class="sec">Alat</div><div class="it"><span class="dot"></span>Log API</div></div>
+  <div class="main">
+    <div class="top"><span class="crumb">Riwayat / Shelia</span><span class="sp"></span><span class="av">AP</span></div>
+    <div class="body">
+      <div><h1>Riwayat Shelia</h1><div class="sub">Sesi absen masuk dan pulang.</div></div>
+      <div class="card">
+        <div class="tb"><span class="search">Cari tanggal atau shift…</span><span class="sp"></span><span class="btn">Muat ulang</span></div>
+        <table><tr><th>Tanggal</th><th>Shift</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr>
+        <tr><td class="tn">17 Nov 2026</td><td>Pagi</td><td class="tn">-</td><td class="tn">-</td><td><span class="badge mu">Belum masuk</span></td></tr>
+        <tr><td class="tn">16 Nov 2026</td><td>Pagi</td><td class="tn">08:02</td><td class="tn">17:05</td><td><span class="badge ok">Hadir</span></td></tr>
+        <tr><td class="tn">14 Nov 2026</td><td>Pagi</td><td class="tn">08:21</td><td class="tn">17:00</td><td><span class="badge wa">Terlambat</span></td></tr></table>
+        <div class="pager"><div class="pl"><span class="sel">10 ▾</span><span class="tn">1-3 dari 3</span></div><div class="pr"><span class="pb">‹</span><span class="pb on">1</span><span class="pb">›</span></div></div>
+      </div>
+    </div></div></div>
+
+<p class="pg">Page 3 · Riwayat MagangHub</p>
+<p class="pgd">Each aspect clamped to two lines so rows stay even; click a row (or Lihat) to read all three in full in a side panel, and step to the previous or next day there.</p>
+<div class="mx">
+  <div class="rail"><div class="brand"><i></i>Shelia Test</div><div class="sec">Absensi</div><div class="it"><span class="dot"></span>Absen</div>
+    <div class="sec">Riwayat</div><div class="it"><span class="dot"></span>Riwayat Shelia</div><div class="it on"><span class="dot"></span>Riwayat MagangHub</div><div class="sec">Alat</div><div class="it"><span class="dot"></span>Log API</div></div>
+  <div class="main">
+    <div class="top"><span class="crumb">Riwayat / MagangHub</span><span class="sp"></span><span class="badge ok">Terhubung</span><span class="av">AP</span></div>
+    <div class="body">
+      <div><h1>Riwayat MagangHub</h1><div class="sub">Log harian dari akun MagangHub Anda.</div></div>
+      <div class="card">
+        <div class="tb"><span class="search">Cari aktivitas…</span><span class="sp"></span><span class="btn">Muat ulang</span></div>
+        <table class="ml"><colgroup><col style="width:96px"><col style="width:58px"><col style="width:84px"><col><col><col><col style="width:56px"></colgroup><tr><th>Tanggal</th><th>Masuk</th><th>Status</th><th>Aktivitas</th><th>Pembelajaran</th><th>Kendala</th><th></th></tr><tr onclick="mhOpen(this)" style="cursor:pointer"><td class="tn">17 Nov 2026</td><td class="tn">07:58</td><td><span class="badge ok">Hadir</span></td><td><div class="clamp">Merapikan alur verifikasi wajah pada halaman absen dan menguji respons API absensi bersama tim backend untuk shift pagi.</div></td><td><div class="clamp">Token wajah hanya berlaku dua menit, jadi foto harus diambil tepat sebelum absen dikirim. Kode galat server perlu dibaca agar pesan ke pengguna tepat.</div></td><td><div class="clamp">Kamera laptop buram di ruangan yang kurang terang sehingga verifikasi wajah beberapa kali gagal dan harus diulang dengan cahaya tambahan.</div></td><td><span class="eye">Lihat</span></td></tr><tr onclick="mhOpen(this)" style="cursor:pointer"><td class="tn">16 Nov 2026</td><td class="tn">08:01</td><td><span class="badge ok">Hadir</span></td><td><div class="clamp">Menyusun dokumentasi alur absen dan membandingkan langkah Shelia dengan MagangHub untuk laporan mingguan kepada pembimbing lapangan.</div></td><td><div class="clamp">Perbedaan utama ada pada cara server memeriksa lokasi dan waktu, bukan pada formulir yang diisi oleh peserta magang setiap harinya.</div></td><td><div class="clamp">Belum ada akses ke data riwayat Shelia sehingga perbandingan hanya bisa memakai data hari ini dan catatan manual dari tim.</div></td><td><span class="eye">Lihat</span></td></tr><tr onclick="mhOpen(this)" style="cursor:pointer"><td class="tn">14 Nov 2026</td><td class="tn">08:05</td><td><span class="badge ok">Hadir</span></td><td><div class="clamp">Rapat koordinasi dengan tim untuk menentukan prioritas perbaikan antarmuka dan pembagian tugas pengujian selama dua minggu ke depan.</div></td><td><div class="clamp">Prioritas sebaiknya ditentukan dari masalah yang paling sering dialami pengguna, bukan dari fitur yang paling mudah dikerjakan tim.</div></td><td><div class="clamp">Jadwal rapat bentrok dengan shift sehingga beberapa anggota tim hanya bisa bergabung sebentar dan perlu menerima ringkasan tertulis.</div></td><td><span class="eye">Lihat</span></td></tr></table>
+        <div class="pager"><div class="pl"><span class="sel">10 ▾</span><span class="tn">1-10 dari 34</span></div><div class="pr"><span class="pj">Ke halaman <span class="pin">1</span> dari 4</span><span class="pb">‹</span><span class="pb on">1</span><span class="pb">2</span><span class="pb">3</span><span class="pb">4</span><span class="pb">›</span></div></div>
+      </div>
+    </div></div><div class="scrim" onclick="mhClose(this)"></div><div class="sheet"><div class="sh-h"><div><div class="ct" style="margin:0">Log 17 Nov 2026</div><div class="cd" style="margin:2px 0 0">Masuk 07:58 · <span class="badge ok">Hadir</span></div></div><span class="sp"></span><span class="x" onclick="mhClose(this)" style="cursor:pointer">✕</span></div><div class="sh-b"><label>Aktivitas</label><p>Merapikan alur verifikasi wajah pada halaman absen dan menguji respons API absensi bersama tim backend untuk shift pagi.</p><label>Pembelajaran</label><p>Token wajah hanya berlaku dua menit, jadi foto harus diambil tepat sebelum absen dikirim. Kode galat server perlu dibaca agar pesan ke pengguna tepat.</p><label>Kendala</label><p>Kamera laptop buram di ruangan yang kurang terang sehingga verifikasi wajah beberapa kali gagal dan harus diulang dengan cahaya tambahan.</p></div><div class="sh-f"><span class="btn">‹ Sebelumnya</span><span class="sp"></span><span class="btn">Berikutnya ›</span></div></div></div>
+
+
+<p class="pg">Page 4 · Log API</p>
+<p class="pgd">Read like a story first, raw data second. Calls are grouped into the action you took (e.g. "Absen masuk"), each with a plain-language title; failures say what went wrong in words. The right side keeps the full technical detail: status, time, size, and request/response JSON with secrets shown as "disembunyikan".</p>
+<div class="mx">
+  <div class="rail"><div class="brand"><i></i>Shelia Test</div><div class="sec">Absensi</div><div class="it"><span class="dot"></span>Absen</div>
+    <div class="sec">Riwayat</div><div class="it"><span class="dot"></span>Riwayat Shelia</div><div class="it"><span class="dot"></span>Riwayat MagangHub</div><div class="sec">Alat</div><div class="it on"><span class="dot"></span>Log API</div></div>
+  <div class="main">
+    <div class="top"><span class="crumb">Alat / Log API</span><span class="sp"></span><span class="av">AP</span></div>
+    <div class="body">
+      <div style="display:flex;align-items:flex-end;gap:12px"><div><h1>Log API</h1><div class="sub">12 panggilan di sesi ini · 1 gagal</div></div><span class="sp"></span><span class="btn">Bersihkan</span></div>
+      <div class="tb" style="margin:0"><span class="seg"><span class="on">Semua</span><span>Shelia</span><span>MagangHub</span></span><span class="seg"><span class="on">Semua status</span><span>Gagal (1)</span></span><span class="sp"></span><span class="search">Cari endpoint…</span></div>
+      <div class="lg">
+        <div style="flex:1;min-width:0">
+          <div class="grp">Absen masuk · 08:02<i></i></div>
+          <div class="req"><span class="m get">GET</span><span class="rt">Cek status hari ini</span><span class="badge ok">200</span><span class="rp">/attendance-integration/user/today</span></div>
+          <div class="req"><span class="m post">POST</span><span class="rt">Verifikasi wajah</span><span class="badge ok">200</span><span class="rp">/v2/attendance/face/verify · 412 ms</span></div>
+          <div class="req on"><span class="m post">POST</span><span class="rt">Kirim absen masuk</span><span class="badge no">422</span><span class="rp">/v2/attendance/check-in · 236 ms</span></div>
+          <div class="grp">Masuk ke akun · 07:55<i></i></div>
+          <div class="req"><span class="m post">POST</span><span class="rt">Login</span><span class="badge ok">200</span><span class="rp">/auth/login · 318 ms</span></div>
+          <div class="req"><span class="m get">GET</span><span class="rt">Ambil log MagangHub</span><span class="badge ok">200</span><span class="rp">/maganghub-api/v1/daily-logs?page=1 · 540 ms</span></div>
+        </div>
+        <div class="card dt">
+          <div class="sum bad"><span class="badge no">422</span><div><b>Absen masuk ditolak</b><span>Token wajah sudah kedaluwarsa (berlaku 2 menit). Ambil foto lagi, lalu kirim.</span></div></div>
+          <div class="meta"><div><small>Metode</small><strong>POST</strong></div><div><small>Status</small><strong>422</strong></div><div><small>Durasi</small><strong>236 ms</strong></div><div><small>Waktu</small><strong>08:02:41</strong></div></div>
+          <div class="ut"><span>Request</span><span class="on">Response</span><span>Header</span></div>
+<pre class="js"><span class="copy">Salin</span>{
+  <span class="k">"success"</span>: <span class="n">false</span>,
+  <span class="k">"code"</span>: <span class="s">"FACE_TOKEN_EXPIRED"</span>,
+  <span class="k">"message"</span>: <span class="s">"Token verifikasi wajah tidak berlaku"</span>,
+  <span class="k">"meta"</span>: {
+    <span class="k">"bypass_token"</span>: <span class="r">disembunyikan</span>,
+    <span class="k">"retry_after"</span>: <span class="n">0</span>
+  }
+}</pre>
+          <div class="hint">Nilai rahasia (kata sandi, token, foto) tidak pernah ditampilkan dan tidak disimpan. Log hilang saat tab ditutup.</div>
+        </div>
+      </div>
+    </div></div></div>
+<script>
+function mhOpen(tr){const mx=tr.closest('.mx');const c=tr.querySelectorAll('td');const sh=mx.querySelector('.sheet');
+sh.querySelector('.ct').textContent='Log '+c[0].textContent;
+const ps=sh.querySelectorAll('.sh-b p');[3,4,5].forEach((i,n)=>ps[n].textContent=c[i].textContent);
+mx.querySelectorAll('tr').forEach(r=>r.querySelectorAll('td').forEach(td=>td.style.background=''));
+c.forEach(td=>td.style.background='hsl(212 100% 50% / .05)');mx.classList.add('open')}
+function mhClose(el){el.closest('.mx').classList.remove('open')}
+</script>
