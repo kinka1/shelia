@@ -48,11 +48,15 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   const [sending, setSending] = useState(false)
   const [sendErr, setSendErr] = useState('')
 
+  // One log per day: sending stays locked until MagangHub confirms today has none.
+  const [today, setToday] = useState<'checking' | 'ok' | 'error'>('checking')
   const seq = useRef(0)
   async function check(d = date) {
     const id = ++seq.current
     const r = await fetchMyToday(d)
     if (id !== seq.current) return r // ada pengecekan yang lebih baru: jawaban lama dibuang
+    if (r && 'error' in r) { setToday('error'); return r }
+    setToday('ok')
     setSentAt(r?.sentAt ?? null)
     if (d === todayWIB()) onSentAt?.(r?.sentAt ?? null)
     return r
@@ -67,13 +71,17 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   // Kirim log only opens the confirmation; the extension sends from MagangHub's own page.
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!left && canSend) { setSendErr(''); setConfirming(true) }
+    if (!left && canSend && today === 'ok' && !sentAt) { setSendErr(''); setConfirming(true) }
   }
 
   // With the extension: one click, sent from a MagangHub tab it manages.
   async function sendViaExtension() {
     if (sending) return
     setSending(true); setSendErr('')
+    // Checked again right before sending: a log sent from another tab or device meanwhile stops it.
+    const now = await check()
+    if (now && 'sentAt' in now) { setSending(false); setConfirming(false); toast.info('Log hari ini sudah terkirim, tidak dikirim lagi.'); return }
+    if (now && 'error' in now) { setSending(false); setSendErr('Belum bisa memastikan log hari ini, jadi tidak dikirim. Coba lagi.'); return }
     const r = await extSend(sendBody({ date, ...v, latitude: point.lat, longitude: point.lng }))
     setSending(false)
     if ('ok' in r && r.ok) { setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
@@ -140,9 +148,15 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
+              {today === 'checking' ? <span className="text-xs text-muted-foreground">Memeriksa log hari ini…</span>
+                : today === 'error' ? (
+                  <span className="flex items-center gap-2 text-xs text-warning-ink">
+                    Belum bisa memastikan log hari ini.
+                    <Button type="button" variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold" onClick={() => void check()}>Cek lagi</Button>
+                  </span>
+                ) : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={left > 0}>Kirim log</Button>
+              <Button type="submit" disabled={left > 0 || today !== 'ok'}>Kirim log</Button>
             </>
           )}
         </div>

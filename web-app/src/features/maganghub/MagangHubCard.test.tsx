@@ -162,6 +162,45 @@ describe('MagangHubCard gates', () => {
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue(texts.obstacles)
   })
 
+  it('cannot send while checking whether today is already sent', async () => {
+    setup()
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {}))) // the check never answers
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fill()
+    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
+    expect(screen.getByText('Memeriksa log hari ini…')).toBeInTheDocument()
+  })
+
+  it('a failed check blocks sending (never assumed "not sent"); Cek lagi retries', async () => {
+    let fail = true
+    setup()
+    vi.stubGlobal('fetch', vi.fn(async () => (fail ? new Response('{}', { status: 500 }) : new Response(JSON.stringify({ data: [] })))))
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fill()
+    expect(await screen.findByText('Belum bisa memastikan log hari ini.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
+    fail = false
+    fireEvent.click(screen.getByRole('button', { name: 'Cek lagi' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Kirim log' })).toBeEnabled())
+  })
+
+  it('a log sent elsewhere meanwhile is caught right before sending: nothing is sent', async () => {
+    let rows: unknown[] = []
+    const s = setup()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: rows, total: rows.length }))))
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fill()
+    fireEvent.click(await screen.findByRole('button', { name: 'Kirim log' }))
+    rows = [{ date: TODAY, created_at: `${TODAY}T09:15:00` }]
+    fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
+    expect(await screen.findByText('Terkirim 09:15')).toBeInTheDocument()
+    expect(sends(s)).toEqual([])
+    expect(screen.queryByRole('button', { name: 'Kirim ke MagangHub' })).toBeNull()
+  })
+
   it('without a token: a connect step instead of the form, then the form', async () => {
     localStorage.removeItem('maganghub.token')
     let tokenAnswer: any = { error: 'login' }

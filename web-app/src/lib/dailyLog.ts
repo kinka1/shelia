@@ -17,16 +17,17 @@ export const todayWIB = (now = new Date()): string => new Date(now.getTime() + 7
 
 
 /** Log for this date already on MagangHub? Newest logs come first, so page 1 covers recent days. */
-export async function fetchMyToday(date: string): Promise<{ sentAt: string } | null> {
+/** null = nothing sent that day; a failed check is an error, never "not sent" (one log per day). */
+export async function fetchMyToday(date: string): Promise<{ sentAt: string } | { error: string } | null> {
   const t = getMhToken()
   if (!t) return null
   try {
     const res = await loggedFetch(`${BASE}/daily-logs?page=1`, { headers: { Authorization: `Bearer ${t}` }, action: 'Cek log hari ini' })
-    if (!res.ok) return null
+    if (!res.ok) return { error: `MagangHub menjawab HTTP ${res.status}` }
     const b = await res.json()
     const row = (Array.isArray(b?.data) ? b.data : []).find((r: any) => String(r?.date ?? '').slice(0, 10) === date)
     if (!row) return null
     const at = typeof row.created_at === 'string' ? row.created_at.slice(11, 16) : typeof row.clock_in === 'string' ? row.clock_in : ''
     return { sentAt: at || '-' }
-  } catch { return null }
+  } catch { return { error: 'MagangHub tidak bisa dihubungi' } }
 }

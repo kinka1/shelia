@@ -24,4 +24,16 @@ describe('real MagangHub status', () => {
     expect(String((f.mock.calls[0] as unknown[])[0])).toBe('/maganghub-api/v1/daily-logs?page=1')
     vi.unstubAllGlobals()
   })
+
+  it('fetchMyToday: nothing today → null; failure → an error, never "not sent"', async () => {
+    const { fetchMyToday } = await import('./dailyLog')
+    localStorage.setItem('maganghub.token', 'mh-tok')
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: [] }))))
+    expect(await fetchMyToday('2026-11-17')).toBeNull()
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 500 })))
+    expect(await fetchMyToday('2026-11-17')).toEqual({ error: expect.any(String) })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
+    expect(await fetchMyToday('2026-11-17')).toEqual({ error: expect.any(String) })
+    vi.unstubAllGlobals()
+  })
 })
