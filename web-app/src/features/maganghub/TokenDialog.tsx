@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { bookmarkletHref } from '@/lib/maganghub'
 
-const STEPS = ['Seret tombol ke bookmark bar', 'Buka MagangHub dan login', 'Klik bookmark → Shelia']
+const MH_URL = 'https://monev.maganghub.kemnaker.go.id/'
+const STEPS = [
+  'Seret tombol ke bookmark bar',
+  <>Buka <a href={MH_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-ink underline underline-offset-2">MagangHub</a> dan login</>,
+  'Klik bookmark → Shelia',
+]
 
 export function TokenDialog({ connected, onDisconnect }: { connected: boolean; onDisconnect: () => void }) {
   // React 19 swaps javascript: hrefs set as props for a throwing URL, so set it on the node.
@@ -24,7 +29,7 @@ export function TokenDialog({ connected, onDisconnect }: { connected: boolean; o
         >
           → Shelia
         </a>
-        <ol className="list-decimal space-y-1 pl-5 text-sm">{STEPS.map((s) => <li key={s}>{s}</li>)}</ol>
+        <ol className="list-decimal space-y-1 pl-5 text-sm">{STEPS.map((s, i) => <li key={i}>{s}</li>)}</ol>
         {connected && <Button variant="ghost" className="w-fit text-destructive-ink" onClick={onDisconnect}>Putuskan</Button>}
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { TokenDialog } from './TokenDialog'
 
 describe('TokenDialog', () => {
@@ -13,5 +13,13 @@ describe('TokenDialog', () => {
     expect(href).not.toContain('React has blocked')
     expect(err.mock.calls.flat().join(' ')).not.toContain('React has blocked')
     err.mockRestore()
+  })
+  it('links "MagangHub" in the steps to the MagangHub site in a new tab', () => {
+    render(<TokenDialog connected={false} onDisconnect={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    const a = screen.getByRole('link', { name: 'MagangHub' })
+    expect(a).toHaveAttribute('href', 'https://monev.maganghub.kemnaker.go.id/')
+    expect(a).toHaveAttribute('target', '_blank')
+    expect(a).toHaveAttribute('rel', 'noopener noreferrer')
   })
 })
