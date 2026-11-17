@@ -101,3 +101,16 @@ describe('generateLog', () => {
     expect(await generateLog(commits, 'K')).toEqual({ error: 'Jawaban DeepSeek tidak bisa dibaca. Coba lagi.' })
   })
 })
+
+describe('generateLog prompt', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  it('asks for natural formal Indonesian and names the period when it is not today', async () => {
+    const f = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ activity_log: 'a'.repeat(110), lesson_learned: 'b'.repeat(110), obstacles: 'c'.repeat(110) }) } }] })))
+    vi.stubGlobal('fetch', f)
+    await generateLog([{ sha: 'a', message: 'fix', files: [] }], 'K', 'deepseek-flash', '10–12 Nov 2026')
+    const sent = JSON.parse(f.mock.calls[0][1].body).messages.map((m: any) => m.content).join('\n')
+    expect(sent).toMatch(/baku/)
+    expect(sent).toMatch(/terjemahan/)
+    expect(sent).toContain('Periode: 10–12 Nov 2026')
+  })
+})

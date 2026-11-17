@@ -54,7 +54,8 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   const [point, setPoint] = useState(draft?.point ?? OFFICE)
   useEffect(() => {
     if (sentAt) return
-    try { localStorage.setItem(DRAFT, JSON.stringify({ date, v, point })) } catch { /* storage blocked */ }
+    const blank = !v.activity_log && !v.lesson_learned && !v.obstacles && point.lat === OFFICE.lat && point.lng === OFFICE.lng
+    try { if (blank) localStorage.removeItem(DRAFT); else localStorage.setItem(DRAFT, JSON.stringify({ date, v, point })) } catch { /* storage blocked */ }
   }, [date, v, point, sentAt])
   const [confirming, setConfirming] = useState(false)
   const ext = useExtension()
@@ -122,7 +123,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
         {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         {canSend && <MhConnect installed onRefresh={mh.refresh} onBusy={setRefreshing} />}
         {mh.status !== 'none' && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); setV(BLANK_V); setPoint(OFFICE); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
         )}
       </div>
       {/* While Perbarui token runs the card is greyed and can't be clicked (unlocks on success or failure). */}

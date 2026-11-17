@@ -50,7 +50,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     try {
       await sheliaApi('/auth/logout', { method: 'POST', action: 'Keluar dari akun' })
     } catch { /* sesi tetap dihapus walau request gagal */ }
-    clearSession()
+    clearSession(true)
     setToken(null)
     setEmployee(null)
     setExpired('')

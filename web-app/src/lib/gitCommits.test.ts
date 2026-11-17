@@ -261,3 +261,19 @@ describe('tokenUrl (pre-filled "new token" page)', () => {
   })
   it('no usable link → null', () => expect(tokenUrl('')).toBeNull())
 })
+
+describe('date range (Pilih tanggal)', () => {
+  it('reads from 00:00 of the first day to 24:00 of the last, Jakarta time', async () => {
+    const f = serve({
+      [`${gh}/user`]: { login: 'budi', email: 'b@x.id' },
+      [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
+      [`${gh}/repos/o/r/commits?sha=main`]: [],
+      [`${gh}/repos/o/r`]: { full_name: 'o/r', default_branch: 'main' },
+    })
+    const r = await fetchTodayCommits({ repo: 'https://github.com/o/r', token: 'T', deepseekKey: 'k' }, NOW, { from: '2026-11-10', until: '2026-11-12' })
+    const list = f.mock.calls.map(([u]) => u).find((u) => u.includes('commits?sha=main'))!
+    expect(list).toContain('since=2026-11-09T17%3A00%3A00.000Z')
+    expect(list).toContain('until=2026-11-12T17%3A00%3A00.000Z')
+    expect(r).toEqual({ error: 'Tidak ada commit pada 10–12 Nov 2026' })
+  })
+})

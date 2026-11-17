@@ -12,7 +12,6 @@ type Result = { commits: GitCommit[]; trimmed: boolean; note?: string } | { erro
 const MAX_COMMITS = 30
 const MAX_BRANCHES = 20
 const GITLAB_PAGES = 5 // 500 commits a day is plenty
-const NO_COMMITS = 'Tidak ada commit hari ini'
 const NOT_FOUND = 'Repo tidak ditemukan atau privat. Isi token akses.'
 
 export function repoLinks(s: Settings): RepoLink[] {
@@ -53,8 +52,24 @@ export function tokenUrl(repoUrl: string): { href: string; site: 'GitHub' | 'Git
 
 /** 00:00–24:00 in Jakarta (UTC+7, no DST) as UTC ISO strings. */
 export function todayRangeWIB(now = new Date()): { since: string; until: string } {
-  const since = new Date(`${todayWIB(now)}T00:00:00+07:00`)
-  return { since: since.toISOString(), until: new Date(since.getTime() + 86_400_000).toISOString() }
+  return rangeWIB({ from: todayWIB(now), until: todayWIB(now) })
+}
+
+/** Chosen days (YYYY-MM-DD, inclusive): 00:00 of the first to 24:00 of the last, Jakarta time. */
+export type Days = { from: string; until: string }
+export function rangeWIB(d: Days): { since: string; until: string } {
+  const since = new Date(`${d.from}T00:00:00+07:00`)
+  const end = new Date(new Date(`${d.until}T00:00:00+07:00`).getTime() + 86_400_000)
+  return { since: since.toISOString(), until: end.toISOString() }
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+/** "10–12 Nov 2026", "28 Okt – 3 Nov 2026", "10 Nov 2026". */
+export function periodLabel(d: Days): string {
+  const [fy, fm, fd] = d.from.split('-').map(Number), [uy, um, ud] = d.until.split('-').map(Number)
+  if (d.from === d.until) return `${fd} ${MONTHS[fm - 1]} ${fy}`
+  if (fy === uy && fm === um) return `${fd}–${ud} ${MONTHS[um - 1]} ${uy}`
+  return `${fd} ${MONTHS[fm - 1]}${fy === uy ? '' : ` ${fy}`} – ${ud} ${MONTHS[um - 1]} ${uy}`
 }
 
 class HttpError extends Error { constructor(public status: number) { super(String(status)) } }
@@ -62,13 +77,17 @@ class NetError extends Error {}
 class BadAnswer extends Error {}
 
 /** Every repo is read; one failing doesn't stop the others, and it is named in the note. */
-export async function fetchTodayCommits(s: Settings, now = new Date()): Promise<Result> {
+export async function fetchTodayCommits(s: Settings, now = new Date(), days?: Days): Promise<Result> {
+  const today = todayWIB(now)
+  const d = days ?? { from: today, until: today }
+  const span: Span = { ...rangeWIB(d), when: d.from === today && d.until === today ? 'hari ini' : `pada ${periodLabel(d)}` }
+  const NO_COMMITS = `Tidak ada commit ${span.when}`
   const links = repoLinks(s)
   if (!links.length) return { error: 'Isi minimal satu link repo.' }
-  const results = await Promise.all(links.map(async (l) => ({ label: parseRepo(l.url)?.path ?? l.url, r: await oneRepo(l, s.username, now) })))
+  const results = await Promise.all(links.map(async (l) => ({ label: parseRepo(l.url)?.path ?? l.url, r: await oneRepo(l, s.username, span) })))
   const label = (x: { label: string }, msg: string) => (links.length > 1 ? `${x.label}: ${msg}` : msg)
   const ok = results.filter((x) => 'commits' in x.r)
-  const quiet = (m: string) => m === NO_COMMITS || m.startsWith('Ada ') // not failures: just nothing of yours today
+  const quiet = (m: string) => m === NO_COMMITS || m.startsWith('Ada ') // not failures: just nothing of yours in the period
   const failed = results.filter((x) => 'error' in x.r && !quiet(x.r.error))
   if (!ok.length) {
     if (failed.length) return { error: failed.map((x) => label(x, (x.r as { error: string }).error)).join('\n') }
@@ -87,7 +106,7 @@ export async function fetchTodayCommits(s: Settings, now = new Date()): Promise<
   }
 }
 
-async function oneRepo(link: RepoLink, username: string | undefined, now: Date): Promise<Result> {
+async function oneRepo(link: RepoLink, username: string | undefined, span: Span): Promise<Result> {
   const repo = parseRepo(link.url)
   if (!repo) return { error: 'Link repo tidak dikenali. Contoh: https://github.com/nama/repo' }
   const token = link.token?.trim()
@@ -104,7 +123,7 @@ async function oneRepo(link: RepoLink, username: string | undefined, now: Date):
     return body as any
   }
   try {
-    const res = await (repo.kind === 'github' ? github : gitlab)(repo.api, repo.path, { token, username }, get, todayRangeWIB(now))
+    const res = await (repo.kind === 'github' ? github : gitlab)(repo.api, repo.path, { token, username }, get, span)
     return 'commits' in res ? { ...res, commits: res.commits.map((c) => ({ ...c, repo: repo.path })) } : res
   } catch (e) {
     if (e instanceof HttpError) {
@@ -119,19 +138,19 @@ async function oneRepo(link: RepoLink, username: string | undefined, now: Date):
 }
 
 type Get = (url: string, list?: boolean) => Promise<any>
-type Range = { since: string; until: string }
+type Span = { since: string; until: string; when: string } // when: "hari ini" or "pada 10–12 Nov 2026"
 type Who = { token?: string; username?: string }
 const q = (o: Record<string, string>) => new URLSearchParams(o).toString()
 
 /** Keeps the user's non-merge commits (newest first as listed), or the right message. */
-function pick<T>(all: T[], mine: (c: T) => boolean, who: string): { mine: T[]; trimmed: boolean } | { error: string } {
-  if (!all.length) return { error: NO_COMMITS }
+function pick<T>(all: T[], mine: (c: T) => boolean, who: string, when: string): { mine: T[]; trimmed: boolean } | { error: string } {
+  if (!all.length) return { error: `Tidak ada commit ${when}` }
   const m = all.filter(mine)
-  if (!m.length) return { error: `Ada ${all.length} commit hari ini, tapi tidak ada dari ${who}` }
+  if (!m.length) return { error: `Ada ${all.length} commit ${when}, tapi tidak ada dari ${who}` }
   return { mine: m.slice(0, MAX_COMMITS), trimmed: m.length > MAX_COMMITS }
 }
 
-async function github(api: string, path: string, w: Who, get: Get, range: Range): Promise<Result> {
+async function github(api: string, path: string, w: Who, get: Get, { when, ...range }: Span): Promise<Result> {
   const me = w.token ? await get(`${api}/user`) : { login: w.username }
   const ids = [me.login, me.email].filter(Boolean).map((x: string) => x.toLowerCase())
   const info = await get(`${api}/repos/${path}`)
@@ -152,7 +171,7 @@ async function github(api: string, path: string, w: Who, get: Get, range: Range)
   }
   // author is null when the commit email isn't linked to a GitHub account: the email still counts.
   const isMine = (c: any) => [c.author?.login, c.commit?.author?.email].some((x) => x && ids.includes(String(x).toLowerCase()))
-  const p = pick([...seen.values()], isMine, me.login || me.email || 'Anda')
+  const p = pick([...seen.values()], isMine, me.login || me.email || 'Anda', when)
   if ('error' in p) return p
   const commits = await Promise.all(p.mine.map(async (c) => {
     const d = await get(`${api}/repos/${path}/commits/${c.sha}`)
@@ -171,7 +190,7 @@ function countDiff(diff: string): { additions: number; deletions: number } {
   return { additions: body.filter((l) => l.startsWith('+')).length, deletions: body.filter((l) => l.startsWith('-')).length }
 }
 
-async function gitlab(api: string, path: string, w: Who, get: Get, range: Range): Promise<Result> {
+async function gitlab(api: string, path: string, w: Who, get: Get, { when, ...range }: Span): Promise<Result> {
   const proj = `${api}/projects/${encodeURIComponent(path)}`
   const me = w.token ? await get(`${api}/user`) : { username: w.username }
   const ids = [me.username, me.name, me.email, me.commit_email, me.public_email].filter(Boolean).map((x: string) => x.toLowerCase())
@@ -188,7 +207,7 @@ async function gitlab(api: string, path: string, w: Who, get: Get, range: Range)
     const v = String(x || '').toLowerCase()
     return v && (ids.includes(v) || (!w.token && ids.some((i) => v.startsWith(`${i}@`))))
   })
-  const p = pick(all, isMine, me.username || me.email || 'Anda')
+  const p = pick(all, isMine, me.username || me.email || 'Anda', when)
   if ('error' in p) return p
   const commits = await Promise.all(p.mine.map(async (c) => {
     const diffs: any[] = await get(`${proj}/repository/commits/${c.id}/diff?per_page=100`, true)

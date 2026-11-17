@@ -11,7 +11,11 @@ export const getMhToken = (): string | null => { try { return localStorage.getIt
 const OUT_KEY = 'maganghub.keluar'
 export const mhSignedOut = (): boolean => { try { return localStorage.getItem(OUT_KEY) === '1' } catch { return false } }
 export const setMhToken = (t: string): void => { try { localStorage.setItem(MH_KEY, t); localStorage.removeItem(OUT_KEY) } catch { /* storage blocked */ } }
-export const signOutMh = (): void => { try { localStorage.removeItem(MH_KEY); localStorage.setItem(OUT_KEY, '1') } catch { /* storage blocked */ } }
+// Keluar erases everything the MagangHub card kept here (token, draft, Generate keys); only the marker stays,
+// so a reload doesn't silently fetch the token again.
+export const signOutMh = (): void => {
+  try { for (const k of [MH_KEY, 'maganghub.draft', 'generate.settings']) localStorage.removeItem(k); localStorage.setItem(OUT_KEY, '1') } catch { /* storage blocked */ }
+}
 
 export function tokenExpiry(token: string): Date | null {
   try {

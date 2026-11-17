@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, errorText, getToken, onUnauthorized, saveSession, sheliaApi } from './shelia'
+import { ApiError, clearSession, errorText, getToken, onUnauthorized, saveSession, sheliaApi } from './shelia'
 
 const reply = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers })
@@ -78,5 +78,15 @@ describe('errorText', () => {
     expect(localStorage.getItem('maganghub.token')).toBe('mh')
     expect(localStorage.getItem('shelia.history')).toBe('[]')
     vi.unstubAllGlobals()
+  })
+})
+
+describe('Keluar (clearSession)', () => {
+  it("also erases Shelia's saved history", () => {
+    saveSession('t', { full_name: 'Budi' } as any)
+    localStorage.setItem('shelia.history', '[1]')
+    clearSession(true)
+    expect(getToken()).toBeNull()
+    expect(localStorage.getItem('shelia.history')).toBeNull()
   })
 })

@@ -60,7 +60,7 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
   })
 
-  it('Keluar logs out of Shelia only: MagangHub, history and the API log stay', async () => {
+  it('Keluar logs out of Shelia and erases its history; MagangHub and the API log stay', async () => {
     saveSession('T', {})
     localStorage.setItem('maganghub.token', 'm')
     localStorage.setItem('shelia.history', '[]')
@@ -71,6 +71,6 @@ describe('LoginPage', () => {
     await act(async () => { await out() })
     expect(getToken()).toBeNull()
     expect(localStorage.getItem('maganghub.token')).toBe('m')
-    expect(localStorage.getItem('shelia.history')).toBe('[]')
+    expect(localStorage.getItem('shelia.history')).toBeNull()
   })
 })

@@ -15,16 +15,28 @@ export const DEFAULT_MODEL: ModelId = 'deepseek-flash'
 const KEYS = ['activity_log', 'lesson_learned', 'obstacles'] as const
 const LONG = 160 // above this, ask once for a shorter text (never cut by code)
 
-const SYSTEM = `Kamu menulis log harian magang (MagangHub Kemnaker) dalam Bahasa Indonesia dari commit hari ini.
+const SYSTEM = `Kamu membantu peserta magang (MagangHub Kemnaker) menulis log harian dari commit pekerjaannya.
 Balas HANYA JSON: {"activity_log": "...", "lesson_learned": "...", "obstacles": "..."}.
-Aturan untuk setiap field:
-- Panjang 100–130 karakter: minimal 100, sesingkat mungkin. Satu atau dua kalimat, tanpa markdown, tanpa hash commit.
+
+Gaya bahasa: Bahasa Indonesia baku yang luwes, seperti peserta magang menulis laporan singkat untuk pembimbingnya.
+- Ikuti EYD: ejaan, tanda baca, dan huruf kapital yang benar; kalimat lengkap dan efektif.
+- Gunakan kalimat aktif tanpa subjek "saya", diawali kata kerja: "Memperbaiki…", "Menambahkan…", "Mempelajari…".
+- Tulis dengan susunan kalimat Indonesia, bukan terjemahan harfiah dari bahasa Inggris. Hindari: "melakukan implementasi" (tulis "menerapkan"), "melakukan perbaikan" (tulis "memperbaiki"), "di mana" dan "yang mana" sebagai kata sambung, "dalam rangka", "hal ini", "adalah sebuah", "berhasil" yang tidak perlu.
+- Hindari kata yang terdengar dibuat AI atau berlebihan: "secara signifikan", "memastikan", "meningkatkan pengalaman pengguna", "krusial", "optimal", "berbagai", "mulus", "efisien dan efektif".
+- Pakai kata Indonesia yang lazim: "halaman", "tampilan", "tombol", "data", "fitur", "perbaikan". Istilah teknis yang memang biasa dipakai (API, token, login, branch) boleh tetap; jangan menulis kata "commit".
+- Tanpa markdown, tanpa hash commit, tanpa nama file lengkap; sebut bagian sistemnya saja.
+
+Aturan isi untuk setiap field:
+- Panjang 100–130 karakter: minimal 100, sesingkat mungkin. Satu atau dua kalimat.
 - Hanya tulis apa yang ditunjukkan commit (pesan dan nama file). Jangan mengarang fitur, angka, alat, atau nama yang tidak ada.
-- Jangan menyalin pesan commit mentah; tulis seperti laporan kerja yang wajar.
 - Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap 100–130 karakter.
-activity_log: apa yang dikerjakan atau diubah hari ini; sebut bagian sistem yang terlihat dari nama file.
-lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh commit.
-obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, tulis bahwa tidak ada kendala berarti, lalu sebut singkat hal yang perlu dijaga atau dicek dari pekerjaan itu.`
+- Jika ada "Periode", rangkum pekerjaan selama periode itu, bukan satu hari.
+activity_log: apa yang dikerjakan atau diubah; sebut bagian sistem yang terlihat dari nama file.
+lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh.
+obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, tulis bahwa tidak ada kendala berarti, lalu sebut singkat hal yang perlu dijaga atau dicek dari pekerjaan itu.
+
+Contoh nada yang diinginkan (bukan isi):
+{"activity_log": "Memperbaiki validasi formulir login dan menambahkan pesan galat yang lebih jelas saat token akses sudah kedaluwarsa.", "lesson_learned": "Mempelajari cara aplikasi memeriksa masa berlaku token dan menampilkan pesan galat tanpa membuat pengguna keluar dari halaman.", "obstacles": "Tidak ada kendala berarti. Alur login perlu dicek ulang di ponsel karena tampilannya sempat bergeser setelah perubahan."}`
 
 const one = (c: GitCommit) => {
   const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')
@@ -65,8 +77,10 @@ async function ask(messages: Msg[], key: string, model: string): Promise<Call> {
 }
 
 /** At most two calls: a second one only to fix a field under 100 or over 160 characters. */
-export async function generateLog(commits: GitCommit[], deepseekKey: string, model: string = DEFAULT_MODEL): Promise<LogTexts | { error: string }> {
-  const messages: Msg[] = [{ role: 'system', content: SYSTEM }, { role: 'user', content: describeCommits(commits) }]
+/** period: e.g. "10–12 Nov 2026" when the commits span a chosen range (absent for today). */
+export async function generateLog(commits: GitCommit[], deepseekKey: string, model: string = DEFAULT_MODEL, period?: string): Promise<LogTexts | { error: string }> {
+  const user = `${period ? `Periode: ${period}\n\n` : ''}${describeCommits(commits)}`
+  const messages: Msg[] = [{ role: 'system', content: SYSTEM }, { role: 'user', content: user }]
   const first = await ask(messages, deepseekKey, model)
   if ('error' in first) return first
   const short = KEYS.filter((k) => first.texts[k].length < MIN_CHARS)

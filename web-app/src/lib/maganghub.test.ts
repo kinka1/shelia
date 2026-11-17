@@ -56,3 +56,13 @@ describe('fetchDailyLogs element filtering', () => {
     expect((await fetchDailyLogs(1)).rows[0]).toMatchObject({ clock_in: '14:52', status: 'APPROVED' })
   })
 })
+
+describe('Keluar (signOutMh)', () => {
+  it('also erases the draft and the Generate settings (keys included), keeps the logged-out marker', async () => {
+    const { signOutMh, mhSignedOut } = await import('./maganghub')
+    localStorage.setItem(MH_KEY, 'x'); localStorage.setItem('maganghub.draft', '{}'); localStorage.setItem('generate.settings', '{}')
+    signOutMh()
+    for (const k of [MH_KEY, 'maganghub.draft', 'generate.settings']) expect(localStorage.getItem(k)).toBeNull()
+    expect(mhSignedOut()).toBe(true)
+  })
+})

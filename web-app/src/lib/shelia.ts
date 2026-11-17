@@ -31,9 +31,11 @@ export function saveSession(token: string, emp: object): void {
   storageSet(STORAGE.employee, JSON.stringify(emp))
 }
 /** Forget the Shelia login only; MagangHub has its own Keluar. */
-export function clearSession(): void {
+/** everything = Keluar: also erases what Shelia kept here. An expired login (false) keeps the history. */
+export function clearSession(everything = false): void {
   storageDel(STORAGE.token)
   storageDel(STORAGE.employee)
+  if (everything) storageDel('shelia.history')
 }
 
 const unauthorized = new Set<() => void>()

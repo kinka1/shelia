@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { fetchTodayCommits, repoLinks, tokenUrl, type RepoLink, type Settings } from '@/lib/gitCommits'
+import { fetchTodayCommits, periodLabel, repoLinks, tokenUrl, type Days, type RepoLink, type Settings } from '@/lib/gitCommits'
+import { todayWIB } from '@/lib/dailyLog'
 import { DEFAULT_MODEL, MODELS, generateLog, type LogTexts } from '@/lib/generateLog'
 
 const KEY = 'generate.settings'
@@ -28,6 +29,16 @@ export const setGenSettings = (s: Settings): void => { try { localStorage.setIte
 export const clearGenSettings = (): void => { try { localStorage.removeItem(KEY) } catch { /* storage blocked */ } }
 
 /** Every field is required (a token per repo, so the user is known from it). */
+const MAX_DAYS = 31
+const dayDiff = (d: Days) => (Date.parse(d.until) - Date.parse(d.from)) / 86_400_000
+function checkDays(d: Days, today: string): string {
+  if (!d.from || !d.until) return 'Isi tanggal "Dari" dan "Sampai".'
+  if (d.until > today) return 'Tanggal tidak boleh melewati hari ini.'
+  if (d.from > d.until) return 'Tanggal "Dari" harus sebelum atau sama dengan "Sampai".'
+  if (dayDiff(d) + 1 > MAX_DAYS) return `Rentang paling lama ${MAX_DAYS} hari.`
+  return ''
+}
+
 const complete = (f: Form) => !!f.deepseekKey.trim() && f.repos.every((r) => r.url.trim() && r.token?.trim())
 
 /** Generate fills the three texts from today's commits; the user reviews before sending. */
@@ -42,6 +53,9 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
   const [err, setErr] = useState('')
   const [note, setNote] = useState('')
   const running = useRef(false)
+  const today = todayWIB()
+  const [ranged, setRanged] = useState(false) // Pilih tanggal: generate from a from–until range instead of today
+  const [days, setDays] = useState<Days>({ from: today, until: today })
   useEffect(() => { onBusy?.(busy) }, [busy, onBusy])
 
   function openSettings() {
@@ -50,22 +64,32 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
     setFormErr(''); setTried(false); setShow(false); setOpen(true)
   }
 
-  async function run(s: Settings) {
+  async function run(s: Settings, d?: Days) {
     if (running.current) return
     running.current = true; setBusy(true); setErr(''); setNote('')
     const before = value
     try {
-      const c = await fetchTodayCommits(s)
+      const c = d ? await fetchTodayCommits(s, new Date(), d) : await fetchTodayCommits(s)
       if ('error' in c) return setErr(c.error)
       setNote([c.note, c.trimmed && 'Hanya 30 commit pertama dipakai'].filter(Boolean).join('\n'))
-      const t = await generateLog(c.commits, s.deepseekKey, s.model ?? DEFAULT_MODEL)
+      const onlyToday = !d || (d.from === today && d.until === today)
+      const t = onlyToday
+        ? await generateLog(c.commits, s.deepseekKey, s.model ?? DEFAULT_MODEL)
+        : await generateLog(c.commits, s.deepseekKey, s.model ?? DEFAULT_MODEL, periodLabel(d))
       if ('error' in t) return setErr(t.error)
       onChange(t)
       toast.success(`Dibuat dari ${c.commits.length} commit. Periksa sebelum mengirim.`, { action: { label: 'Batalkan', onClick: () => onChange(before) } })
     } finally { running.current = false; setBusy(false) }
   }
 
-  function generate() { const s = getGenSettings(); if (s) void run(s); else openSettings() }
+  function generate() {
+    const s = getGenSettings()
+    if (!s) return openSettings()
+    if (!ranged) return void run(s)
+    const e = checkDays(days, today)
+    if (e) return setErr(e)
+    void run(s, days)
+  }
 
   function save() {
     setTried(true)
@@ -96,12 +120,26 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
       <Button type="button" variant="outline" size="sm" className={SMALL} disabled={busy} onClick={generate}>
         {busy ? 'Membuat…' : 'Generate'}
       </Button>
+      <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" aria-expanded={ranged} disabled={busy}
+        onClick={() => { setRanged(!ranged); setErr('') }}>{ranged ? 'Hari ini saja' : 'Pilih tanggal'}</Button>
       <Button type="button" variant="ghost" size="icon" className="size-6" aria-label="Pengaturan Generate" onClick={openSettings}>
         <Settings2 className="size-3.5" />
       </Button>
       {saved
         ? <span className="text-xs text-success-ink">Diatur · {repoLinks(saved).length} repo</span>
         : <span className="text-xs text-warning-ink">Belum diatur</span>}
+      {ranged && (
+        <div className="flex w-full flex-wrap items-end gap-2">
+          {(['from', 'until'] as const).map((k) => (
+            <div key={k} className="flex flex-col gap-1">
+              <Label htmlFor={`gen-${k}`} className="text-xs font-semibold text-muted-foreground">{k === 'from' ? 'Dari' : 'Sampai'}</Label>
+              <Input id={`gen-${k}`} type="date" className="h-8 w-auto text-xs" max={today} disabled={busy}
+                value={days[k]} onChange={(e) => { setDays({ ...days, [k]: e.target.value }); setErr('') }} />
+            </div>
+          ))}
+          <span className="pb-2 text-xs text-muted-foreground">Paling lama {MAX_DAYS} hari.</span>
+        </div>
+      )}
       {note && <p className="w-full whitespace-pre-line text-xs text-warning-ink">{note}</p>}
       {err && <p role="alert" className="w-full whitespace-pre-line text-xs text-destructive-ink">{err}</p>}
 

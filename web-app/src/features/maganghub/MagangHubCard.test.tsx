@@ -325,9 +325,22 @@ describe('MagangHubCard Kosongkan', () => {
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('')
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue('')
     expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
-    await waitFor(() => expect(JSON.parse(localStorage.getItem('maganghub.draft')!).v.activity_log).toBe(''))
+    await waitFor(() => expect(localStorage.getItem('maganghub.draft')).toBeNull())
     fireEvent.click(await screen.findByRole('button', { name: 'Batalkan' }))
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('aku')
     expect(screen.getByLabelText('Latitude')).toHaveValue('-6.2')
+  })
+})
+
+describe('MagangHubCard Keluar', () => {
+  it('empties the form and leaves no draft behind', async () => {
+    localStorage.setItem('maganghub.draft', JSON.stringify({ date: TODAY, v: { activity_log: 'rahasia', lesson_learned: 'b', obstacles: 'c' }, point: { lat: -6.2, lng: 106.8 } }))
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Keluar' })[0])
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull())
+    await waitFor(() => expect(localStorage.getItem('maganghub.draft')).toBeNull())
+    expect(localStorage.getItem('generate.settings')).toBeNull()
   })
 })
