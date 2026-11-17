@@ -57,6 +57,15 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
   const [ranged, setRanged] = useState(false) // Pilih tanggal: generate from a from–until range instead of today
   const [days, setDays] = useState<Days>({ from: today, until: today })
   useEffect(() => { onBusy?.(busy) }, [busy, onBusy])
+  // A reminder click opens the page with ?generate=1: generate once, only into empty fields.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    if (!q.has('generate')) return
+    q.delete('generate')
+    window.history.replaceState(window.history.state, '', window.location.pathname + (q.size ? `?${q}` : '') + window.location.hash)
+    const s = getGenSettings()
+    if (s && !value.activity_log.trim() && !value.lesson_learned.trim() && !value.obstacles.trim()) void run(s)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openSettings() {
     const s = getGenSettings()

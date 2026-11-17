@@ -11,6 +11,7 @@ import {
   type TimedToken,
 } from '@/lib/attendance'
 import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
+import { extRemind, remindSchedule } from '@/lib/extension'
 import { CameraCapture } from './CameraCapture'
 import { SessionNotes } from './Sessions'
 import type { useToday } from './useToday'
@@ -118,6 +119,9 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
   }
 
   const shift = shifts.find((x) => x.id === shiftId)
+  const times = JSON.stringify(remindSchedule(shift))
+  // The picked (or only) shift sets the reminder times in the extension.
+  useEffect(() => { const t = JSON.parse(times); if (t) void extRemind({ schedule: t }) }, [times])
   const outside = !!today?.is_outside_location
   // Satu baris pendek, seperti "Log harian" di MagangHub: langkahnya, shift, dan posisi terhadap area.
   const subtitle = [

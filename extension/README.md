@@ -11,3 +11,10 @@ Semua permintaan dibuat di halaman MagangHub sendiri, dari browser Anda; tidak l
 Setelah terpasang, tab test-shelia yang terbuka dimuat ulang otomatis.
 
 ID ekstensi: `fiagillffjfgpckjfblgknnhhcahecdj` (tetap, dari `key` di manifest).
+
+## Pengingat absen (1.2.0)
+Senin–Jumat, 15 menit sebelum absen masuk ditutup dan 15 menit sebelum absen pulang dibuka (jam dari
+shift yang dipilih di test-shelia; awalnya 08:00 / 17:00). Pengingat tidak muncul untuk yang sudah
+selesai hari ini. Klik notifikasi membuka halaman Absen; kalau log belum dikirim, Generate berjalan
+otomatis bila Pengaturan Generate sudah diisi. Hanya jam dan status selesai/belum yang disimpan di
+ekstensi, tidak ada token. Chrome harus menyala agar pengingat muncul.

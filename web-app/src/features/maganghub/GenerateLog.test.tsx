@@ -27,6 +27,27 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
+describe('GenerateLog from a reminder (?generate=1)', () => {
+  const saved = () => localStorage.setItem('generate.settings', JSON.stringify({ repos: [{ url: SETTINGS.repo, token: 'T' }], deepseekKey: 'K' }))
+  afterEach(() => window.history.replaceState(null, '', '/'))
+  it('generates once when settings exist and the texts are empty, then drops the flag', async () => {
+    saved(); window.history.replaceState(null, '', '/?generate=1')
+    const onChange = ui({ activity_log: '', lesson_learned: '', obstacles: '' })
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(TEXTS))
+    expect(fetchTodayCommits).toHaveBeenCalledTimes(1)
+    expect(window.location.search).toBe('')
+  })
+  it('never overwrites typed text, and does nothing without the flag', async () => {
+    saved(); window.history.replaceState(null, '', '/?generate=1')
+    ui(EMPTY)
+    expect(window.location.search).toBe('')
+    window.history.replaceState(null, '', '/')
+    ui({ activity_log: '', lesson_learned: '', obstacles: '' })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(fetchTodayCommits).not.toHaveBeenCalled()
+  })
+})
+
 describe('GenerateLog', () => {
   it('first click without settings opens the settings; Simpan saves them and generates', async () => {
     const onChange = ui()

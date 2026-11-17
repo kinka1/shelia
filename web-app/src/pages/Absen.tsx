@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CheckCircle2, CircleDashed, Clock3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,6 +9,8 @@ import { useToday } from '@/features/shelia/useToday'
 import { useSession } from '@/features/session/SessionProvider'
 import LoginPage from '@/features/session/LoginPage'
 import { fmtTime } from '@/lib/attendance'
+import { todayWIB } from '@/lib/dailyLog'
+import { extRemind } from '@/lib/extension'
 import { cn } from '@/lib/utils'
 
 type Tone = 'done' | 'partial' | 'todo'
@@ -40,6 +42,12 @@ export function sheliaItem(today: any, loading: boolean, loggedIn = true): Item 
   if (today.next_action === 'check_out')
     return { name: 'Shelia', tone: 'partial', value: `Sudah masuk ${inAt}${late}`, action: 'Check-out', target: 'form-shelia' }
   return { name: 'Shelia', tone: 'done', value: `Masuk ${inAt}${outAt !== '-' ? ` · pulang ${outAt}` : ''}${late}`, target: 'form-shelia' }
+}
+
+/** Today's done flags for the reminder in the extension. */
+export function remindStatus(today: any, sentAt: string | null, date: string) {
+  const masuk = sheliaDone(today)
+  return { date, masuk, pulang: masuk && today?.next_action !== 'check_out', log: !!sentAt }
 }
 
 export function mhItem(sentAt: string | null, connected: boolean): Item {
@@ -98,6 +106,8 @@ export default function Absen() {
   const shelia = useToday(!!token)
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [mhConnected, setMhConnected] = useState(false)
+  const status = token && shelia.today ? JSON.stringify(remindStatus(shelia.today, sentAt, todayWIB())) : ''
+  useEffect(() => { if (status) void extRemind({ status: JSON.parse(status) }) }, [status])
   return (
     <div className="space-y-5">
       <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading, !!token)} mh={mhItem(sentAt, mhConnected)} loading={!!token && shelia.loading} />

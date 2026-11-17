@@ -40,6 +40,16 @@ export const extSend = async (body: object): Promise<ExtResult> =>
 
 export const EXT_POLL_MS = 3000
 
+type Shift = Record<string, unknown> | undefined
+const hm = (t: unknown) => (typeof t === 'string' && /^\d\d:\d\d/.test(t) ? t.slice(0, 5) : null)
+/** Reminder events from a shift (option A): check-in closes, check-out opens. */
+export function remindSchedule(s: Shift): { masuk: string; pulang: string } | null {
+  const masuk = hm(s?.check_in_end), pulang = hm(s?.check_out_start)
+  return masuk && pulang ? { masuk, pulang } : null
+}
+/** Tell the reminder in the extension the shift times or today's status: times and flags only, never tokens. */
+export const extRemind = (m: { schedule?: object; status?: object }) => call({ type: 'remind', ...m }, 2000)
+
 /** Installed extension version; null when absent, undefined while the first check runs.
  *  Re-checked every few seconds while the tab is visible (a hello costs ~1 ms), so removing or
  *  disabling it shows up without a reload; the extension reloads this page after an install. */
