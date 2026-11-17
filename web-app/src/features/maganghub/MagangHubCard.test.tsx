@@ -162,17 +162,38 @@ describe('MagangHubCard gates', () => {
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue(texts.obstacles)
   })
 
-  it('the three fields are read-only while Generate runs', async () => {
+  it('while Generate runs the fields are greyed and locked, typed text stays, then it is replaced', async () => {
+    const texts = { activity_log: 'a'.repeat(110), lesson_learned: 'b'.repeat(110), obstacles: 'c'.repeat(110) }
     localStorage.setItem('generate.settings', JSON.stringify({ repo: 'https://github.com/o/r', token: 'T', deepseekKey: 'K' }))
-    const gc = await import('@/lib/gitCommits')
-    vi.spyOn(gc, 'fetchTodayCommits').mockReturnValue(new Promise(() => {}))
+    const gc = await import('@/lib/gitCommits'); const gl = await import('@/lib/generateLog')
+    let release!: (v: any) => void
+    vi.spyOn(gc, 'fetchTodayCommits').mockResolvedValue({ commits: [], trimmed: false })
+    vi.spyOn(gl, 'generateLog').mockReturnValue(new Promise((r) => { release = r }))
     setup()
     render(<MagangHubCard />)
     await screen.findByLabelText('Tanggal')
+    const box = screen.getByRole('textbox', { name: 'Aktivitas' })
+    fireEvent.change(box, { target: { value: 'ketikan saya' } })
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
-    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveAttribute('readonly'))
+    await waitFor(() => expect(box).toHaveAttribute('readonly'))
+    expect(box).toHaveValue('ketikan saya')
+    expect(box.className).toMatch(/bg-muted/)
+    release(texts)
+    await waitFor(() => expect(box).toHaveValue(texts.activity_log))
+    await waitFor(() => expect(box).not.toHaveAttribute('readonly'))
   })
 
+  it('Perbarui token greys out and locks the card until it finishes', async () => {
+    let answer!: (v: unknown) => void
+    setup({ answer: (m) => (m.type === 'token' ? new Promise((r) => { answer = r }) : { ok: true }) })
+    const { container } = render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    await waitFor(() => expect(container.querySelector('[inert]')).not.toBeNull())
+    expect(container.querySelector('[inert]')).toContainElement(screen.getByRole('textbox', { name: 'Aktivitas' }))
+    answer({ error: 'login' })
+    await waitFor(() => expect(container.querySelector('[inert]')).toBeNull())
+  })
   it('cannot send while checking whether today is already sent', async () => {
     setup()
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {}))) // the check never answers

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from '@/App'
 import { SessionProvider } from '@/features/session/SessionProvider'
@@ -87,5 +87,21 @@ describe('AppShell', () => {
     expect(await screen.findByText(/Check-out mulai/)).toBeInTheDocument()
     expect(screen.getByText(/Menunggu pemeriksaan HR/)).toBeInTheDocument()
     expect(screen.queryByText(/Sesi 1/)).toBeNull()
+  })
+
+  it('Muat ulang status greys out and locks the Shelia card until it finishes', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    let hold: ((r: Response) => void) | null = null
+    const body = () => new Response(JSON.stringify({ data: { next_action: 'none', sessions: [] } }))
+    vi.stubGlobal('fetch', vi.fn(() => (hold === null ? Promise.resolve(body()) : new Promise<Response>((r) => { hold = r }))))
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    const shelia = (await screen.findByRole('heading', { name: 'Shelia' })).closest('section')!
+    await within(shelia).findByRole('button', { name: 'Muat ulang status' })
+    hold = () => {}
+    fireEvent.click(within(shelia).getByRole('button', { name: 'Muat ulang status' }))
+    await waitFor(() => expect(shelia.querySelector('[inert]')).not.toBeNull())
+    expect(shelia.querySelector('[inert]')!.className).toMatch(/opacity/)
+    hold!(body())
+    await waitFor(() => expect(shelia.querySelector('[inert]')).toBeNull())
   })
 })

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -41,8 +41,9 @@ function InstallSteps() {
 }
 
 /** Header button: Perbarui token in one click with the extension; otherwise how to install it. */
-export function MhConnect({ installed, onRefresh }: { installed: boolean; onRefresh: () => void }) {
+export function MhConnect({ installed, onRefresh, onBusy }: { installed: boolean; onRefresh: () => void; onBusy?: (busy: boolean) => void }) {
   const { busy, err, refresh } = useTokenRefresh(onRefresh)
+  useEffect(() => { onBusy?.(busy) }, [busy, onBusy])
 
   if (installed) return (
     <span className="inline-flex items-center gap-2">

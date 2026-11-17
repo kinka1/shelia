@@ -35,6 +35,7 @@ function Note({ tone, children }: { tone: 'warning' | 'destructive' | 'info'; ch
 
 export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType<typeof useToday>) {
   const { logout } = useSession()
+  const refreshing = loading && !!today
   const [shiftId, setShiftId] = useState('')
   const [reason, setReason] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
@@ -146,6 +147,8 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         </Button>
         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => void logout()}>Keluar</Button>
       </div>
+      {/* While Muat ulang status runs the card is greyed and can't be clicked (unlocks on success or failure). */}
+      <div inert={refreshing} aria-busy={refreshing || undefined} className={refreshing ? 'pointer-events-none select-none opacity-50 transition-opacity' : 'transition-opacity'}>
       {done && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
           <CheckCircle2 className="size-4 shrink-0 text-success-ink" aria-hidden />
@@ -223,6 +226,7 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         )}
       </div>
       </>)}
+      </div>
     </section>
   )
 }
