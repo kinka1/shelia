@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { fetchTodayCommits, repoLinks, type RepoLink, type Settings } from '@/lib/gitCommits'
+import { fetchTodayCommits, repoLinks, tokenUrl, type RepoLink, type Settings } from '@/lib/gitCommits'
 import { DEFAULT_MODEL, MODELS, generateLog, type LogTexts } from '@/lib/generateLog'
 
 const KEY = 'generate.settings'
@@ -114,8 +114,8 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
           </DialogHeader>
           <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
             <p className="text-xs text-muted-foreground">
-              Semua isian wajib (<span aria-hidden className="text-destructive-ink">*</span>). Token cukup dengan akses baca: GitHub fine-grained token
-              (Contents: read) atau GitLab token (read_api).
+              Semua isian wajib (<span aria-hidden className="text-destructive-ink">*</span>). Token cukup dengan akses baca; tautan
+              “Buat token” membuka halaman GitHub/GitLab yang sudah terisi.
             </p>
             {form.repos.map((r, i) => (
               <fieldset key={i} className="flex flex-col gap-2 rounded-md border p-3">
@@ -128,6 +128,17 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
                 </legend>
                 {input(`gen-repo-${i}`, `Link repo ${i + 1}`, r.url, (v) => setRepo(i, { url: v }), { placeholder: 'https://github.com/nama/repo' })}
                 {input(`gen-token-${i}`, 'Token akses (GitHub atau GitLab)', r.token ?? '', (v) => setRepo(i, { token: v }), { secret: true, srLabel: `repo ${i + 1}` })}
+                {(() => {
+                  const t = tokenUrl(r.url)
+                  return t ? (
+                    <p className="text-xs text-muted-foreground">
+                      <a href={t.href} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-ink underline underline-offset-2">
+                        Buat token di {t.site}<span className="sr-only"> (tab baru)</span> ↗
+                      </a>{' '}
+                      — isiannya sudah terisi, hanya akses baca. Salin token yang dibuat ke sini.
+                    </p>
+                  ) : <p className="text-xs text-muted-foreground">Isi link repo dulu untuk membuat token.</p>
+                })()}
               </fieldset>
             ))}
             {form.repos.length < MAX_REPOS && (

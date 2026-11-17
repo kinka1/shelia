@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchTodayCommits, parseRepo, todayRangeWIB } from './gitCommits'
+import { fetchTodayCommits, parseRepo, todayRangeWIB, tokenUrl } from './gitCommits'
 
 const NOW = new Date('2026-11-17T10:00:00Z')
 const ok = (b: unknown) => new Response(JSON.stringify(b))
@@ -238,4 +238,26 @@ describe('edge cases (QA)', () => {
     expect(r).toMatchObject({ commits: [{ sha: 'c100', files: [{ path: 'q.sql', additions: 1, deletions: 2 }] }] })
     expect(f.mock.calls.map(([u]) => u).some((u) => u.includes('/diff?per_page=100'))).toBe(true)
   })
+})
+
+describe('tokenUrl (pre-filled "new token" page)', () => {
+  it('GitHub: fine-grained, read-only contents, for the repo owner', () => {
+    const u = new URL(tokenUrl('https://github.com/kinka1/shelia')!.href)
+    expect(u.origin + u.pathname).toBe('https://github.com/settings/personal-access-tokens/new')
+    expect(Object.fromEntries(u.searchParams)).toEqual({
+      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (test-shelia).',
+      target_name: 'kinka1', expires_in: '366', contents: 'read',
+    })
+    expect(tokenUrl('https://github.com/kinka1/shelia')!.site).toBe('GitHub')
+  })
+  it('GitLab (also self-hosted): read_api only', () => {
+    const t = tokenUrl('git@gitlab.example.com:g/sub/r.git')!
+    const u = new URL(t.href)
+    expect(u.origin + u.pathname).toBe('https://gitlab.example.com/-/user_settings/personal_access_tokens')
+    expect(Object.fromEntries(u.searchParams)).toEqual({
+      name: 'Shelia Generate', description: 'Baca commit untuk log harian MagangHub (test-shelia).', scopes: 'read_api',
+    })
+    expect(t.site).toBe('GitLab')
+  })
+  it('no usable link → null', () => expect(tokenUrl('')).toBeNull())
 })

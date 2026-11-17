@@ -34,6 +34,23 @@ export function parseRepo(url: string): { kind: 'github' | 'gitlab'; api: string
   return { kind: 'gitlab', api: `https://${host}${u.port ? `:${u.port}` : ''}/api/v4`, path, host }
 }
 
+const TOKEN_NAME = 'Shelia Generate'
+const TOKEN_NOTE = 'Baca commit untuk log harian MagangHub (test-shelia).'
+
+/** The site's own "new token" page, pre-filled read-only (documented URL parameters of both sites):
+ *  GitHub fine-grained token with Contents: read for the repo owner, 366 days (the maximum);
+ *  GitLab (also self-hosted) with the read_api scope. */
+export function tokenUrl(repoUrl: string): { href: string; site: 'GitHub' | 'GitLab' } | null {
+  const r = parseRepo(repoUrl)
+  if (!r) return null
+  if (r.kind === 'github') {
+    const p = new URLSearchParams({ name: TOKEN_NAME, description: TOKEN_NOTE, target_name: r.path.split('/')[0], expires_in: '366', contents: 'read' })
+    return { href: `https://github.com/settings/personal-access-tokens/new?${p}`, site: 'GitHub' }
+  }
+  const p = new URLSearchParams({ name: TOKEN_NAME, description: TOKEN_NOTE, scopes: 'read_api' })
+  return { href: `${r.api.replace(/\/api\/v4$/, '')}/-/user_settings/personal_access_tokens?${p}`, site: 'GitLab' }
+}
+
 /** 00:00–24:00 in Jakarta (UTC+7, no DST) as UTC ISO strings. */
 export function todayRangeWIB(now = new Date()): { since: string; until: string } {
   const since = new Date(`${todayWIB(now)}T00:00:00+07:00`)

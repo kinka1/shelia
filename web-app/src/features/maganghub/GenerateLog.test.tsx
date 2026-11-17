@@ -165,4 +165,15 @@ describe('GenerateLog', () => {
     await waitFor(() => expect(generateLog).toHaveBeenCalledWith(expect.any(Array), 'K', 'deepseek-v4-pro'))
     expect(JSON.parse(localStorage.getItem('generate.settings')!).model).toBe('deepseek-v4-pro')
   })
+
+  it('each repo offers a pre-filled "new token" link built from its link', async () => {
+    ui()
+    fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
+    expect(await screen.findByText('Isi link repo dulu untuk membuat token.')).toBeInTheDocument()
+    type(/^Link repo 1/, 'https://gitlab.com/g/r')
+    const a = screen.getByRole('link', { name: /Buat token di GitLab/ })
+    expect(a.getAttribute('href')).toMatch(/^https:\/\/gitlab\.com\/-\/user_settings\/personal_access_tokens\?/)
+    expect(a).toHaveAttribute('target', '_blank')
+    expect(a).toHaveAttribute('rel', 'noopener noreferrer')
+  })
 })
