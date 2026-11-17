@@ -54,6 +54,7 @@ describe('AppShell', () => {
     render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
     const shelia = (await screen.findByRole('heading', { name: 'Shelia' })).closest('section')!
     expect(within(shelia).getByText('Terhubung')).toBeInTheDocument()
+    expect(within(shelia).getByRole('button', { name: 'Muat ulang status' })).toHaveTextContent('Muat ulang status')
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Menu akun' }), { button: 0, ctrlKey: false })
     expect(await screen.findByText('Budi')).toBeInTheDocument()
     expect(screen.queryByRole('menuitem', { name: 'Keluar' })).toBeNull()

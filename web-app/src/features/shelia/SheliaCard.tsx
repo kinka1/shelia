@@ -141,8 +141,8 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         <span className="flex-1" />
         <StatusPill status="closed" label="Terhubung" />
         {done && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
-        <Button variant="ghost" size="icon" aria-label="Muat ulang" disabled={loading} onClick={() => void reload()}>
-          <RefreshCw className={loading ? 'animate-spin' : ''} />
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" disabled={loading} onClick={() => void reload()}>
+          <RefreshCw className={loading ? 'animate-spin' : ''} aria-hidden /> Muat ulang status
         </Button>
         <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => void logout()}>Keluar</Button>
       </div>
