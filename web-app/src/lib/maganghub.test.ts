@@ -3,7 +3,7 @@ import { MH_KEY, bookmarkletHref, fetchDailyLogs, intakeTokenFromLocation, takeT
 
 const ORIGIN = 'https://test-shelia.holo.my.id'
 function runBookmarklet(token: string | null, hostname = 'monev.maganghub.kemnaker.go.id') {
-  const calls = { open: [] as unknown[][], alert: [] as string[] }
+  const calls = { open: [] as unknown[][], alert: [] as string[], go: '' }
   const href = bookmarkletHref(ORIGIN)
   expect(href.startsWith('javascript:')).toBe(true)
   expect(href).not.toContain('#')
@@ -12,7 +12,7 @@ function runBookmarklet(token: string | null, hostname = 'monev.maganghub.kemnak
     { getItem: (k: string) => (k === 'monev_access_token' ? token : null) },
     { open: (...a: unknown[]) => calls.open.push(a) },
     (m: string) => calls.alert.push(m),
-    { hostname },
+    { hostname, set href(u: string) { calls.go = u } },
   )
   return calls
 }
@@ -26,9 +26,10 @@ describe('token hand-off', () => {
     expect(takeTokenFromHash('')).toBeNull()
     expect(takeTokenFromHash('#x=1')).toBeNull()
   })
-  it('bookmarklet reads monev_access_token and opens fragment URL', () => {
+  it('bookmarklet reads monev_access_token and sends the same tab to our fragment URL', () => {
     const c = runBookmarklet('tok/1')
-    expect(c.open).toEqual([[ORIGIN + '/#mh=tok%2F1', '_blank', 'noopener']])
+    expect(c.go).toBe(ORIGIN + '/#mh=tok%2F1')
+    expect(c.open).toEqual([])
     expect(c.alert).toEqual([])
   })
   it('bookmarklet refuses other hosts and logged-out state', () => {

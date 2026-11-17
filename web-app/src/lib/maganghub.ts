@@ -1,4 +1,5 @@
 import { loggedFetch } from './apiLog'
+import { closeIfAnotherTab } from './handoff'
 
 export const MH_KEY = 'maganghub.token'
 const API = '/maganghub-api/v1'
@@ -16,7 +17,7 @@ export function takeTokenFromHash(hash: string): string | null {
 export function bookmarkletHref(origin: string): string {
   const code = "(function(){if(location.hostname!=='monev.maganghub.kemnaker.go.id'){alert('Buka halaman MagangHub dulu');return}var t=sessionStorage.getItem('monev_access_token');" +
     "if(!t){alert('Login MagangHub dulu');return}" +
-    'window.open(' + JSON.stringify(origin + '/#mh=') + "+encodeURIComponent(t),'_blank','noopener')})();"
+    'location.href=' + JSON.stringify(origin + '/#mh=') + '+encodeURIComponent(t)})();'
   return 'javascript:' + encodeURI(code).replace(/#/g, '%23') // a raw # would truncate a saved bookmark
 }
 
@@ -24,10 +25,12 @@ export const getMhToken = (): string | null => { try { return localStorage.getIt
 export const clearMhToken = (): void => { try { localStorage.removeItem(MH_KEY) } catch { /* storage blocked */ } }
 
 export function intakeTokenFromLocation(): void {
+  const sent = location.hash === '#mh-sent' // back from the → Kirim log bookmark
   const t = takeTokenFromHash(location.hash)
-  if (!t) return
-  try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ }
+  if (!t && !sent) return
+  if (t) try { localStorage.setItem(MH_KEY, t) } catch { /* storage blocked */ }
   history.replaceState(null, '', location.pathname + location.search)
+  closeIfAnotherTab(sent ? 'sent' : undefined)
 }
 
 export function tokenExpiry(token: string): Date | null {

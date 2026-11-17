@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { fmtDate } from './LogDetailSheet'
 import { MIN_CHARS, fetchMyToday, fieldState, remainingFields, todayWIB } from '@/lib/dailyLog'
 import { sendBookmarkletHref, sendUrl } from '@/lib/sendBookmarklet'
+import { onLogSent } from '@/lib/handoff'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
 import { TokenDialog } from './TokenDialog'
@@ -42,7 +43,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [confirming, setConfirming] = useState(false)
   const [waiting, setWaiting] = useState(false) // MagangHub tab opened; the send happens there
   // React 19 blocks javascript: hrefs set as props, so set it on the node.
-  const sendBookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', sendBookmarkletHref()), [])
+  const sendBookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', sendBookmarkletHref(location.origin)), [])
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -71,6 +72,9 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
     setConfirming(false)
     setWaiting(true)
   }
+
+  // The bookmark's tab tells us it sent the log, then closes.
+  useEffect(() => onLogSent(() => void check().then((r) => { if (r) setWaiting(false) })), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Back from the MagangHub tab: look again whether the log arrived.
   useEffect(() => {

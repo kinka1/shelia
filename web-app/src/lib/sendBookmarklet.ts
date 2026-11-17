@@ -17,7 +17,7 @@ export function sendUrl(v: SendLog): string {
 }
 
 // Plain ES5 so it runs as a bookmark on any browser. Only the whitelisted fields are ever sent.
-const CODE = `(function(){
+const CODE = (origin: string) => `(function(){
 if(location.hostname!=='monev.maganghub.kemnaker.go.id'){alert('Buka halaman MagangHub dulu');return}
 var p=${JSON.stringify(KEY)};
 if(location.hash.indexOf(p)!==0){alert('Data log tidak ditemukan. Klik "Buka MagangHub" di Shelia dulu.');return}
@@ -33,10 +33,10 @@ if(!confirm('Kirim ke MagangHub?\\n\\nTanggal: '+b.date+'\\nKehadiran: Hadir\\nT
 var c=(window.__NUXT__&&window.__NUXT__.config&&window.__NUXT__.config.public)||{};
 var h={'Content-Type':'application/json',Authorization:'Bearer '+t};if(c.buildId)h['X-Frontend-Build-ID']=c.buildId;
 fetch('https://monev-api.maganghub.kemnaker.go.id/api/v1/attendances',{method:'POST',credentials:'include',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){
-if(r.ok){history.replaceState(null,'',location.pathname+location.search);alert('Terkirim ke MagangHub.');location.reload();return}
+if(r.ok){location.href=${JSON.stringify(origin + '/#mh-sent')};return}
 alert('Gagal mengirim (HTTP '+r.status+'): '+(j.message||j.error||'')+(r.status===401?'\\nMuat ulang halaman MagangHub, lalu klik bookmark ini lagi.':''))})}).catch(function(){alert('Gagal terhubung ke MagangHub.')})
 })();`
 
-export function sendBookmarkletHref(): string {
-  return 'javascript:' + encodeURI(CODE.replace(/\n/g, '')).replace(/#/g, '%23') // a raw # would truncate a saved bookmark
+export function sendBookmarkletHref(origin: string): string {
+  return 'javascript:' + encodeURI(CODE(origin).replace(/\n/g, '')).replace(/#/g, '%23') // a raw # would truncate a saved bookmark
 }

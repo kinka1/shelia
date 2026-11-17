@@ -7,7 +7,7 @@ import { bookmarkletHref } from '@/lib/maganghub'
 const MH_URL = 'https://monev.maganghub.kemnaker.go.id/'
 const STEPS = [
   'Seret tombol ke bookmark bar',
-  <>Buka <a href={MH_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-primary-ink underline underline-offset-2">MagangHub</a> dan login</>,
+  <>Buka <a href={MH_URL} target="_blank" rel="noopener noreferrer" onClick={(e) => { e.preventDefault(); window.open(MH_URL, '_blank', 'noopener') }} className="font-medium text-primary-ink underline underline-offset-2">MagangHub</a> dan login</>,
   'Klik bookmark → Shelia',
 ]
 

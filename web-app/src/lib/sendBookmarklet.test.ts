@@ -5,20 +5,20 @@ const log = { activity_log: 'a'.repeat(100), lesson_learned: 'b'.repeat(100), ob
 
 /** Run the bookmarklet as if clicked on a page with this hash, with fake browser globals. */
 function run(hash: string, opts: { host?: string; token?: string | null; ok?: boolean; confirm?: boolean } = {}) {
-  const href = sendBookmarkletHref()
+  const href = sendBookmarkletHref('https://test-shelia.holo.my.id')
   const code = decodeURIComponent(href.slice('javascript:'.length)) // browsers fully percent-decode javascript: URLs
   const calls: { url: string; init: any }[] = []
   const alerts: string[] = []
   const fetch = vi.fn(async (url: string, init: any) => { calls.push({ url, init }); return new Response(JSON.stringify({ message: 'x' }), { status: opts.ok === false ? 422 : 201 }) })
   const win = {
-    location: { hostname: opts.host ?? 'monev.maganghub.kemnaker.go.id', hash, pathname: '/dashboard', search: '', reload: vi.fn() },
+    location: { hostname: opts.host ?? 'monev.maganghub.kemnaker.go.id', hash, pathname: '/dashboard', search: '', reload: vi.fn(), href: '' },
     sessionStorage: { getItem: () => (opts.token === undefined ? 'mh-tok' : opts.token) },
     __NUXT__: { config: { public: { buildId: 'build-1' } } },
   }
   new Function('window', 'location', 'sessionStorage', 'fetch', 'confirm', 'alert', 'history', code)(
     win, win.location, win.sessionStorage, fetch, () => opts.confirm ?? true, (m: string) => alerts.push(m), { replaceState: vi.fn() },
   )
-  return { calls, alerts, fetch }
+  return { calls, alerts, fetch, win }
 }
 
 describe('send bookmarklet (→ Kirim log)', () => {
@@ -41,6 +41,11 @@ describe('send bookmarklet (→ Kirim log)', () => {
     expect(JSON.parse(calls[0].init.body)).toEqual({ date: '2026-11-18', status: 'PRESENT', ...log, latitude: -7.3, longitude: 112.7 })
   })
 
+  it('after a successful send, takes this tab back to Shelia to close it', async () => {
+    const { win } = run('#shelia-log=' + encodeURIComponent(JSON.stringify({ date: '2026-11-18', status: 'PRESENT', ...log })))
+    await vi.waitFor(() => expect(win.location.href).toBe('https://test-shelia.holo.my.id/#mh-sent'))
+  })
+
   it('drops unknown keys and leaves coordinates out when absent', async () => {
     const { calls } = run('#shelia-log=' + encodeURIComponent(JSON.stringify({ date: '2026-11-18', status: 'PRESENT', ...log, location: 'Surabaya', participant_id: 'x' })))
     await vi.waitFor(() => expect(calls).toHaveLength(1))
@@ -60,6 +65,6 @@ describe('send bookmarklet (→ Kirim log)', () => {
   })
 
   it('a saved bookmark keeps the whole code (no raw #)', () => {
-    expect(sendBookmarkletHref().slice('javascript:'.length)).not.toContain('#')
+    expect(sendBookmarkletHref('https://test-shelia.holo.my.id').slice('javascript:'.length)).not.toContain('#')
   })
 })

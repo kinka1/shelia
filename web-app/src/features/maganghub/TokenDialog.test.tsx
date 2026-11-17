@@ -22,4 +22,12 @@ describe('TokenDialog', () => {
     expect(a).toHaveAttribute('target', '_blank')
     expect(a).toHaveAttribute('rel', 'noopener noreferrer')
   })
+  it('opens MagangHub from script so the bookmark can close that tab later', () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    render(<TokenDialog connected={false} onDisconnect={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    fireEvent.click(screen.getByRole('link', { name: 'MagangHub' }))
+    expect(open).toHaveBeenCalledWith('https://monev.maganghub.kemnaker.go.id/', '_blank', 'noopener')
+    open.mockRestore()
+  })
 })
