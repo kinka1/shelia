@@ -38,6 +38,14 @@ describe('LogApi', () => {
     expect(screen.queryByText(/"rahasia"/)).toBeNull()
   })
 
+  it('labels request and response headers on the Header tab', () => {
+    render(<LogApi />)
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Header' }), { button: 0 })
+    fireEvent.click(screen.getByRole('tab', { name: 'Header' }))
+    expect(screen.getByText('Header permintaan')).toBeInTheDocument()
+    expect(screen.getByText('Header respons')).toBeInTheDocument()
+  })
+
   it('filters by status and source', () => {
     render(<LogApi />)
     fireEvent.click(screen.getByRole('button', { name: 'Gagal (1)' }))

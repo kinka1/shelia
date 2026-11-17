@@ -1,12 +1,8 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { explain, type LogEntry } from '@/lib/apiLog'
+import { wib } from '@/lib/time'
 import { JsonView } from './JsonView'
-
-export const wib = (at: number, secs = false) =>
-  new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', ...(secs && { second: '2-digit' }), hourCycle: 'h23',
-  }).format(at).replace(/\./g, ':')
 
 export function LogDetail({ entry }: { entry: LogEntry }) {
   const x = explain(entry)
@@ -44,7 +40,9 @@ export function LogDetail({ entry }: { entry: LogEntry }) {
         <TabsContent value="req"><JsonView value={entry.reqBody} /></TabsContent>
         <TabsContent value="res"><JsonView value={entry.resBody} /></TabsContent>
         <TabsContent value="hdr" className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground">Header permintaan</p>
           <JsonView value={entry.reqHeaders} />
+          <p className="text-xs font-medium text-muted-foreground">Header respons</p>
           <JsonView value={entry.resHeaders} />
         </TabsContent>
       </Tabs>

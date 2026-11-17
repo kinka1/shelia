@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { groupEntries, type LogEntry } from '@/lib/apiLog'
-import { wib } from './LogDetail'
+import { wib } from '@/lib/time'
 
 export function LogList({ entries, selectedId, onSelect }: {
   entries: LogEntry[]; selectedId: number | undefined; onSelect: (id: number) => void
