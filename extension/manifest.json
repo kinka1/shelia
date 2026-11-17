@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Phoenix MagangHub",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Kirim log harian, ambil token MagangHub, dan ingatkan absen 15 menit sebelumnya.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtxDjgvFHdj29xhFGLPgiS1jUPOd2NMP4OhYXAlSVb7J6wCtfXPSeLnZXKCwU7G7q01n8w7+6eAevLWjQ8rbtwe2hfGmOHfxhuCqDNGaBaskq1CLOHPGcr4TI0fJdh98s6w4CofS+NEDIbjyhYTHrZWQuF2KFf5n1cemgx8fLHdc2vCtrB6m+4kqlZUJD4SnfTjWRDEWVPSqJaCGXC7cVDrhs3kxDnBY66kzOr1XkGCJPU/SUmen8jEO6XPvbCqgOnHyUVrRUkFewEwIXsfgJ+zvHbTgxdHJB8k8f1kKGXFqiasYMivbDIY7358MQ0krIl3y7jWktqsXtJQ31e6vTAQIDAQAB",
   "background": {
@@ -24,6 +24,8 @@
     ]
   },
   "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
     "128": "icon.png"
   }
 }
