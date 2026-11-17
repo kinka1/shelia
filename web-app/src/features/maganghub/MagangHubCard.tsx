@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, CheckCircle2, Circle } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DailyLogError, MIN_CHARS, fetchMyToday, fieldState, remainingFields, submitDailyLog, todayWIB } from '@/lib/dailyLog'
+import { StatusPill } from '@/features/shelia/Sessions'
 import { TokenDialog } from './TokenDialog'
 import { useMhToken } from './useMhToken'
 
@@ -17,11 +17,15 @@ const FIELDS = [
 ] as const
 type Key = (typeof FIELDS)[number][0]
 
-const BADGE = {
-  ok: ['Terhubung', 'bg-success/10 text-success-ink', CheckCircle2],
-  none: ['Belum terhubung', 'bg-muted text-muted-foreground', Circle],
-  expired: ['Kedaluwarsa', 'bg-warning/10 text-warning-ink', AlertTriangle],
+// [kunci tint StatusPill, label]
+const CONN = {
+  ok: ['closed', 'Terhubung'],
+  none: ['', 'Belum terhubung'],
+  expired: ['late', 'Kedaluwarsa'],
 } as const
+
+const LABEL = 'text-xs font-semibold text-muted-foreground'
+const READ_ONLY = 'bg-muted text-muted-foreground focus-visible:ring-0'
 
 const hhmm = (d: Date) => d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')
 
@@ -33,6 +37,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [formErr, setFormErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [sentAt, setSentAt] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -46,7 +51,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   useEffect(() => { void check() }, [date]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const left = remainingFields(v)
-  const [label, tone, Icon] = BADGE[mh.status]
+  const [connKey, connLabel] = CONN[mh.status]
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -69,54 +74,70 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="text-base">MagangHub</CardTitle>
-          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${tone}`}><Icon className="size-3" /> {label}</span>
-          {mh.expiry && <span className="text-xs text-muted-foreground">berlaku sampai {hhmm(mh.expiry)}</span>}
-        </div>
+    <section>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+          <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-xs text-primary-ink">2</span>MagangHub
+        </h2>
+        <span className="flex-1" />
+        <StatusPill status={connKey} label={connLabel} />
+        {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         <TokenDialog connected={!!mh.token} onDisconnect={mh.disconnect} />
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="mh-date">Tanggal</Label>
-              <Input id="mh-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+      {sentAt && !expanded ? (
+        <div className="mt-1 flex items-center gap-2 text-[13px]">
+          <CheckCircle2 className="size-4 shrink-0 text-success-ink" aria-hidden />
+          <span>Terkirim {sentAt}</span>
+          <span className="flex-1" />
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>Lihat</Button>
+        </div>
+      ) : (<>
+      <p className="mb-3 mt-0.5 text-[13px] text-muted-foreground">
+        Log harian{mh.expiry ? ` · token berlaku sampai ${hhmm(mh.expiry)}` : ''}
+      </p>
+      <form onSubmit={submit}>
+        <div className="grid grid-cols-2 gap-x-2.5 sm:grid-cols-3">
+          <div className="mb-2.5 space-y-1">
+            <Label htmlFor="mh-date" className={LABEL}>Tanggal</Label>
+            <Input id="mh-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="mb-2.5 space-y-1">
+            <Label htmlFor="mh-status" className={LABEL}>Status</Label>
+            <Input id="mh-status" value="Hadir" readOnly aria-readonly className={READ_ONLY} />
+          </div>
+          <div className="col-span-2 mb-2.5 space-y-1 sm:col-span-1">
+            <Label htmlFor="mh-loc" className={LABEL}>Lokasi</Label>
+            <Input id="mh-loc" value="Surabaya" readOnly aria-readonly className={READ_ONLY} />
+          </div>
+        </div>
+        {FIELDS.map(([k, name]) => {
+          const s = fieldState(v[k])
+          return (
+            <div key={k} className="mb-2.5 space-y-1">
+              <Label htmlFor={`mh-${k}`} className={LABEL}>{name}</Label>
+              <Textarea id={`mh-${k}`} rows={2} className="min-h-[70px]" value={v[k]} disabled={!!sentAt}
+                onChange={(e) => setV({ ...v, [k]: e.target.value })} />
+              <p aria-live="polite" className={`text-xs tabular-nums ${s.ok ? 'text-success-ink' : s.count ? 'text-warning-ink' : 'text-muted-foreground'}`}>
+                {s.ok ? `✓ ${s.count} karakter` : s.count ? `${s.count} / ${MIN_CHARS} karakter · kurang ${s.missing}` : `0 / ${MIN_CHARS} karakter`}
+              </p>
+              {fieldErr[k] && <p className="text-xs text-destructive-ink">{fieldErr[k]}</p>}
             </div>
-            <div className="space-y-1.5"><Label htmlFor="mh-status">Status</Label><Input id="mh-status" value="Hadir" readOnly /></div>
-            <div className="space-y-1.5"><Label htmlFor="mh-loc">Lokasi</Label><Input id="mh-loc" value="Surabaya" readOnly /></div>
-          </div>
-          {FIELDS.map(([k, name]) => {
-            const s = fieldState(v[k])
-            return (
-              <div key={k} className="space-y-1.5">
-                <Label htmlFor={`mh-${k}`}>{name}</Label>
-                <Textarea id={`mh-${k}`} rows={3} value={v[k]} disabled={!!sentAt}
-                  onChange={(e) => setV({ ...v, [k]: e.target.value })} />
-                <p aria-live="polite" className={`text-xs ${s.ok ? 'text-success-ink' : 'text-warning-ink'}`}>
-                  {s.ok ? `✓ ${s.count} karakter` : `${s.count} / ${MIN_CHARS} karakter · kurang ${s.missing}`}
-                </p>
-                {fieldErr[k] && <p className="text-xs text-destructive-ink">{fieldErr[k]}</p>}
-              </div>
-            )
-          })}
-          {formErr && <div role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive-ink">{formErr}</div>}
-          <div className="flex items-center gap-3">
-            {sentAt ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success-ink">
-                <CheckCircle2 className="size-3" /> Terkirim {sentAt}
-              </span>
-            ) : (
-              <>
-                <Button type="submit" disabled={busy || left > 0}>Kirim log</Button>
-                {left > 0 && <span className="text-sm text-muted-foreground">Lengkapi {left} isian lagi</span>}
-              </>
-            )}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          )
+        })}
+        {formErr && <div role="alert" className="mb-2.5 rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive-ink">{formErr}</div>}
+        <div className="flex items-center gap-2.5">
+          {sentAt ? (
+            <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
+          ) : (
+            <>
+              {left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
+              <span className="flex-1" />
+              <Button type="submit" disabled={busy || left > 0}>Kirim log</Button>
+            </>
+          )}
+        </div>
+      </form>
+      </>)}
+    </section>
   )
 }

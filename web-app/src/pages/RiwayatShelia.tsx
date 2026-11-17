@@ -40,17 +40,21 @@ export default function RiwayatShelia() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Riwayat Shelia</h1>
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          className="h-9 max-w-xs" placeholder="Cari tanggal atau shift…" aria-label="Cari tanggal atau shift"
-          value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }}
-        />
-        <Button variant="outline" className="h-9" disabled={loading} onClick={() => void reload('Muat riwayat Shelia')}>
-          <RefreshCw className="size-4" aria-hidden /> Muat ulang
-        </Button>
+      <div>
+        <h1 className="text-xl font-semibold tracking-[-0.02em]">Riwayat Shelia</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">Sesi absen masuk dan pulang.</p>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-xl border bg-card p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Input
+            className="h-9 max-w-[260px] flex-1" placeholder="Cari tanggal atau shift…" aria-label="Cari tanggal atau shift"
+            value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }}
+          />
+          <span className="flex-1" />
+          <Button variant="outline" className="h-9" disabled={loading} onClick={() => void reload('Muat riwayat Shelia')}>
+            <RefreshCw className="size-4" aria-hidden /> Muat ulang
+          </Button>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -62,10 +66,10 @@ export default function RiwayatShelia() {
               <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Belum ada riwayat.</TableCell></TableRow>
             ) : visible.map((r) => (
               <TableRow key={r.date}>
-                <TableCell className="tabular-nums">{fmtDate(r.date)}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{fmtDate(r.date)}</TableCell>
                 <TableCell>{r.shift}</TableCell>
-                <TableCell className="tabular-nums">{r.checkIn}</TableCell>
-                <TableCell className="tabular-nums">{r.checkOut}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{r.checkIn}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{r.checkOut}</TableCell>
                 <TableCell><StatusPill status={STATUS[r.status][0]} label={STATUS[r.status][1]} /></TableCell>
               </TableRow>
             ))}

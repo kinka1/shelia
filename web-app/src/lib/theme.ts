@@ -1,6 +1,7 @@
 /**
  * Mode tema: 'system' (ikut peramban), 'light' atau 'dark'. Pilihan disimpan di
- * localStorage; kelas `dark` di <html> menggerakkan token Tailwind.
+ * localStorage; kelas `dark` di <html> menggerakkan token Tailwind. Tanpa
+ * pilihan tersimpan, tema terang.
  */
 import { useSyncExternalStore } from 'react'
 
@@ -12,14 +13,14 @@ export type Theme = 'system' | 'light' | 'dark'
 const readStored = (): Theme => {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    return v === 'light' || v === 'dark' ? v : 'system'
+    return v === 'system' || v === 'dark' ? v : 'light'
   } catch {
-    return 'system'
+    return 'light'
   }
 }
 
 const listeners = new Set<() => void>()
-let current: Theme = 'system'
+let current: Theme = 'light'
 
 const render = () => {
   const dark = current === 'dark' || (current === 'system' && window.matchMedia(QUERY).matches)

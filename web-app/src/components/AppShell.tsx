@@ -32,9 +32,13 @@ const today = () =>
     year: 'numeric',
   }).format(new Date())
 
+// "Ayu Pratiwi Sari" -> "AP"
+const initials = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
+
 function Rail({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar p-3 text-sidebar-foreground">
+    <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar px-3 py-4 text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
         <i className="inline-block size-6 rounded-md bg-sidebar-active" />
         Shelia
@@ -50,7 +54,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'group flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-white',
+                  'group flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-white',
                   isActive && 'bg-sidebar-accent font-semibold text-white',
                 )
               }
@@ -79,17 +83,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 hidden w-60 lg:block">
+      <aside className="fixed inset-y-0 left-0 hidden w-[210px] lg:block">
         <Rail />
       </aside>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-60 border-sidebar-border bg-sidebar p-0">
+        <SheetContent side="left" className="w-[210px] border-sidebar-border bg-sidebar p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navigasi utama</SheetDescription>
           <Rail onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
-      <div className="lg:pl-60">
+      <div className="lg:pl-[210px]">
         <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b bg-card px-5">
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Buka menu" onClick={() => setOpen(true)}>
             <Menu />
@@ -107,7 +111,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               aria-label="Menu akun"
               className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink"
             >
-              {name.charAt(0).toUpperCase()}
+              {initials(name)}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel className="font-normal">

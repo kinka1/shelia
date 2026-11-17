@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
@@ -76,21 +75,24 @@ export function CameraCapture({ photo, onPhoto, onError }: {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md border bg-muted text-sm text-muted-foreground">
-        {live ? <video ref={attach} playsInline muted className="h-full w-full object-cover" />
-          : url ? <img src={url} alt="Foto wajah" className="h-full w-full object-cover" />
-          : 'Belum ada foto'}
+    <div>
+      <div className="relative mb-3 grid h-[150px] place-items-center overflow-hidden rounded-lg border border-dashed border-input bg-muted px-3 text-center text-[13px] text-muted-foreground">
+        {url && !live ? <img src={url} alt="Foto wajah" className="absolute inset-0 h-full w-full object-cover" />
+          : live ? 'Kamera aktif. Posisikan wajah di tengah bingkai.'
+          : 'Buka kamera atau unggah foto.'}
+        {/* Teksnya di bawah video: terlihat sampai bingkai pertama tiba. */}
+        {live && <video ref={attach} playsInline muted className="absolute inset-0 h-full w-full object-cover" />}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {live
-          ? <Button type="button" onClick={shoot}><Camera /> Ambil foto</Button>
-          : <Button type="button" variant="outline" onClick={open}><Camera /> {photo ? 'Foto ulang' : 'Buka kamera'}</Button>}
+      <div className="flex items-center gap-2">
         <Button type="button" variant="outline" asChild>
-          <label className="cursor-pointer"><Upload /> Unggah foto
+          <label className="cursor-pointer">Unggah foto
             <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={onFile} />
           </label>
         </Button>
+        <span className="flex-1" />
+        {live
+          ? <Button type="button" onClick={shoot}>Ambil foto</Button>
+          : <Button type="button" onClick={open}>{photo ? 'Foto ulang' : 'Buka kamera'}</Button>}
       </div>
     </div>
   )

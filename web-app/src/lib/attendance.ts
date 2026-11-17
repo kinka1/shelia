@@ -1,8 +1,8 @@
 import { CONFIG } from './shelia'
 
 export const STATUS_LABEL: Record<string, string> = {
-  not_checked_in: 'Belum check-in',
-  checked_in: 'Sudah check-in',
+  not_checked_in: 'Belum masuk',
+  checked_in: 'Sudah masuk',
   late: 'Terlambat',
 }
 export const STATE_LABEL: Record<string, string> = {

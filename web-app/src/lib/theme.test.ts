@@ -22,8 +22,15 @@ describe('theme', () => {
     html.classList.remove('dark')
   })
 
-  it('system follows the browser, live', () => {
+  it('defaults to light when nothing is stored, even in a dark browser', () => {
+    mockDark(true)
+    initTheme()
+    expect(html).not.toHaveClass('dark')
+  })
+
+  it('stored system follows the browser, live', () => {
     const flip = mockDark(true)
+    localStorage.setItem('shelia-theme', 'system')
     initTheme()
     expect(html).toHaveClass('dark')
     flip(false)

@@ -49,8 +49,8 @@
     --warning-ink: 32 95% 32%;         /* #9F5704, >=4.77:1 */
     --info-ink: 259 81% 54%;           /* >=5.17:1 */
     --destructive-ink: 346 94% 40%;    /* >=4.66:1 */
-    --border: 240 12% 95%;             /* #F1F1F4 */
-    --input: 240 12% 91%;
+    --border: 240 12% 91%;             /* garis kartu, tabel, pager (mockup --line) */
+    --input: 240 12% 86%;              /* tepi isian */
     --ring: 212 100% 55%;
     --radius: 0.625rem;
 
@@ -71,6 +71,15 @@
       in every browser. See docs/design-system.md "Illustrations".
     */
     --illustration-accent: 212 90% 74%;
+
+    /* Blok kode JSON di Log API: selalu gelap, di kedua tema. */
+    --code: 240 20% 13%;
+    --code-foreground: 240 18% 92%;
+    --code-muted: 237 14% 80%;
+    --code-chip: 240 18% 25%;
+    --code-key: 212 100% 75%;
+    --code-string: 141 55% 65%;
+    --code-number: 43 100% 65%;
   }
 
   .dark {
@@ -119,6 +128,8 @@
     --sidebar-border: 240 17% 18%;
 
     --illustration-accent: 212 75% 45%;
+
+    --code: 240 21% 9%;                /* kartu gelap sudah 13% */
   }
 
   * {

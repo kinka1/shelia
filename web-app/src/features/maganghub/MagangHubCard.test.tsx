@@ -23,7 +23,10 @@ describe('MagangHubCard', () => {
     stub([{ date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()), clock_in: '08:01' }])
     render(<MagangHubCard />)
     expect(await screen.findByText('Terkirim 08:01')).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByLabelText('Aktivitas')).toBeDisabled())
+    // Bagian yang selesai dilipat jadi satu baris; Lihat membukanya lagi.
+    expect(screen.queryByLabelText('Aktivitas')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Lihat' }))
+    expect(screen.getByLabelText('Aktivitas')).toBeDisabled()
   })
 
   it('maps 422 errors to fields', async () => {

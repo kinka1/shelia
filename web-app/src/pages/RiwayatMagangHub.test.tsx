@@ -44,11 +44,23 @@ describe('RiwayatMagangHub', () => {
     await waitFor(() => expect(row1).toHaveFocus())
   })
 
+  it('filters the loaded rows by activity text', async () => {
+    fetchDailyLogs.mockResolvedValue({ status: 'ok', rows, total: 3 })
+    renderPage()
+    await screen.findByText('11 Nov 2026')
+    fireEvent.change(screen.getByPlaceholderText('Cari aktivitas…'), { target: { value: 'belajar 2' } })
+    expect(screen.getAllByRole('row')).toHaveLength(2)
+    expect(screen.getByText('12 Nov 2026')).toBeInTheDocument()
+  })
+
   it('shows not-connected state with a link', async () => {
     fetchDailyLogs.mockResolvedValue({ status: 'none', rows: [], total: null })
     renderPage()
     expect(await screen.findByText('MagangHub belum terhubung')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Hubungkan di halaman Absen' })).toHaveAttribute('href', '/')
+    // Pesan ada di dalam tabel, di bawah kepala kolom.
+    expect(screen.getByRole('columnheader', { name: 'Aktivitas' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: /MagangHub belum terhubung/ })).toBeInTheDocument()
   })
 
   it('shows expired state and error text', async () => {

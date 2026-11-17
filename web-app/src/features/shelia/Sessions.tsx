@@ -2,8 +2,9 @@ import { AlertTriangle, CheckCircle2, Circle, Clock, PlayCircle, XCircle } from 
 import { STATE_LABEL, fmtTime } from '@/lib/attendance'
 
 const TONE: Record<string, [string, typeof Circle]> = {
-  late: ['bg-warning/10 text-warning-ink', AlertTriangle],
-  expired: ['bg-warning/10 text-warning-ink', AlertTriangle],
+  not_checked_in: ['bg-warning/15 text-warning-ink', AlertTriangle],
+  late: ['bg-warning/15 text-warning-ink', AlertTriangle],
+  expired: ['bg-warning/15 text-warning-ink', AlertTriangle],
   rejected: ['bg-destructive/10 text-destructive-ink', XCircle],
   checked_in: ['bg-success/10 text-success-ink', CheckCircle2],
   closed: ['bg-success/10 text-success-ink', CheckCircle2],
@@ -15,7 +16,7 @@ const TONE: Record<string, [string, typeof Circle]> = {
 export function StatusPill({ status, label }: { status?: string; label: string }) {
   const [cls, Icon] = TONE[status || ''] ?? ['bg-muted text-muted-foreground', Circle]
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-[5px] whitespace-nowrap rounded-md px-2 py-1 text-xs font-semibold ${cls}`}>
       <Icon className="size-3" /> {label}
     </span>
   )

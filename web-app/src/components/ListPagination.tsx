@@ -85,7 +85,8 @@ export const ListPagination = ({
   }, [ready, known, total, page, lastPage, onPageChange])
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+    // Kaki kartu p-4: menembus padding supaya garis atasnya selebar kartu.
+    <div className="-mx-4 -mb-4 mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
       <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
         {onPerPageChange && (
           <Select value={String(perPage)} onValueChange={(v) => onPerPageChange(Number(v))}>

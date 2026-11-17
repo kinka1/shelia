@@ -67,6 +67,15 @@ export default {
   				DEFAULT: 'hsl(var(--card) / <alpha-value>)',
   				foreground: 'hsl(var(--card-foreground) / <alpha-value>)'
   			},
+  			code: {
+  				DEFAULT: 'hsl(var(--code) / <alpha-value>)',
+  				foreground: 'hsl(var(--code-foreground) / <alpha-value>)',
+  				muted: 'hsl(var(--code-muted) / <alpha-value>)',
+  				chip: 'hsl(var(--code-chip) / <alpha-value>)',
+  				key: 'hsl(var(--code-key) / <alpha-value>)',
+  				string: 'hsl(var(--code-string) / <alpha-value>)',
+  				number: 'hsl(var(--code-number) / <alpha-value>)'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar) / <alpha-value>)',
   				foreground: 'hsl(var(--sidebar-foreground) / <alpha-value>)',
