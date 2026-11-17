@@ -1,4 +1,4 @@
-import { clearLog, loggedFetch } from './apiLog'
+import { loggedFetch } from './apiLog'
 
 export const CONFIG = { API_BASE: '/api' as const, LAT: -7.308430344545027, LNG: 112.785199930883 }
 
@@ -30,14 +30,10 @@ export function saveSession(token: string, emp: object): void {
   storageSet(STORAGE.token, token)
   storageSet(STORAGE.employee, JSON.stringify(emp))
 }
-/** Forget the Shelia login. `everything` (Keluar) also drops this browser's other local data. */
-export function clearSession(everything = true): void {
+/** Forget the Shelia login only; MagangHub has its own Keluar. */
+export function clearSession(): void {
   storageDel(STORAGE.token)
   storageDel(STORAGE.employee)
-  if (!everything) return
-  storageDel('maganghub.token')
-  storageDel('shelia.history')
-  clearLog()
 }
 
 const unauthorized = new Set<() => void>()
@@ -85,7 +81,7 @@ export async function sheliaApi<T = any>(
       },
     )
     if (res.status === 401 && auth) {
-      clearSession(false) // only Shelia expired; MagangHub stays connected
+      clearSession()
       unauthorized.forEach((cb) => cb())
     }
     throw err

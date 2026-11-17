@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from '@/App'
 import { SessionProvider } from '@/features/session/SessionProvider'
 import { saveSession } from '@/lib/shelia'
+import { stubExt } from '@/test/ext'
 
 describe('AppShell', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -45,5 +46,32 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Login di halaman Absen' })).toHaveAttribute('href', '/')
     expect(screen.queryByLabelText('NIK')).toBeNull()
     expect(screen.queryByText('Pagi')).toBeNull()
+  })
+
+  it('Shelia card shows Terhubung and Keluar; the profile menu has no Keluar', async () => {
+    saveSession('t', { full_name: 'Budi', nik: '123', branch_name: 'Surabaya' })
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: { next_action: 'none', sessions: [] } }))))
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    const shelia = (await screen.findByRole('heading', { name: 'Shelia' })).closest('section')!
+    expect(within(shelia).getByText('Terhubung')).toBeInTheDocument()
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Menu akun' }), { button: 0, ctrlKey: false })
+    expect(await screen.findByText('Budi')).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Keluar' })).toBeNull()
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    fireEvent.click(within(shelia).getByRole('button', { name: 'Keluar' }))
+    expect(await screen.findByLabelText('NIK')).toBeInTheDocument()
+  })
+
+  it('the top status follows MagangHub Keluar and Hubungkan', async () => {
+    localStorage.clear()
+    localStorage.setItem('maganghub.token', 'mh-tok')
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: [], total: 0 }))))
+    stubExt((m) => (m.type === 'hello' ? { ok: true, version: '1.1.0' } : { ok: true, token: 'again' }))
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    expect(await screen.findByText('Belum diisi')).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: 'Keluar' }))
+    expect(await screen.findByText('Belum terhubung', { selector: 'p' })).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: 'Hubungkan MagangHub' }))
+    expect(await screen.findByText('Belum diisi')).toBeInTheDocument()
   })
 })

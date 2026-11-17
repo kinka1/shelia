@@ -33,8 +33,10 @@ const READ_ONLY = 'bg-muted text-muted-foreground focus-visible:ring-0'
 
 const hhmm = (d: Date) => d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')
 
-export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null) => void }) {
+export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: string | null) => void; onConnected?: (ok: boolean) => void }) {
   const mh = useMhToken()
+  // The page's status card shows the same connection, so it hears about every change.
+  useEffect(() => { onConnected?.(mh.status === 'ok') }, [mh.status, onConnected])
   const date = todayWIB() // locked to today, like MagangHub's own form
   const [v, setV] = useState<Record<Key, string>>({ activity_log: '', lesson_learned: '', obstacles: '' })
   const [sentAt, setSentAt] = useState<string | null>(null)

@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/
 import { Toaster } from '@/components/ui/sonner'
 import ThemeToggle from '@/components/ThemeToggle'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSession } from '@/features/session/SessionProvider'
 import { cn } from '@/lib/utils'
@@ -76,7 +76,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
 export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
-  const { token, employee, logout } = useSession()
+  const { token, employee } = useSession()
   const name = employee?.full_name || 'Karyawan'
   const section = SECTIONS.find((s) => s.items.some((i) => i.to === pathname))
   const item = section?.items.find((i) => i.to === pathname)
@@ -120,8 +120,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   {[employee?.nik, employee?.branch_name].filter(Boolean).join(' · ')}
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => void logout()}>Keluar</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>}
         </header>

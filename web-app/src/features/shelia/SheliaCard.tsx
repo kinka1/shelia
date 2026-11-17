@@ -15,6 +15,8 @@ import { CameraCapture } from './CameraCapture'
 import { Sessions } from './Sessions'
 import type { useToday } from './useToday'
 import { rememberShift } from '@/lib/sheliaHistory'
+import { useSession } from '@/features/session/SessionProvider'
+import { StatusPill } from './Sessions'
 
 const STEPS = ['1 · Shift dipilih', '2 · Foto wajah', '3 · Kirim']
 const hhmm = (t: unknown) => (typeof t === 'string' ? t.slice(0, 5) : '?')
@@ -32,6 +34,7 @@ function Note({ tone, children }: { tone: 'warning' | 'destructive' | 'info'; ch
 }
 
 export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType<typeof useToday>) {
+  const { logout } = useSession()
   const [shiftId, setShiftId] = useState('')
   const [reason, setReason] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
@@ -136,10 +139,12 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
           Shelia
         </h2>
         <span className="flex-1" />
+        <StatusPill status="closed" label="Terhubung" />
         {done && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         <Button variant="ghost" size="icon" aria-label="Muat ulang" disabled={loading} onClick={() => void reload()}>
           <RefreshCw className={loading ? 'animate-spin' : ''} />
         </Button>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => void logout()}>Keluar</Button>
       </div>
       {done && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">

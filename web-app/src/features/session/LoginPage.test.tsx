@@ -3,7 +3,6 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import { fireEvent } from '@testing-library/react'
 import LoginPage from './LoginPage'
 import { SessionProvider, useSession } from './SessionProvider'
-import { clearLog, loggedFetch, useApiLog } from '@/lib/apiLog'
 import { getEmployee, getToken, saveSession, sheliaApi } from '@/lib/shelia'
 
 const ui = () => render(<SessionProvider><LoginPage /></SessionProvider>)
@@ -61,20 +60,17 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
   })
 
-  it('Keluar clears maganghub token, history and the API log', async () => {
+  it('Keluar logs out of Shelia only: MagangHub, history and the API log stay', async () => {
     saveSession('T', {})
     localStorage.setItem('maganghub.token', 'm')
     localStorage.setItem('shelia.history', '[]')
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')))
-    clearLog()
-    await loggedFetch('/x', { action: 'Seed' })
-    let log: unknown[] = []
     let out!: () => Promise<void>
-    const Probe = () => { log = useApiLog(); out = useSession().logout; return null }
+    const Probe = () => { out = useSession().logout; return null }
     render(<SessionProvider><Probe /></SessionProvider>)
-    expect(log.length).toBeGreaterThan(0)
     await act(async () => { await out() })
-    for (const k of ['absen.token', 'maganghub.token', 'shelia.history']) expect(localStorage.getItem(k)).toBeNull()
-    expect(log).toEqual([])
+    expect(getToken()).toBeNull()
+    expect(localStorage.getItem('maganghub.token')).toBe('m')
+    expect(localStorage.getItem('shelia.history')).toBe('[]')
   })
 })
