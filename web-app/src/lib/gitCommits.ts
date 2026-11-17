@@ -1,46 +1,94 @@
-// Today's commits by the user from GitHub or GitLab, read straight from the browser (both allow it).
+// Today's commits by the user from one or more GitHub/GitLab repos, read straight from the browser.
 // Only messages, file paths and +/− counts are kept: no code leaves this module.
+import { todayWIB } from './dailyLog'
 
 export type GitFile = { path: string; additions: number; deletions: number }
-export type GitCommit = { sha: string; message: string; files: GitFile[] }
-export type Settings = { repo: string; token?: string; deepseekKey: string; username?: string }
+export type GitCommit = { sha: string; message: string; files: GitFile[]; repo?: string }
+export type RepoLink = { url: string; token?: string }
+/** `repo`/`token` are the single-repo settings saved before several repos were allowed. */
+export type Settings = { repos?: RepoLink[]; repo?: string; token?: string; deepseekKey: string; username?: string }
 type Result = { commits: GitCommit[]; trimmed: boolean; note?: string } | { error: string }
 
 const MAX_COMMITS = 30
 const MAX_BRANCHES = 20
+const GITLAB_PAGES = 5 // 500 commits a day is plenty
+const NO_COMMITS = 'Tidak ada commit hari ini'
 const NOT_FOUND = 'Repo tidak ditemukan atau privat. Isi token akses.'
 
-export function parseRepo(url: string): { kind: 'github' | 'gitlab'; api: string; path: string } | null {
+export function repoLinks(s: Settings): RepoLink[] {
+  const list = s.repos?.length ? s.repos : s.repo ? [{ url: s.repo, token: s.token }] : []
+  return list.filter((r) => r.url?.trim())
+}
+
+/** https, www., ssh:// and scp-style (git@host:path) links; GitHub by host, anything else GitLab. */
+export function parseRepo(url: string): { kind: 'github' | 'gitlab'; api: string; path: string; host: string } | null {
+  let raw = url.trim()
+  const scp = /^[\w.-]+@([^:/]+):(.+)$/.exec(raw)
+  if (scp) raw = `https://${scp[1]}/${scp[2]}`
   let u: URL
-  try { u = new URL(url.trim()) } catch { return null }
-  const path = u.pathname.replace(/^\/+|\/+$/g, '').replace(/\.git$/, '').replace(/\/-\/.*$/, '')
+  try { u = new URL(raw.replace(/^ssh:\/\//, 'https://')) } catch { return null }
+  const host = u.hostname.replace(/^www\./, '')
+  const path = u.pathname.replace(/^\/+|\/+$/g, '').replace(/\/-\/.*$/, '').replace(/\.git$/, '')
   if (!path.includes('/')) return null
-  if (u.hostname === 'github.com') return { kind: 'github', api: 'https://api.github.com', path: path.split('/').slice(0, 2).join('/') }
-  return { kind: 'gitlab', api: `${u.origin}/api/v4`, path }
+  if (host === 'github.com') return { kind: 'github', api: 'https://api.github.com', path: path.split('/').slice(0, 2).join('/'), host }
+  return { kind: 'gitlab', api: `https://${host}${u.port ? `:${u.port}` : ''}/api/v4`, path, host }
 }
 
 /** 00:00–24:00 in Jakarta (UTC+7, no DST) as UTC ISO strings. */
 export function todayRangeWIB(now = new Date()): { since: string; until: string } {
-  const day = new Date(now.getTime() + 7 * 3600_000).toISOString().slice(0, 10)
-  const since = new Date(`${day}T00:00:00+07:00`)
+  const since = new Date(`${todayWIB(now)}T00:00:00+07:00`)
   return { since: since.toISOString(), until: new Date(since.getTime() + 86_400_000).toISOString() }
 }
 
 class HttpError extends Error { constructor(public status: number) { super(String(status)) } }
+class NetError extends Error {}
+class BadAnswer extends Error {}
 
+/** Every repo is read; one failing doesn't stop the others, and it is named in the note. */
 export async function fetchTodayCommits(s: Settings, now = new Date()): Promise<Result> {
-  const repo = parseRepo(s.repo)
+  const links = repoLinks(s)
+  if (!links.length) return { error: 'Isi minimal satu link repo.' }
+  const results = await Promise.all(links.map(async (l) => ({ label: parseRepo(l.url)?.path ?? l.url, r: await oneRepo(l, s.username, now) })))
+  const label = (x: { label: string }, msg: string) => (links.length > 1 ? `${x.label}: ${msg}` : msg)
+  const ok = results.filter((x) => 'commits' in x.r)
+  const quiet = (m: string) => m === NO_COMMITS || m.startsWith('Ada ') // not failures: just nothing of yours today
+  const failed = results.filter((x) => 'error' in x.r && !quiet(x.r.error))
+  if (!ok.length) {
+    if (failed.length) return { error: failed.map((x) => label(x, (x.r as { error: string }).error)).join('\n') }
+    const others = results.filter((x) => (x.r as { error: string }).error.startsWith('Ada '))
+    return { error: others.length ? others.map((x) => label(x, (x.r as { error: string }).error)).join('\n') : NO_COMMITS }
+  }
+  const all = ok.flatMap((x) => (x.r as { commits: GitCommit[] }).commits)
+  const notes = [
+    ...ok.map((x) => (x.r as { note?: string }).note && label(x, (x.r as { note: string }).note)),
+    ...failed.map((x) => label(x, (x.r as { error: string }).error)),
+  ].filter(Boolean)
+  return {
+    commits: all.slice(0, MAX_COMMITS),
+    trimmed: all.length > MAX_COMMITS || ok.some((x) => (x.r as { trimmed: boolean }).trimmed),
+    ...(notes.length ? { note: notes.join('\n') } : {}),
+  }
+}
+
+async function oneRepo(link: RepoLink, username: string | undefined, now: Date): Promise<Result> {
+  const repo = parseRepo(link.url)
   if (!repo) return { error: 'Link repo tidak dikenali. Contoh: https://github.com/nama/repo' }
+  const token = link.token?.trim()
   const headers: Record<string, string> = repo.kind === 'github'
-    ? { Accept: 'application/vnd.github+json', ...(s.token ? { Authorization: `Bearer ${s.token}` } : {}) }
-    : { ...(s.token ? { 'PRIVATE-TOKEN': s.token } : {}) }
-  const get = async (url: string) => {
-    const r = await fetch(url, { headers })
+    ? { Accept: 'application/vnd.github+json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+    : { ...(token ? { 'PRIVATE-TOKEN': token } : {}) }
+  const get = async (url: string, list = false) => {
+    let r: Response
+    try { r = await fetch(url, { headers }) } catch { throw new NetError() }
     if (!r.ok) throw new HttpError(r.status)
-    return r.json()
+    let body: unknown
+    try { body = await r.json() } catch { throw new BadAnswer() }
+    if (list && !Array.isArray(body)) throw new BadAnswer()
+    return body as any
   }
   try {
-    return await (repo.kind === 'github' ? github : gitlab)(repo.api, repo.path, s, get, todayRangeWIB(now))
+    const res = await (repo.kind === 'github' ? github : gitlab)(repo.api, repo.path, { token, username }, get, todayRangeWIB(now))
+    return 'commits' in res ? { ...res, commits: res.commits.map((c) => ({ ...c, repo: repo.path })) } : res
   } catch (e) {
     if (e instanceof HttpError) {
       if (e.status === 401) return { error: 'Token akses ditolak. Periksa tokennya.' }
@@ -48,24 +96,26 @@ export async function fetchTodayCommits(s: Settings, now = new Date()): Promise<
       if (e.status === 403 || e.status === 429) return { error: 'Batas akses API tercapai. Coba lagi nanti atau isi token akses.' }
       return { error: `Gagal membaca repo (HTTP ${e.status}).` }
     }
-    return { error: `Tidak bisa menghubungi ${new URL(repo.api).hostname === 'api.github.com' ? 'github.com' : new URL(repo.api).hostname} dari browser.` }
+    if (e instanceof NetError) return { error: `Tidak bisa menghubungi ${repo.host} dari browser.` }
+    return { error: `Jawaban ${repo.host} tidak bisa dibaca.` }
   }
 }
 
-type Get = (url: string) => Promise<any>
+type Get = (url: string, list?: boolean) => Promise<any>
 type Range = { since: string; until: string }
+type Who = { token?: string; username?: string }
 const q = (o: Record<string, string>) => new URLSearchParams(o).toString()
 
-/** Keeps the user's non-merge commits (deduped, newest first as listed), or the right message. */
+/** Keeps the user's non-merge commits (newest first as listed), or the right message. */
 function pick<T>(all: T[], mine: (c: T) => boolean, who: string): { mine: T[]; trimmed: boolean } | { error: string } {
-  if (!all.length) return { error: 'Tidak ada commit hari ini' }
+  if (!all.length) return { error: NO_COMMITS }
   const m = all.filter(mine)
   if (!m.length) return { error: `Ada ${all.length} commit hari ini, tapi tidak ada dari ${who}` }
   return { mine: m.slice(0, MAX_COMMITS), trimmed: m.length > MAX_COMMITS }
 }
 
-async function github(api: string, path: string, s: Settings, get: Get, range: Range): Promise<Result> {
-  const me = s.token ? await get(`${api}/user`) : { login: s.username }
+async function github(api: string, path: string, w: Who, get: Get, range: Range): Promise<Result> {
+  const me = w.token ? await get(`${api}/user`) : { login: w.username }
   const ids = [me.login, me.email].filter(Boolean).map((x: string) => x.toLowerCase())
   const info = await get(`${api}/repos/${path}`)
   const main: string = info.default_branch || 'main'
@@ -73,16 +123,17 @@ async function github(api: string, path: string, s: Settings, get: Get, range: R
   // With one: the default branch first, then others as listed, 20 at most (said when skipped).
   let names = [main]
   let note: string | undefined
-  if (s.token) {
-    const all: string[] = (await get(`${api}/repos/${path}/branches?per_page=100`)).map((b: { name: string }) => b.name)
+  if (w.token) {
+    const all: string[] = (await get(`${api}/repos/${path}/branches?per_page=100`, true)).map((b: { name: string }) => b.name)
     names = [main, ...all.filter((n) => n !== main)]
     if (names.length > MAX_BRANCHES) { names = names.slice(0, MAX_BRANCHES); note = `Hanya ${MAX_BRANCHES} branch yang dibaca` }
   }
   const seen = new Map<string, any>()
   for (const name of names) {
-    const list: any[] = await get(`${api}/repos/${path}/commits?sha=${encodeURIComponent(name)}&${q({ ...range, per_page: '100' })}`)
-    for (const c of list) if (c.parents?.length <= 1 && !seen.has(c.sha)) seen.set(c.sha, c)
+    const list: any[] = await get(`${api}/repos/${path}/commits?sha=${encodeURIComponent(name)}&${q({ ...range, per_page: '100' })}`, true)
+    for (const c of list) if ((c.parents?.length ?? 1) <= 1 && !seen.has(c.sha)) seen.set(c.sha, c)
   }
+  // author is null when the commit email isn't linked to a GitHub account: the email still counts.
   const isMine = (c: any) => [c.author?.login, c.commit?.author?.email].some((x) => x && ids.includes(String(x).toLowerCase()))
   const p = pick([...seen.values()], isMine, me.login || me.email || 'Anda')
   if ('error' in p) return p
@@ -94,31 +145,37 @@ async function github(api: string, path: string, s: Settings, get: Get, range: R
   return { commits, trimmed: p.trimmed, ...(note ? { note } : {}) }
 }
 
-async function gitlab(api: string, path: string, s: Settings, get: Get, range: Range): Promise<Result> {
+/** + and − lines of a GitLab diff: ---/+++ are file headers only before the first @@; after it every line counts. */
+function countDiff(diff: string): { additions: number; deletions: number } {
+  const lines = String(diff || '').split('\n')
+  const at = lines.findIndex((l) => l.startsWith('@@'))
+  const head = (at < 0 ? lines : lines.slice(0, at)).filter((l) => !l.startsWith('+++') && !l.startsWith('---'))
+  const body = [...head, ...(at < 0 ? [] : lines.slice(at).filter((l) => !l.startsWith('@@')))]
+  return { additions: body.filter((l) => l.startsWith('+')).length, deletions: body.filter((l) => l.startsWith('-')).length }
+}
+
+async function gitlab(api: string, path: string, w: Who, get: Get, range: Range): Promise<Result> {
   const proj = `${api}/projects/${encodeURIComponent(path)}`
-  const me = s.token ? await get(`${api}/user`) : { username: s.username }
+  const me = w.token ? await get(`${api}/user`) : { username: w.username }
   const ids = [me.username, me.name, me.email, me.commit_email, me.public_email].filter(Boolean).map((x: string) => x.toLowerCase())
   await get(proj)
-  const list: any[] = await get(`${proj}/repository/commits?${q({ all: 'true', ...range, per_page: '100' })}`)
+  const list: any[] = []
+  for (let page = 1; page <= GITLAB_PAGES; page++) {
+    const batch: any[] = await get(`${proj}/repository/commits?${q({ ...(page > 1 ? { page: String(page) } : {}), all: 'true', ...range, per_page: '100' })}`, true)
+    list.push(...batch)
+    if (batch.length < 100) break
+  }
   const all = list.filter((c) => (c.parent_ids?.length ?? 1) <= 1)
   // Without a token only a username is known: also accept it as the start of the commit email.
   const isMine = (c: any) => [c.author_name, c.author_email, c.committer_email].some((x) => {
     const v = String(x || '').toLowerCase()
-    return v && (ids.includes(v) || (!s.token && ids.some((i) => v.startsWith(`${i}@`))))
+    return v && (ids.includes(v) || (!w.token && ids.some((i) => v.startsWith(`${i}@`))))
   })
   const p = pick(all, isMine, me.username || me.email || 'Anda')
   if ('error' in p) return p
   const commits = await Promise.all(p.mine.map(async (c) => {
-    const diffs: any[] = await get(`${proj}/repository/commits/${c.id}/diff`)
-    const files = diffs.map((d) => {
-      const lines = String(d.diff || '').split('\n')
-      return {
-        path: d.new_path,
-        additions: lines.filter((l) => l.startsWith('+') && !l.startsWith('+++')).length,
-        deletions: lines.filter((l) => l.startsWith('-') && !l.startsWith('---')).length,
-      }
-    })
-    return { sha: c.id, message: c.message, files }
+    const diffs: any[] = await get(`${proj}/repository/commits/${c.id}/diff?per_page=100`, true)
+    return { sha: c.id, message: c.message, files: diffs.map((d) => ({ path: d.new_path, ...countDiff(d.diff) })) }
   }))
   return { commits, trimmed: p.trimmed }
 }

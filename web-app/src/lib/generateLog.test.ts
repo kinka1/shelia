@@ -66,6 +66,12 @@ describe('generateLog', () => {
     expect(await generateLog(commits, 'K')).toEqual(long)
   })
 
+  it('names the project of each commit when there are several', async () => {
+    const f = answers(reply(good))
+    await generateLog([{ ...commits[0], repo: 'o/web' }, { sha: 'g', repo: 'g/api', message: 'fix login', files: [] }], 'K')
+    expect(all(f, 0)).toMatch(/Proyek o\/web[\s\S]*Proyek g\/api/)
+  })
+
   it('reads JSON inside ```json fences', async () => {
     answers(reply('```json\n' + JSON.stringify(good) + '\n```'))
     expect(await generateLog(commits, 'K')).toEqual(good)

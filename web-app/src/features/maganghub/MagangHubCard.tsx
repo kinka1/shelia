@@ -46,6 +46,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   const [confirming, setConfirming] = useState(false)
   const ext = useExtension()
   const [sending, setSending] = useState(false)
+  const [generating, setGenerating] = useState(false) // fields read-only so a Generate can't overwrite typing
   const [sendErr, setSendErr] = useState('')
 
   // One log per day: sending stays locked until MagangHub confirms today has none.
@@ -129,13 +130,13 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           </div>
         </div>
         <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
-        {!sentAt && <GenerateLog value={v} onChange={setV} />}
+        {!sentAt && <GenerateLog value={v} onChange={setV} onBusy={setGenerating} />}
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
           return (
             <div key={k} className="mb-2.5 space-y-1">
               <Label htmlFor={`mh-${k}`} className={LABEL}>{name} <span className="text-destructive-ink" aria-hidden>*</span></Label>
-              <Textarea id={`mh-${k}`} aria-required rows={2} className="min-h-[70px]" value={v[k]} disabled={!!sentAt}
+              <Textarea id={`mh-${k}`} aria-required rows={2} className="min-h-[70px]" value={v[k]} disabled={!!sentAt} readOnly={generating} aria-busy={generating || undefined}
                 onChange={(e) => setV({ ...v, [k]: e.target.value })} />
               <p aria-live="polite" className={`text-xs tabular-nums ${s.ok ? 'text-success-ink' : s.count ? 'text-warning-ink' : 'text-muted-foreground'}`}>
                 {s.ok ? `✓ ${s.count} karakter` : s.count ? `${s.count} / ${MIN_CHARS} karakter · kurang ${s.missing}` : `0 / ${MIN_CHARS} karakter`}
@@ -156,7 +157,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
                   </span>
                 ) : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={left > 0 || today !== 'ok'}>Kirim log</Button>
+              <Button type="submit" disabled={left > 0 || today !== 'ok' || generating}>Kirim log</Button>
             </>
           )}
         </div>

@@ -13,15 +13,21 @@ Aturan untuk setiap field:
 - Panjang 100–130 karakter: minimal 100, sesingkat mungkin. Satu atau dua kalimat, tanpa markdown, tanpa hash commit.
 - Hanya tulis apa yang ditunjukkan commit (pesan dan nama file). Jangan mengarang fitur, angka, alat, atau nama yang tidak ada.
 - Jangan menyalin pesan commit mentah; tulis seperti laporan kerja yang wajar.
+- Jika ada lebih dari satu proyek, sebut singkat tiap proyek; tetap 100–130 karakter.
 activity_log: apa yang dikerjakan atau diubah hari ini; sebut bagian sistem yang terlihat dari nama file.
 lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh commit.
 obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, tulis bahwa tidak ada kendala berarti, lalu sebut singkat hal yang perlu dijaga atau dicek dari pekerjaan itu.`
 
+const one = (c: GitCommit) => {
+  const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')
+  return `Commit: ${c.message.trim()}${files ? `\nFile:\n${files}` : ''}`
+}
+
+/** Commits grouped by project, so the texts can name each project when there are several. */
 export function describeCommits(commits: GitCommit[]): string {
-  return commits.map((c) => {
-    const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')
-    return `Commit: ${c.message.trim()}${files ? `\nFile:\n${files}` : ''}`
-  }).join('\n\n')
+  const groups = new Map<string, GitCommit[]>()
+  for (const c of commits) groups.set(c.repo ?? '', [...(groups.get(c.repo ?? '') ?? []), c])
+  return [...groups].map(([repo, cs]) => `${repo ? `Proyek ${repo}:\n` : ''}${cs.map(one).join('\n\n')}`).join('\n\n')
 }
 
 type Msg = { role: 'system' | 'user' | 'assistant'; content: string }

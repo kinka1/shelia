@@ -162,6 +162,17 @@ describe('MagangHubCard gates', () => {
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue(texts.obstacles)
   })
 
+  it('the three fields are read-only while Generate runs', async () => {
+    localStorage.setItem('generate.settings', JSON.stringify({ repo: 'https://github.com/o/r', token: 'T', deepseekKey: 'K' }))
+    const gc = await import('@/lib/gitCommits')
+    vi.spyOn(gc, 'fetchTodayCommits').mockReturnValue(new Promise(() => {}))
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveAttribute('readonly'))
+  })
+
   it('cannot send while checking whether today is already sent', async () => {
     setup()
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {}))) // the check never answers

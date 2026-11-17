@@ -4,7 +4,7 @@ import { Toaster, toast } from 'sonner'
 
 const fetchTodayCommits = vi.fn()
 const generateLog = vi.fn()
-vi.mock('@/lib/gitCommits', () => ({ fetchTodayCommits: (...a: any[]) => fetchTodayCommits(...a) }))
+vi.mock('@/lib/gitCommits', async (real) => ({ ...(await real<object>()), fetchTodayCommits: (...a: any[]) => fetchTodayCommits(...a) }))
 vi.mock('@/lib/generateLog', () => ({ generateLog: (...a: any[]) => generateLog(...a) }))
 
 import { GenerateLog } from './GenerateLog'
@@ -32,14 +32,15 @@ describe('GenerateLog', () => {
     const onChange = ui()
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
     expect(await screen.findByRole('heading', { name: 'Pengaturan Generate' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Token akses/)).toHaveAttribute('type', 'password')
+    expect(screen.getByLabelText('Token akses repo 1')).toHaveAttribute('type', 'password')
     expect(screen.getByLabelText(/API key DeepSeek/)).toHaveAttribute('type', 'password')
     expect(screen.getByText(/Disimpan hanya di browser ini/)).toBeInTheDocument()
-    type(/Link repo/, SETTINGS.repo); type(/Token akses/, 'T'); type(/API key DeepSeek/, 'K')
+    type(/^Link repo 1/, SETTINGS.repo); type(/^Token akses repo 1/, 'T'); type(/API key DeepSeek/, 'K')
     fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(TEXTS))
-    expect(JSON.parse(localStorage.getItem('generate.settings')!)).toMatchObject(SETTINGS)
-    expect(fetchTodayCommits).toHaveBeenCalledWith(expect.objectContaining(SETTINGS))
+    const saved = { repos: [{ url: SETTINGS.repo, token: 'T' }], deepseekKey: 'K' }
+    expect(JSON.parse(localStorage.getItem('generate.settings')!)).toMatchObject(saved)
+    expect(fetchTodayCommits).toHaveBeenCalledWith(expect.objectContaining(saved))
     expect(generateLog).toHaveBeenCalledWith(expect.any(Array), 'K')
   })
 
@@ -79,12 +80,13 @@ describe('GenerateLog', () => {
     expect(await screen.findByText('Hanya 30 commit pertama dipakai')).toBeInTheDocument()
   })
 
-  it('the gear reopens settings; Hapus clears them', async () => {
+  it('the gear reopens settings (an old single-repo setting shows as repo 1); Hapus clears them', async () => {
     localStorage.setItem('generate.settings', JSON.stringify(SETTINGS))
     ui()
     fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
-    expect(await screen.findByLabelText(/Link repo/)).toHaveValue(SETTINGS.repo)
-    fireEvent.click(screen.getByRole('button', { name: 'Hapus' }))
+    expect(await screen.findByLabelText(/^Link repo 1/)).toHaveValue(SETTINGS.repo)
+    expect(screen.getByLabelText('Token akses repo 1')).toHaveValue('T')
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus semua' }))
     expect(localStorage.getItem('generate.settings')).toBeNull()
   })
 
@@ -92,12 +94,48 @@ describe('GenerateLog', () => {
     ui()
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
     await screen.findByRole('heading', { name: 'Pengaturan Generate' })
-    type(/Link repo/, SETTINGS.repo)
+    type(/^Link repo 1/, SETTINGS.repo)
     fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
-    expect(await screen.findByText('Isi link repo dan API key DeepSeek.')).toBeInTheDocument()
+    expect(await screen.findByText('Isi minimal satu link repo dan API key DeepSeek.')).toBeInTheDocument()
     type(/API key DeepSeek/, 'K')
     fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
-    expect(await screen.findByText('Tanpa token, isi username Git Anda.')).toBeInTheDocument()
+    expect(await screen.findByText('Ada repo tanpa token: isi username Git Anda.')).toBeInTheDocument()
     expect(fetchTodayCommits).not.toHaveBeenCalled()
+  })
+
+  it('several repos: Tambah repo adds a row, Hapus repo removes one, all are saved', async () => {
+    ui()
+    fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
+    type(/^Link repo 1/, 'https://github.com/o/web'); type(/^Token akses repo 1/, 'T1')
+    fireEvent.click(screen.getByRole('button', { name: 'Tambah repo' }))
+    type(/^Link repo 2/, 'https://gitlab.com/g/api'); type(/^Token akses repo 2/, 'T2')
+    fireEvent.click(screen.getByRole('button', { name: 'Tambah repo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus repo 3' }))
+    expect(screen.queryByLabelText(/^Link repo 3/)).toBeNull()
+    type(/API key DeepSeek/, 'K')
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('generate.settings')!).repos).toEqual([
+      { url: 'https://github.com/o/web', token: 'T1' }, { url: 'https://gitlab.com/g/api', token: 'T2' },
+    ]))
+  })
+
+  it('tells the card while it works, so the fields can’t be edited mid-run', async () => {
+    localStorage.setItem('generate.settings', JSON.stringify(SETTINGS))
+    let release!: (v: unknown) => void
+    generateLog.mockReturnValue(new Promise((r) => { release = r }))
+    const onBusy = vi.fn()
+    render(<GenerateLog value={EMPTY} onChange={vi.fn()} onBusy={onBusy} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
+    await waitFor(() => expect(onBusy).toHaveBeenLastCalledWith(true))
+    release(TEXTS)
+    await waitFor(() => expect(onBusy).toHaveBeenLastCalledWith(false))
+  })
+
+  it('shows notes about skipped repos or branches', async () => {
+    localStorage.setItem('generate.settings', JSON.stringify(SETTINGS))
+    fetchTodayCommits.mockResolvedValue({ commits: [], trimmed: false, note: 'o/secret: Repo tidak ditemukan atau privat. Isi token akses.' })
+    ui()
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
+    expect(await screen.findByText(/o\/secret: Repo tidak ditemukan/)).toBeInTheDocument()
   })
 })

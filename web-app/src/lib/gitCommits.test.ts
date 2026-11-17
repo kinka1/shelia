@@ -36,8 +36,8 @@ describe('todayRangeWIB', () => {
 
 describe('parseRepo', () => {
   it('reads GitHub and GitLab links', () => {
-    expect(parseRepo('https://github.com/kinka1/shelia.git')).toEqual({ kind: 'github', api: gh, path: 'kinka1/shelia' })
-    expect(parseRepo('https://gitlab.example.com/a/b/c')).toEqual({ kind: 'gitlab', api: 'https://gitlab.example.com/api/v4', path: 'a/b/c' })
+    expect(parseRepo('https://github.com/kinka1/shelia.git')).toEqual({ kind: 'github', api: gh, path: 'kinka1/shelia', host: 'github.com' })
+    expect(parseRepo('https://gitlab.example.com/a/b/c')).toEqual({ kind: 'gitlab', api: 'https://gitlab.example.com/api/v4', path: 'a/b/c', host: 'gitlab.example.com' })
     expect(parseRepo('nope')).toBeNull()
   })
 })
@@ -56,7 +56,7 @@ describe('fetchTodayCommits — GitHub', () => {
       [`${gh}/repos/o/r`]: { full_name: 'o/r', default_branch: 'main' },
     })
     const r = await fetchTodayCommits({ ...base, token: 'T' }, NOW)
-    expect(r).toEqual({ commits: [{ sha: 'abc', message: 'msg abc', files: [{ path: 'src/a.ts', additions: 3, deletions: 1 }] }], trimmed: false })
+    expect(r).toEqual({ commits: [{ sha: 'abc', message: 'msg abc', repo: 'o/r', files: [{ path: 'src/a.ts', additions: 3, deletions: 1 }] }], trimmed: false })
     for (const [, init] of f.mock.calls) expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer T')
     const list = f.mock.calls.map(([u]) => u).find((u) => u.includes('commits?sha=main'))!
     expect(list).toContain('since=2026-11-16T17%3A00%3A00.000Z')
@@ -150,7 +150,7 @@ describe('fetchTodayCommits — GitLab', () => {
       [proj]: {},
     })
     const r = await fetchTodayCommits(s, NOW)
-    expect(r).toEqual({ commits: [{ sha: 'abc', message: 'feat x', files: [{ path: 'src/a.ts', additions: 2, deletions: 1 }] }], trimmed: false })
+    expect(r).toEqual({ commits: [{ sha: 'abc', message: 'feat x', repo: 'a/b/c', files: [{ path: 'src/a.ts', additions: 2, deletions: 1 }] }], trimmed: false })
     const list = f.mock.calls.map(([u]) => u).find((u) => u.includes('/repository/commits?'))!
     expect(list).toContain('all=true')
     for (const [, init] of f.mock.calls) expect((init?.headers as Record<string, string>)['PRIVATE-TOKEN']).toBe('G')
@@ -159,5 +159,83 @@ describe('fetchTodayCommits — GitLab', () => {
   it('blocked by the browser (CORS/offline) → names the host', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
     expect(await fetchTodayCommits(s, NOW)).toEqual({ error: 'Tidak bisa menghubungi gitlab.example.com dari browser.' })
+  })
+})
+
+describe('several repos', () => {
+  const gl = 'https://gitlab.com/api/v4/projects/g%2Fr'
+  it('combines today’s commits from every repo, labelled per project', async () => {
+    serve({
+      [`${gh}/user`]: { login: 'budi' },
+      [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
+      [`${gh}/repos/o/r/commits?sha=main`]: [ghCommit('abc', 'budi', 'b@x.id')],
+      [`${gh}/repos/o/r/commits/abc`]: { files: [] },
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
+      'https://gitlab.com/api/v4/user': { username: 'budi', email: 'b@x.id' },
+      [`${gl}/repository/commits?`]: [{ id: 'g1', message: 'fix y', author_name: 'budi', author_email: 'b@x.id', parent_ids: ['p'] }],
+      [`${gl}/repository/commits/g1/diff`]: [],
+      [gl]: {},
+    })
+    const r = await fetchTodayCommits({ repos: [{ url: 'https://github.com/o/r', token: 'T' }, { url: 'https://gitlab.com/g/r', token: 'G' }], deepseekKey: 'k' }, NOW)
+    expect('commits' in r && r.commits.map((c) => [c.repo, c.sha])).toEqual([['o/r', 'abc'], ['g/r', 'g1']])
+  })
+
+  it('one repo failing doesn’t stop the others; the failure is named', async () => {
+    serve({
+      [`${gh}/repos/o/r/commits?sha=main`]: [ghCommit('abc', 'budi', 'b@x.id')],
+      [`${gh}/repos/o/r/commits/abc`]: { files: [] },
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
+    })
+    const r = await fetchTodayCommits({ repos: [{ url: 'https://github.com/o/r' }, { url: 'https://github.com/o/secret' }], username: 'budi', deepseekKey: 'k' }, NOW)
+    expect(r).toMatchObject({ commits: [{ sha: 'abc' }], note: 'o/secret: Repo tidak ditemukan atau privat. Isi token akses.' })
+  })
+
+  it('no commits anywhere → one plain message; everything failing → each repo named', async () => {
+    serve({ [`${gh}/repos/o/a/commits?`]: [], [`${gh}/repos/o/a`]: { default_branch: 'main' }, [`${gh}/repos/o/b/commits?`]: [], [`${gh}/repos/o/b`]: { default_branch: 'main' } })
+    const two = (a: string, b: string) => ({ repos: [{ url: `https://github.com/o/${a}` }, { url: `https://github.com/o/${b}` }], username: 'budi', deepseekKey: 'k' })
+    expect(await fetchTodayCommits(two('a', 'b'), NOW)).toEqual({ error: 'Tidak ada commit hari ini' })
+    serve({})
+    expect(await fetchTodayCommits(two('x', 'y'), NOW)).toEqual({ error: 'o/x: Repo tidak ditemukan atau privat. Isi token akses.\no/y: Repo tidak ditemukan atau privat. Isi token akses.' })
+  })
+})
+
+describe('edge cases (QA)', () => {
+  it('reads www, ssh and scp-style links', () => {
+    expect(parseRepo('https://www.github.com/o/r')).toMatchObject({ kind: 'github', path: 'o/r' })
+    expect(parseRepo('git@github.com:o/r.git')).toMatchObject({ kind: 'github', path: 'o/r' })
+    expect(parseRepo('ssh://git@gitlab.com/g/sub/r.git')).toMatchObject({ kind: 'gitlab', api: 'https://gitlab.com/api/v4', path: 'g/sub/r' })
+    expect(parseRepo('https://gitlab.com/g/r/-/tree/main')).toMatchObject({ path: 'g/r' })
+  })
+
+  it('GitHub commit with no linked account (author null) is matched by its email', async () => {
+    serve({
+      [`${gh}/user`]: { login: 'budi', email: 'b@x.id' },
+      [`${gh}/repos/o/r/branches`]: [{ name: 'main' }],
+      [`${gh}/repos/o/r/commits?sha=main`]: [{ sha: 'n1', author: null, parents: [{}], commit: { message: 'm', author: { email: 'B@X.id' } } }],
+      [`${gh}/repos/o/r/commits/n1`]: { files: [] },
+      [`${gh}/repos/o/r`]: { default_branch: 'main' },
+    })
+    const r = await fetchTodayCommits({ repo: 'https://github.com/o/r', token: 'T', deepseekKey: 'k' }, NOW)
+    expect('commits' in r && r.commits.map((c) => c.sha)).toEqual(['n1'])
+  })
+
+  it('an unreadable answer says so (not "cannot connect")', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<html>', { status: 200 })))
+    expect(await fetchTodayCommits({ repo: 'https://github.com/o/r', username: 'b', deepseekKey: 'k' }, NOW)).toEqual({ error: 'Jawaban github.com tidak bisa dibaca.' })
+  })
+
+  it('GitLab: diff asks for 100 files per page, counts "--" deletions, and pages through commits', async () => {
+    const api = 'https://gitlab.com/api/v4/projects/g%2Fr'
+    const mine = (i: number) => ({ id: `c${i}`, message: 'm', author_name: 'budi', author_email: 'b@x.id', parent_ids: ['p'] })
+    const f = serve({
+      'https://gitlab.com/api/v4/user': { username: 'budi', email: 'b@x.id' },
+      [`${api}/repository/commits?all=true`]: Array.from({ length: 100 }, (_, i) => ({ ...mine(i), author_email: 'x@y.z', author_name: 'x' })),
+      [`${api}/repository/commits?page=2`]: [mine(100)],
+      [`${api}/repository/commits/c100/diff`]: [{ new_path: 'q.sql', diff: '@@ -1,2 +1,1 @@\n--- old comment\n-x\n+y' }],
+      [api]: {},
+    })
+    const r = await fetchTodayCommits({ repo: 'https://gitlab.com/g/r', token: 'G', deepseekKey: 'k' }, NOW)
+    expect(r).toMatchObject({ commits: [{ sha: 'c100', files: [{ path: 'q.sql', additions: 1, deletions: 2 }] }] })
+    expect(f.mock.calls.map(([u]) => u).some((u) => u.includes('/diff?per_page=100'))).toBe(true)
   })
 })
