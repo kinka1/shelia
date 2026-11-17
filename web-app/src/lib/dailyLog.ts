@@ -2,7 +2,7 @@ import { loggedFetch } from './apiLog'
 import { getMhToken } from './maganghub'
 
 export const MIN_CHARS = 100
-// Real MagangHub, through our nginx: GET daily-logs and this one POST are the only routes let through.
+// Real MagangHub, read-only through our nginx (GET daily-logs). Sending happens on MagangHub's own page.
 const BASE = '/maganghub-api/v1'
 
 export function fieldState(text: string) {
@@ -15,39 +15,6 @@ export const remainingFields = (v: { activity_log: string; lesson_learned: strin
 
 export const todayWIB = (now = new Date()): string => new Date(now.getTime() + 7 * 3600_000).toISOString().slice(0, 10)
 
-
-export class DailyLogError extends Error {
-  status: number
-  errors: Record<string, string>
-  constructor(message: string, status: number, errors: Record<string, string> = {}) {
-    super(message)
-    this.status = status
-    this.errors = errors
-  }
-}
-
-export type DailyLogInput = { date: string; activity_log: string; lesson_learned: string; obstacles: string; latitude: number; longitude: number }
-
-/** Same request MagangHub's own form makes: one POST records attendance (Hadir) and the daily log together. */
-export async function submitDailyLog(v: DailyLogInput): Promise<void> {
-  const t = getMhToken()
-  if (!t) throw new DailyLogError('MagangHub belum terhubung.', 401)
-  const res = await loggedFetch(`${BASE}/attendances`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      date: v.date, status: 'PRESENT',
-      activity_log: v.activity_log, lesson_learned: v.lesson_learned, obstacles: v.obstacles,
-      latitude: v.latitude, longitude: v.longitude,
-    }),
-    action: 'Kirim log harian',
-  })
-  if (res.ok) return
-  const b = await res.json().catch(() => ({}))
-  const msg = res.status === 401 || res.status === 403 ? 'Token MagangHub kedaluwarsa. Perbarui token lalu kirim lagi.'
-    : b?.message || b?.error || `Gagal mengirim (HTTP ${res.status})`
-  throw new DailyLogError(String(msg), res.status, b?.errors && typeof b.errors === 'object' ? b.errors : {})
-}
 
 /** Log for this date already on MagangHub? Newest logs come first, so page 1 covers recent days. */
 export async function fetchMyToday(date: string): Promise<{ sentAt: string } | null> {

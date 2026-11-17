@@ -87,7 +87,6 @@ describe('titleFor', () => {
     expect(titleFor('POST', '/api/auth/login')).toBe('Login')
     expect(titleFor('GET', '/api/v2/attendance/shifts/available')).toBe('Ambil daftar shift')
     expect(titleFor('GET', '/maganghub-api/v1/daily-logs?page=2')).toBe('Ambil log MagangHub')
-    expect(titleFor('POST', '/maganghub-api/v1/attendances')).toBe('Kirim log harian ke MagangHub')
     expect(titleFor('GET', '/api/unknown')).toBe('/api/unknown')
   })
 })

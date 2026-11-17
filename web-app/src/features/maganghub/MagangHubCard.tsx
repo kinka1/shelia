@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -7,7 +6,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { fmtDate } from './LogDetailSheet'
-import { DailyLogError, MIN_CHARS, fetchMyToday, fieldState, remainingFields, submitDailyLog, todayWIB } from '@/lib/dailyLog'
+import { MIN_CHARS, fetchMyToday, fieldState, remainingFields, todayWIB } from '@/lib/dailyLog'
+import { sendBookmarkletHref, sendUrl } from '@/lib/sendBookmarklet'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
 import { TokenDialog } from './TokenDialog'
@@ -36,13 +36,13 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const mh = useMhToken()
   const [date, setDate] = useState(() => todayWIB())
   const [v, setV] = useState<Record<Key, string>>({ activity_log: '', lesson_learned: '', obstacles: '' })
-  const [fieldErr, setFieldErr] = useState<Partial<Record<Key, string>>>({})
-  const [formErr, setFormErr] = useState('')
-  const [busy, setBusy] = useState(false)
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [point, setPoint] = useState(OFFICE)
   const [confirming, setConfirming] = useState(false)
+  const [waiting, setWaiting] = useState(false) // MagangHub tab opened; the send happens there
+  // React 19 blocks javascript: hrefs set as props, so set it on the node.
+  const sendBookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', sendBookmarkletHref()), [])
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -58,33 +58,26 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const left = remainingFields(v)
   const [connKey, connLabel] = CONN[mh.status]
 
-  const canSend = mh.status === 'ok'
-
-  // Kirim log goes to the real MagangHub, so it only opens a confirmation; send() runs after "Kirim ke MagangHub".
+  // The log is sent from MagangHub's own page (bookmark "→ Kirim log"), so here we only prepare and open it.
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!busy && !left && canSend) setConfirming(true)
+    if (!left) setConfirming(true)
   }
 
-  async function send() {
-    if (busy) return
+  function openMagangHub() {
+    window.open(sendUrl({ date, ...v, latitude: point.lat, longitude: point.lng }), '_blank', 'noopener')
     setConfirming(false)
-    setBusy(true); setFormErr(''); setFieldErr({})
-    try {
-      await submitDailyLog({ date, ...v, latitude: point.lat, longitude: point.lng })
-      toast.success('Log harian terkirim')
-      await check()
-    } catch (err) {
-      if (err instanceof DailyLogError && err.status === 409) {
-        if (!(await check())) setFormErr('Log untuk tanggal ini sudah ada.')
-        return
-      }
-      if (err instanceof DailyLogError && err.status === 422) {
-        setFieldErr(Object.fromEntries(Object.entries(err.errors).map(([k, m]) => [k, /wajib/i.test(String(m)) ? 'Wajib diisi' : `Minimal ${MIN_CHARS} karakter`])))
-      }
-      setFormErr(err instanceof Error ? err.message : 'Gagal mengirim')
-    } finally { setBusy(false) }
+    setWaiting(true)
   }
+
+  // Back from the MagangHub tab: look again whether the log arrived.
+  useEffect(() => {
+    if (!waiting) return
+    const again = () => { if (document.visibilityState === 'visible') void check().then((r) => { if (r) setWaiting(false) }) }
+    window.addEventListener('focus', again)
+    document.addEventListener('visibilitychange', again)
+    return () => { window.removeEventListener('focus', again); document.removeEventListener('visibilitychange', again) }
+  }, [waiting]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section>
@@ -130,20 +123,18 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
               <p aria-live="polite" className={`text-xs tabular-nums ${s.ok ? 'text-success-ink' : s.count ? 'text-warning-ink' : 'text-muted-foreground'}`}>
                 {s.ok ? `✓ ${s.count} karakter` : s.count ? `${s.count} / ${MIN_CHARS} karakter · kurang ${s.missing}` : `0 / ${MIN_CHARS} karakter`}
               </p>
-              {fieldErr[k] && <p className="text-xs text-destructive-ink">{fieldErr[k]}</p>}
             </div>
           )
         })}
-        {formErr && <div role="alert" className="mb-2.5 rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive-ink">{formErr}</div>}
         <div className="flex items-center gap-2.5">
           {sentAt ? (
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {!canSend ? <span className="text-xs text-warning-ink">Sambungkan MagangHub dulu</span>
+              {waiting ? <span role="status" className="text-xs text-primary-ink">Kirim dari tab MagangHub dengan bookmark → Kirim log</span>
                 : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={busy || left > 0 || !canSend}>{busy ? 'Mengirim…' : 'Kirim log'}</Button>
+              <Button type="submit" disabled={left > 0}>Kirim log</Button>
             </>
           )}
         </div>
@@ -151,8 +142,8 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Kirim ke MagangHub?</DialogTitle>
-            <DialogDescription>Kehadiran dan log harian ini masuk ke akun MagangHub Anda dan tidak bisa dibatalkan dari sini.</DialogDescription>
+            <DialogTitle>Kirim lewat MagangHub</DialogTitle>
+            <DialogDescription>Log dikirim dari halaman MagangHub di browser Anda, bukan dari server ini. Setelah terkirim, tidak bisa dibatalkan dari sini.</DialogDescription>
           </DialogHeader>
           <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-sm">
             <dt className="text-muted-foreground">Tanggal</dt><dd>{fmtDate(date)}</dd>
@@ -167,9 +158,19 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
               </section>
             ))}
           </div>
+          <ol className="list-decimal space-y-1.5 pl-5 text-sm">
+            <li>
+              Sekali saja: seret{' '}
+              <a ref={sendBookmarkRef} onClick={(e) => e.preventDefault()}
+                className="inline-flex rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">→ Kirim log</a>
+              {' '}ke bookmark bar.
+            </li>
+            <li>Klik <b>Buka MagangHub</b>. Kalau diminta login, login dulu lalu klik lagi.</li>
+            <li>Di tab MagangHub, klik bookmark <b>→ Kirim log</b> lalu konfirmasi.</li>
+          </ol>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
-            <Button onClick={() => void send()}>Kirim ke MagangHub</Button>
+            <Button onClick={openMagangHub}>Buka MagangHub</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

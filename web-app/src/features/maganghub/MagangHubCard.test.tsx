@@ -31,23 +31,7 @@ describe('MagangHubCard', () => {
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toBeDisabled()
   })
 
-  it('maps 422 errors to fields', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
-      i?.method === 'POST' ? json({ message: 'x', errors: { obstacles: 'obstacles minimal 100 karakter' } }, 422) : json({ data: [] })))
-    render(<MagangHubCard />)
-    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
-    expect(await screen.findByText('Minimal 100 karakter')).toBeInTheDocument()
-  })
 
-  it('shows a message when 409 finds no row on re-check', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
-      i?.method === 'POST' ? json({ message: 'Absensi untuk tanggal ini sudah ada' }, 409) : json({ data: [] })))
-    render(<MagangHubCard />)
-    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
-    expect(await screen.findByText('Log untuk tanggal ini sudah ada.')).toBeInTheDocument()
-  })
 })
 
 describe('MagangHubCard stale check', () => {
@@ -69,37 +53,42 @@ describe('MagangHubCard stale check', () => {
   })
 })
 
+// The log is sent from MagangHub's page by the bookmark; here we check what the link we open carries.
+const opened = () => {
+  const urls: string[] = []
+  vi.stubGlobal('open', vi.fn((u: string) => { urls.push(u); return null }))
+  vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })))
+  return urls
+}
+const payload = (u: string) => JSON.parse(decodeURIComponent(new URL(u).hash.slice('#shelia-log='.length)))
+const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } }) }
+const openMh = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Buka MagangHub' }))
+}
+
 describe('MagangHubCard location', () => {
   afterEach(() => vi.unstubAllGlobals())
-  const sent = () => {
-    const posts: any[] = []
-    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) => {
-      if (i?.method === 'POST') { posts.push(JSON.parse(String(i.body))); return json({}, 201) }
-      return json({ data: [] })
-    }))
-    return posts
-  }
-  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } }) }
 
   it('sends the office coordinates by default', async () => {
-    const posts = sent()
+    const urls = opened()
     render(<MagangHubCard />)
-    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
-    await waitFor(() => expect(posts).toHaveLength(1))
-    expect(posts[0]).toMatchObject({ latitude: -7.308430344545027, longitude: 112.785199930883, status: 'PRESENT' })
+    fill(); await openMh()
+    expect(urls).toHaveLength(1)
+    expect(new URL(urls[0]).origin).toBe('https://monev.maganghub.kemnaker.go.id')
+    expect(payload(urls[0])).toMatchObject({ status: 'PRESENT', latitude: -7.308430344545027, longitude: 112.785199930883 })
   })
 
   it('fills latitude and longitude from the device GPS', async () => {
-    const posts = sent()
+    const urls = opened()
     vi.stubGlobal('navigator', { ...navigator, geolocation: { getCurrentPosition: (ok: PositionCallback) => ok({ coords: { latitude: -7.25, longitude: 112.75, accuracy: 18 } } as GeolocationPosition) } })
     render(<MagangHubCard />)
     fireEvent.click(screen.getByRole('button', { name: /Gunakan lokasi saya/ }))
     expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
     expect(screen.getByLabelText('Latitude')).toHaveValue('-7.25')
     expect(screen.getByLabelText('Longitude')).toHaveValue('112.75')
-    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
-    await waitFor(() => expect(posts).toHaveLength(1))
-    expect(posts[0]).toMatchObject({ latitude: -7.25, longitude: 112.75 })
+    fill(); await openMh()
+    expect(payload(urls[0])).toMatchObject({ latitude: -7.25, longitude: 112.75 })
   })
 })
 
@@ -111,38 +100,40 @@ it('shows the coordinates exactly as sent, not rounded', () => {
   vi.unstubAllGlobals()
 })
 
-describe('MagangHubCard real send safety', () => {
+describe('MagangHubCard send via MagangHub', () => {
   afterEach(() => vi.unstubAllGlobals())
-  const posts: any[] = []
-  beforeEach(() => {
-    posts.length = 0
-    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) => {
-      if (i?.method === 'POST') { posts.push(JSON.parse(String(i.body))); return json({}, 201) }
-      return json({ data: [] })
-    }))
-  })
-  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } }) }
 
-  it('asks before sending and sends nothing when cancelled', async () => {
+  it('shows what will be sent and opens nothing when cancelled', async () => {
+    const urls = opened()
     render(<MagangHubCard />)
     fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
     const dlg = await screen.findByRole('dialog')
-    expect(dlg).toHaveTextContent('Kirim ke MagangHub?')
+    expect(dlg).toHaveTextContent('Kirim lewat MagangHub')
     expect(dlg).toHaveTextContent('Hadir')
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(posts).toHaveLength(0)
+    expect(urls).toHaveLength(0)
   })
 
-  it('cannot send without a MagangHub token', async () => {
-    localStorage.removeItem('maganghub.token')
+  it('offers the → Kirim log bookmark with a working javascript: link', async () => {
+    opened()
     render(<MagangHubCard />)
-    fill()
-    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
-    expect(screen.getByText('Sambungkan MagangHub dulu')).toBeInTheDocument()
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    const a = await screen.findByRole('link', { name: '→ Kirim log' })
+    expect(a.getAttribute('href')).toMatch(/^javascript:\(function/)
+  })
+
+  it('sends nothing to our server', async () => {
+    const urls = opened()
+    render(<MagangHubCard />)
+    fill(); await openMh()
+    const f = globalThis.fetch as unknown as ReturnType<typeof vi.fn>
+    expect(f.mock.calls.every(([, i]) => !i || (i as RequestInit).method === undefined || (i as RequestInit).method === 'GET')).toBe(true)
+    expect(urls).toHaveLength(1)
   })
 
   it('no longer shows or sends a Lokasi field', () => {
+    opened()
     render(<MagangHubCard />)
     expect(screen.queryByLabelText('Lokasi')).toBeNull()
   })
