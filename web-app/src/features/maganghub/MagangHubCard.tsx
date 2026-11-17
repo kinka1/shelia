@@ -50,7 +50,6 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   const [draft] = useState(() => readDraft(date))
   const [v, setV] = useState<Record<Key, string>>(draft?.v ?? { activity_log: '', lesson_learned: '', obstacles: '' })
   const [sentAt, setSentAt] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(false)
   const [point, setPoint] = useState(draft?.point ?? OFFICE)
   useEffect(() => {
     if (sentAt) return
@@ -120,7 +119,6 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
         </h2>
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />
-        {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         {canSend && <MhConnect installed onRefresh={mh.refresh} onBusy={setRefreshing} />}
         {mh.status !== 'none' && (
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); setV(BLANK_V); setPoint(OFFICE); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
@@ -128,12 +126,10 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
       </div>
       {/* While Perbarui token runs the card is greyed and can't be clicked (unlocks on success or failure). */}
       <div inert={refreshing} aria-busy={refreshing || undefined} className={refreshing ? 'pointer-events-none select-none opacity-50 transition-opacity' : 'transition-opacity'}>
-      {sentAt && !expanded ? (
+      {sentAt ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
           <CheckCircle2 className="size-4 shrink-0 text-success-ink" aria-hidden />
           <span>Terkirim {sentAt}</span>
-          <span className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>Lihat</Button>
         </div>
       ) : ext.version === undefined ? (
         <p className="mt-3 text-[13px] text-muted-foreground">Memeriksa ekstensi…</p>
@@ -154,14 +150,14 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
             <Input id="mh-status" value="Hadir" readOnly aria-readonly className={READ_ONLY} />
           </div>
         </div>
-        <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
-        {!sentAt && <GenerateLog value={v} onChange={setV} onBusy={setGenerating} />}
+        <LocationPicker value={point} onChange={setPoint} />
+        <GenerateLog value={v} onChange={setV} onBusy={setGenerating} />
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
           return (
             <div key={k} className="mb-2.5 space-y-1">
               <Label htmlFor={`mh-${k}`} className={LABEL}>{name} <span className="text-destructive-ink" aria-hidden>*</span></Label>
-              <Textarea id={`mh-${k}`} aria-required rows={2} value={v[k]} disabled={!!sentAt} readOnly={generating} aria-busy={generating || undefined}
+              <Textarea id={`mh-${k}`} aria-required rows={2} value={v[k]} readOnly={generating} aria-busy={generating || undefined}
                 // Greyed and locked while DeepSeek writes; what was typed stays until the result replaces it.
                 className={`min-h-[70px] ${generating ? 'cursor-not-allowed bg-muted text-muted-foreground' : ''}`}
                 onChange={(e) => setV({ ...v, [k]: e.target.value })} />
@@ -172,10 +168,6 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           )
         })}
         <div className="flex items-center gap-2.5">
-          {sentAt ? (
-            <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
-          ) : (
-            <>
               {today === 'checking' ? <span className="text-xs text-muted-foreground">Memeriksa log hari ini…</span>
                 : today === 'error' ? (
                   <span className="flex items-center gap-2 text-xs text-warning-ink">
@@ -186,8 +178,6 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
               <span className="flex-1" />
               <Button type="button" variant="ghost" disabled={empty || generating} onClick={clearForm}>Kosongkan</Button>
               <Button type="submit" disabled={left > 0 || today !== 'ok' || generating}>Kirim log</Button>
-            </>
-          )}
         </div>
       </form>
       <Dialog open={confirming} onOpenChange={setConfirming}>

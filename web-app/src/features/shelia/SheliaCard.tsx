@@ -43,7 +43,6 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
   const [bypass, setBypass] = useState<TimedToken | null>(null)
   const [busy, setBusy] = useState('')
   const [formError, setFormError] = useState('')
-  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     if (shifts.length === 1) setShiftId(shifts[0].id)
@@ -143,7 +142,6 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         </h2>
         <span className="flex-1" />
         <StatusPill status="closed" label="Terhubung" />
-        {done && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         <Button variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold" disabled={loading} onClick={() => void reload()}>
           {loading ? 'Memuat…' : 'Muat ulang status'}
         </Button>
@@ -151,15 +149,13 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
       </div>
       {/* While Muat ulang status runs the card is greyed and can't be clicked (unlocks on success or failure). */}
       <div inert={refreshing} aria-busy={refreshing || undefined} className={refreshing ? 'pointer-events-none select-none opacity-50 transition-opacity' : 'transition-opacity'}>
-      {done && !expanded ? (
+      {done ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">
           <CheckCircle2 className="size-4 shrink-0 text-success-ink" aria-hidden />
           <span>{summary}</span>
-          <span className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(true)}>Lihat</Button>
         </div>
       ) : null}
-      {done && !expanded ? error && <div className="mt-2"><Note tone="destructive">{error}</Note></div> : (<>
+      {done ? error && <div className="mt-2"><Note tone="destructive">{error}</Note></div> : (<>
       {today && (
         <div className="mb-3 mt-0.5">
           <p className="text-[13px] text-muted-foreground">

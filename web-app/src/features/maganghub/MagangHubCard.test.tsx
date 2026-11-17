@@ -39,8 +39,7 @@ describe('MagangHubCard form', () => {
     render(<MagangHubCard />)
     expect(await screen.findByText('Terkirim 08:01')).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Lihat' }))
-    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Lihat' })).toBeNull() // just the summary line, nothing to open
     expect(screen.queryByRole('button', { name: 'Generate' })).toBeNull()
   })
 
