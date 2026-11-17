@@ -39,7 +39,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar px-3 py-4 text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
-        <i className="inline-block size-6 rounded-md bg-sidebar-active" />
+        <img src="/phoenix.svg" alt="" className="size-7" />
         Shelia
       </div>
       {SECTIONS.map((s) => (
