@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { fireEvent } from '@testing-library/react'
 import LoginPage from './LoginPage'
-import { SessionProvider } from './SessionProvider'
+import { SessionProvider, useSession } from './SessionProvider'
+import { clearLog, loggedFetch, useApiLog } from '@/lib/apiLog'
 import { getEmployee, getToken, saveSession, sheliaApi } from '@/lib/shelia'
 
 const ui = () => render(<SessionProvider><LoginPage /></SessionProvider>)
@@ -58,5 +59,22 @@ describe('LoginPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Login gagal: token tidak diterima.')
     expect(getToken()).toBeNull()
     expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
+  })
+
+  it('Keluar clears maganghub token, history and the API log', async () => {
+    saveSession('T', {})
+    localStorage.setItem('maganghub.token', 'm')
+    localStorage.setItem('shelia.history', '[]')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')))
+    clearLog()
+    await loggedFetch('/x', { action: 'Seed' })
+    let log: unknown[] = []
+    let out!: () => Promise<void>
+    const Probe = () => { log = useApiLog(); out = useSession().logout; return null }
+    render(<SessionProvider><Probe /></SessionProvider>)
+    expect(log.length).toBeGreaterThan(0)
+    await act(async () => { await out() })
+    for (const k of ['absen.token', 'maganghub.token', 'shelia.history']) expect(localStorage.getItem(k)).toBeNull()
+    expect(log).toEqual([])
   })
 })

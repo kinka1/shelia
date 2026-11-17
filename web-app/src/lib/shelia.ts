@@ -1,4 +1,4 @@
-import { loggedFetch } from './apiLog'
+import { clearLog, loggedFetch } from './apiLog'
 
 export const CONFIG = { API_BASE: '/api' as const, LAT: -7.308430344545027, LNG: 112.785199930883 }
 
@@ -33,6 +33,10 @@ export function saveSession(token: string, emp: object): void {
 export function clearSession(): void {
   storageDel(STORAGE.token)
   storageDel(STORAGE.employee)
+  // Keluar and 401 expiry also drop the other local data of this browser.
+  storageDel('maganghub.token')
+  storageDel('shelia.history')
+  clearLog()
 }
 
 const unauthorized = new Set<() => void>()
