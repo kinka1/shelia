@@ -10,15 +10,14 @@ SSH=(ssh -i "$HOME/.ssh/ssh-key-2025-09-05.key")
 
 (cd web-app && npm ci && npm run build)
 
-# rsync can't create a missing parent dir
-"${SSH[@]}" "$HOST" "mkdir -p $DEST/web-app"
-
-# --delete only on the built dist dir
-rsync -az --delete -e "${SSH[*]}" web-app/dist/ "$HOST:$DEST/web-app/dist/"
+# The VPS has no rsync: copy with tar/cat over ssh (remote login shell is fish, so wrap in bash -c).
+# dist is unpacked to dist.new and swapped in, so a broken upload never replaces the live build.
+COPYFILE_DISABLE=1 tar --no-xattrs -C web-app/dist -czf - . | "${SSH[@]}" "$HOST" \
+  "bash -c 'mkdir -p $DEST/web-app && cd $DEST/web-app && rm -rf dist.new && mkdir dist.new && tar -xzf - -C dist.new && rm -rf dist && mv dist.new dist'"
 # nginx.conf goes to a .new file; it replaces the live one only after nginx -t passes
-rsync -az -e "${SSH[*]}" nginx.conf "$HOST:$DEST/nginx.conf.new"
-rsync -az -e "${SSH[*]}" docker-compose.yml "$HOST:$DEST/"
-rsync -az -e "${SSH[*]}" monev-mock/ "$HOST:$DEST/monev-mock/"
+"${SSH[@]}" "$HOST" "cat > $DEST/nginx.conf.new" < nginx.conf
+"${SSH[@]}" "$HOST" "cat > $DEST/docker-compose.yml" < docker-compose.yml
+COPYFILE_DISABLE=1 tar --no-xattrs -czf - monev-mock | "${SSH[@]}" "$HOST" "bash -c 'tar -xzf - -C $DEST'"
 
 # remote login shell is fish, so feed bash via stdin
 "${SSH[@]}" "$HOST" 'bash -s' <<'REMOTE'
