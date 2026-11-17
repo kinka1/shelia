@@ -30,3 +30,16 @@ Ada di bagian `CONFIG` paling atas `app.js`:
    dan mengisi alasan (bila di luar area). Website lalu memanggil `face/verify` dan setelah itu `check-in`.
 4. Untuk check-out, langkahnya sama, memakai `attendance_id` dari sesi yang sedang terbuka.
 5. Setelah 3 kali gagal verifikasi wajah, absen bisa dikirim lewat jalur bypass. Absen itu masuk HR review.
+
+## Deploy
+
+Aplikasi baru (React, `web-app/`) dilayani di `/`; halaman absensi lama ada di `/classic/`
+(berkas dari klon `app/` di VPS, tidak pernah diubah oleh skrip deploy).
+
+```
+./deploy.sh
+```
+
+Skrip ini build `web-app` di Mac (`npm ci && npm run build`), rsync `web-app/dist/` (dengan `--delete`),
+`nginx.conf`, `docker-compose.yml`, `web/`, dan `monev-mock/` ke VPS, lalu recreate container `web` dan
+`monev-mock` dan menjalankan `nginx -t`.
