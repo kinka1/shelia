@@ -123,11 +123,12 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
     shift ? `Shift ${shift.name} ${hhmm(shift.check_in_start)}-${hhmm(shift.check_out_end)}` : today?.message,
     canAttend && faceOn && 'verifikasi wajah wajib',
   ].filter(Boolean).join(' · ')
-  const done = sheliaDone(today)
+  // check-out still pending → keep the form open so the afternoon action isn't hidden
+  const done = sheliaDone(today) && kind !== 'check_out'
   const sessions: any[] = Array.isArray(today?.sessions) ? today.sessions : []
   const last = sessions[sessions.length - 1]
   const inAt = fmtTime(last?.check_in_time, last?.work_date)
-  const summary = kind === 'check_out' ? `Sudah masuk${inAt !== '-' ? ` ${inAt}` : ''}` : 'Selesai untuk hari ini'
+  const summary = `Selesai untuk hari ini${inAt !== '-' ? ` · masuk ${inAt}` : ''}`
   return (
     <section>
       <div className="flex items-center gap-2">
