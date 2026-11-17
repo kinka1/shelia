@@ -90,6 +90,8 @@ export function groupEntries(e: LogEntry[]): { key: string; action: string; at: 
     if (last && last.action === x.action) last.entries.push(x)
     else groups.push({ key: `${x.action}-${x.id}`, action: x.action, at: x.at, entries: [x] })
   }
+  // Entries are newest first; the oldest id is fixed once a group exists, so the key survives new joiners.
+  for (const g of groups) g.key = `${g.action}-${g.entries[g.entries.length - 1].id}`
   return groups
 }
 

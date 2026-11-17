@@ -74,6 +74,12 @@ describe('groupEntries', () => {
     expect(g.map((x) => [x.action, x.entries.length])).toEqual([['A', 2], ['B', 1], ['A', 1]])
     expect(new Set(g.map((x) => x.key)).size).toBe(3)
   })
+
+  it('keeps a group key stable when a newer entry joins it', () => {
+    const before = groupEntries([mk('A', 2), mk('A', 1)])[0].key
+    const after = groupEntries([mk('A', 3), mk('A', 2), mk('A', 1)])[0].key
+    expect(after).toBe(before)
+  })
 })
 
 describe('titleFor', () => {
