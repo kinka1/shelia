@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { fmtDate } from './LogDetailSheet'
 import { DailyLogError, MIN_CHARS, fetchMyToday, fieldState, remainingFields, submitDailyLog, todayWIB } from '@/lib/dailyLog'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
@@ -40,6 +42,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [point, setPoint] = useState(OFFICE)
+  const [confirming, setConfirming] = useState(false)
 
   const seq = useRef(0)
   async function check(d = date) {
@@ -55,9 +58,17 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const left = remainingFields(v)
   const [connKey, connLabel] = CONN[mh.status]
 
-  async function submit(e: React.FormEvent) {
+  const canSend = mh.status === 'ok'
+
+  // Kirim log goes to the real MagangHub, so it only opens a confirmation; send() runs after "Kirim ke MagangHub".
+  function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (busy || left) return
+    if (!busy && !left && canSend) setConfirming(true)
+  }
+
+  async function send() {
+    if (busy) return
+    setConfirming(false)
     setBusy(true); setFormErr(''); setFieldErr({})
     try {
       await submitDailyLog({ date, ...v, latitude: point.lat, longitude: point.lng })
@@ -98,7 +109,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         Log harian{mh.expiry ? ` · token berlaku sampai ${hhmm(mh.expiry)}` : ''}
       </p>
       <form onSubmit={submit}>
-        <div className="grid grid-cols-2 gap-x-2.5 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-2.5">
           <div className="mb-2.5 space-y-1">
             <Label htmlFor="mh-date" className={LABEL}>Tanggal</Label>
             <Input id="mh-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -106,10 +117,6 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
           <div className="mb-2.5 space-y-1">
             <Label htmlFor="mh-status" className={LABEL}>Status</Label>
             <Input id="mh-status" value="Hadir" readOnly aria-readonly className={READ_ONLY} />
-          </div>
-          <div className="col-span-2 mb-2.5 space-y-1 sm:col-span-1">
-            <Label htmlFor="mh-loc" className={LABEL}>Lokasi</Label>
-            <Input id="mh-loc" value="Surabaya" readOnly aria-readonly className={READ_ONLY} />
           </div>
         </div>
         <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
@@ -133,13 +140,39 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
             <StatusPill status="closed" label={`Terkirim ${sentAt}`} />
           ) : (
             <>
-              {left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
+              {!canSend ? <span className="text-xs text-warning-ink">Sambungkan MagangHub dulu</span>
+                : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
-              <Button type="submit" disabled={busy || left > 0}>Kirim log</Button>
+              <Button type="submit" disabled={busy || left > 0 || !canSend}>{busy ? 'Mengirim…' : 'Kirim log'}</Button>
             </>
           )}
         </div>
       </form>
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Kirim ke MagangHub?</DialogTitle>
+            <DialogDescription>Kehadiran dan log harian ini masuk ke akun MagangHub Anda dan tidak bisa dibatalkan dari sini.</DialogDescription>
+          </DialogHeader>
+          <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-sm">
+            <dt className="text-muted-foreground">Tanggal</dt><dd>{fmtDate(date)}</dd>
+            <dt className="text-muted-foreground">Kehadiran</dt><dd>Hadir</dd>
+            <dt className="text-muted-foreground">Titik</dt><dd className="break-all tabular-nums">{point.lat}, {point.lng}</dd>
+          </dl>
+          <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-md border p-3">
+            {FIELDS.map(([k, name]) => (
+              <section key={k}>
+                <h3 className="text-xs font-semibold text-muted-foreground">{name}</h3>
+                <p className="mt-0.5 whitespace-pre-wrap break-words text-sm">{v[k].trim()}</p>
+              </section>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setConfirming(false)}>Batal</Button>
+            <Button onClick={() => void send()}>Kirim ke MagangHub</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </>)}
     </section>
   )

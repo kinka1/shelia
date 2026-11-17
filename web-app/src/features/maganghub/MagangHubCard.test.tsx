@@ -1,10 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MagangHubCard } from './MagangHubCard'
 
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status })
-const stub = (rows: unknown[]) => vi.stubGlobal('fetch', vi.fn(async (u: string) => (String(u).includes('/monev-api/') ? json({ data: rows, total: rows.length }) : json({ data: [] }))))
+const stub = (rows: unknown[]) => vi.stubGlobal('fetch', vi.fn(async (u: string) => (String(u).includes('/daily-logs') ? json({ data: rows, total: rows.length }) : json({ data: [] }))))
 const L = 'x'.repeat(100)
+// Every card needs a MagangHub token: the form sends to the real MagangHub.
+beforeEach(() => localStorage.setItem('maganghub.token', 'mh-tok'))
 
 describe('MagangHubCard', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -20,7 +22,7 @@ describe('MagangHubCard', () => {
   })
 
   it('shows sent state when today already has a log', async () => {
-    stub([{ date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()), clock_in: '08:01' }])
+    stub([{ date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()), created_at: '2026-11-17T08:01:00' }])
     render(<MagangHubCard />)
     expect(await screen.findByText('Terkirim 08:01')).toBeInTheDocument()
     // Bagian yang selesai dilipat jadi satu baris; Lihat membukanya lagi.
@@ -34,7 +36,7 @@ describe('MagangHubCard', () => {
       i?.method === 'POST' ? json({ message: 'x', errors: { obstacles: 'obstacles minimal 100 karakter' } }, 422) : json({ data: [] })))
     render(<MagangHubCard />)
     for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
     expect(await screen.findByText('Minimal 100 karakter')).toBeInTheDocument()
   })
 
@@ -43,7 +45,7 @@ describe('MagangHubCard', () => {
       i?.method === 'POST' ? json({ message: 'Absensi untuk tanggal ini sudah ada' }, 409) : json({ data: [] })))
     render(<MagangHubCard />)
     for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
-    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
     expect(await screen.findByText('Log untuk tanggal ini sudah ada.')).toBeInTheDocument()
   })
 })
@@ -52,13 +54,16 @@ describe('MagangHubCard stale check', () => {
   afterEach(() => vi.unstubAllGlobals())
   it('ignores a slower response for a previous date', async () => {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
-    let slow!: (r: Response) => void
-    let n = 0
-    vi.stubGlobal('fetch', vi.fn(() => (++n === 1 ? new Promise<Response>((r) => { slow = r }) : Promise.resolve(json({ data: [] })))))
+    // Hold every request made for the first date (the check and the token probe), answer the new date at once.
+    const held: ((r: Response) => void)[] = []
+    let changed = false
+    vi.stubGlobal('fetch', vi.fn(() => (changed ? Promise.resolve(json({ data: [] })) : new Promise<Response>((r) => { held.push(r) }))))
     render(<MagangHubCard />)
+    await waitFor(() => expect(held.length).toBeGreaterThan(0))
+    changed = true
     fireEvent.change(screen.getByLabelText('Tanggal'), { target: { value: '2020-01-01' } })
-    await waitFor(() => expect(n).toBe(2))
-    slow(json({ data: [{ date: today, clock_in: '08:01' }] }))
+    await new Promise((r) => setTimeout(r, 10))
+    for (const r of held) r(json({ data: [{ date: today, created_at: today + 'T08:01:00' }] }))
     await new Promise((r) => setTimeout(r, 30))
     expect(screen.queryByText('Terkirim 08:01')).toBeNull()
   })
@@ -79,9 +84,9 @@ describe('MagangHubCard location', () => {
   it('sends the office coordinates by default', async () => {
     const posts = sent()
     render(<MagangHubCard />)
-    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
     await waitFor(() => expect(posts).toHaveLength(1))
-    expect(posts[0]).toMatchObject({ latitude: -7.308430344545027, longitude: 112.785199930883, location: 'Surabaya' })
+    expect(posts[0]).toMatchObject({ latitude: -7.308430344545027, longitude: 112.785199930883, status: 'PRESENT' })
   })
 
   it('fills latitude and longitude from the device GPS', async () => {
@@ -92,7 +97,7 @@ describe('MagangHubCard location', () => {
     expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
     expect(screen.getByLabelText('Latitude')).toHaveValue('-7.25')
     expect(screen.getByLabelText('Longitude')).toHaveValue('112.75')
-    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' })); fireEvent.click(await screen.findByRole('button', { name: 'Kirim ke MagangHub' }))
     await waitFor(() => expect(posts).toHaveLength(1))
     expect(posts[0]).toMatchObject({ latitude: -7.25, longitude: 112.75 })
   })
@@ -104,4 +109,41 @@ it('shows the coordinates exactly as sent, not rounded', () => {
   expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
   expect(screen.getByLabelText('Longitude')).toHaveValue('112.785199930883')
   vi.unstubAllGlobals()
+})
+
+describe('MagangHubCard real send safety', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const posts: any[] = []
+  beforeEach(() => {
+    posts.length = 0
+    vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) => {
+      if (i?.method === 'POST') { posts.push(JSON.parse(String(i.body))); return json({}, 201) }
+      return json({ data: [] })
+    }))
+  })
+  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } }) }
+
+  it('asks before sending and sends nothing when cancelled', async () => {
+    render(<MagangHubCard />)
+    fill(); fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
+    const dlg = await screen.findByRole('dialog')
+    expect(dlg).toHaveTextContent('Kirim ke MagangHub?')
+    expect(dlg).toHaveTextContent('Hadir')
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(posts).toHaveLength(0)
+  })
+
+  it('cannot send without a MagangHub token', async () => {
+    localStorage.removeItem('maganghub.token')
+    render(<MagangHubCard />)
+    fill()
+    expect(screen.getByRole('button', { name: 'Kirim log' })).toBeDisabled()
+    expect(screen.getByText('Sambungkan MagangHub dulu')).toBeInTheDocument()
+  })
+
+  it('no longer shows or sends a Lokasi field', () => {
+    render(<MagangHubCard />)
+    expect(screen.queryByLabelText('Lokasi')).toBeNull()
+  })
 })

@@ -35,8 +35,7 @@ const TITLES: Record<string, string> = {
   'POST /api/v2/attendance/face/verify': 'Verifikasi wajah',
   'POST /api/v2/attendance/check-in': 'Kirim absen masuk',
   'POST /api/v2/attendance/check-out': 'Kirim absen pulang',
-  'POST /monev-api/v1/attendances/with-daily-log': 'Kirim log harian',
-  'GET /monev-api/v1/daily-logs': 'Cek log hari ini',
+  'POST /maganghub-api/v1/attendances': 'Kirim log harian ke MagangHub',
   'GET /maganghub-api/v1/daily-logs': 'Ambil log MagangHub',
 }
 
