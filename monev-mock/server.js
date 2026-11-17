@@ -81,7 +81,10 @@ function createServer({ authUrl, dataFile, now = () => new Date(), authTimeoutMs
     if (!validDate(b.date)) errors.date = "Tanggal tidak valid (YYYY-MM-DD)";
     if (!STATUSES.includes(b.status)) errors.status = "Status harus PRESENT, PERMIT, atau SICK";
     if (b.status === "PRESENT") {
-      for (const f of TEXT_FIELDS) if (typeof b[f] !== "string" || !b[f].trim()) errors[f] = `${f} wajib diisi`;
+      for (const f of TEXT_FIELDS) {
+        if (typeof b[f] !== "string" || !b[f].trim()) errors[f] = `${f} wajib diisi`;
+        else if (b[f].trim().length < 100) errors[f] = `${f} minimal 100 karakter`;
+      }
     }
     if (Object.keys(errors).length) throw new HttpError(422, "Data tidak valid", errors);
 

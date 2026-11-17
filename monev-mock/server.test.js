@@ -10,7 +10,7 @@ const listen = (s) => new Promise((r) => s.listen(0, "127.0.0.1", () => r(`http:
 const now = () => new Date("2026-11-16T03:00:00Z"); // Mon 10:00 WIB
 const body = (o = {}) => ({
   date: "2026-11-16", status: "PRESENT", latitude: -6.2, longitude: 106.8, location: "Jakarta",
-  activity_log: "a", lesson_learned: "b", obstacles: "c", ...o,
+  activity_log: "a".repeat(100), lesson_learned: "b".repeat(100), obstacles: "c".repeat(100), ...o,
 });
 
 let stub, stubUrl, mock, base, dataFile;
@@ -91,6 +91,12 @@ test("failed save leaves nothing behind", async () => {
     fs.chmodSync(dir, 0o700);
     assert.strictEqual((await put()).status, 201);
   } finally { fs.chmodSync(dir, 0o700); m.close(); }
+});
+
+test("PRESENT text fields need 100 chars after trim", async () => {
+  const r = await post(body({ date: "2026-11-18", lesson_learned: "x".repeat(99) + "   " }));
+  assert.strictEqual(r.status, 422);
+  assert.match(r.json.errors.lesson_learned, /minimal 100 karakter/);
 });
 
 test("stores present entry", async () => {
