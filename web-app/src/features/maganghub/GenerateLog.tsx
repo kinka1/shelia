@@ -80,7 +80,7 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={id}>
           <span>{label}</span>{opts.srLabel && <span className="sr-only"> {opts.srLabel}</span>}
-          <span aria-hidden className="text-destructive-ink">*</span>
+          <span aria-hidden className="text-destructive-ink">{' '}*</span>
         </Label>
         <Input id={id} type={opts.secret && !show ? 'password' : 'text'} autoComplete="off" spellCheck={false} placeholder={opts.placeholder}
           required aria-required aria-invalid={invalid || undefined} className={invalid ? 'border-destructive' : undefined}
