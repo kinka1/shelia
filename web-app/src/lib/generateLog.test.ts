@@ -32,7 +32,8 @@ describe('generateLog', () => {
     expect(sent).toContain('src/a.ts (+3 −1)')
     expect(sent).toMatch(/Indonesia/)
     expect(sent).toContain('100–130')
-    expect(sent).toMatch(/tidak ada kendala berarti/i)
+    expect(sent).toMatch(/Jangan menulis "tidak ada kendala"/)
+    expect(sent).not.toMatch(/Tidak ada kendala berarti\./)
   })
 
   it('a short field → one retry naming it; then valid', async () => {

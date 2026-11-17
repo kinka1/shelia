@@ -33,10 +33,10 @@ Aturan isi untuk setiap field:
 - Jika ada "Periode", rangkum pekerjaan selama periode itu, bukan satu hari.
 activity_log: apa yang dikerjakan atau diubah; sebut bagian sistem yang terlihat dari nama file.
 lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem, atau teknik yang disentuh.
-obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, tulis bahwa tidak ada kendala berarti, lalu sebut singkat hal yang perlu dijaga atau dicek dari pekerjaan itu.
+obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, langsung tulis hal yang perlu dijaga atau dicek dari pekerjaan itu. Jangan menulis "tidak ada kendala" atau kalimat pembuka serupa.
 
 Contoh nada yang diinginkan (bukan isi):
-{"activity_log": "Fix bug validasi form login dan menambahkan filter tanggal pada endpoint riwayat absensi agar data lebih mudah dicari.", "lesson_learned": "Mempelajari cara backend memeriksa masa berlaku token dan cara frontend menampilkan pesan error tanpa logout paksa.", "obstacles": "Tidak ada kendala berarti. Alur login dan logout perlu dicek ulang di ponsel karena tampilannya sempat bergeser."}`
+{"activity_log": "Fix bug validasi form login dan menambahkan filter tanggal pada endpoint riwayat absensi agar data lebih mudah dicari.", "lesson_learned": "Mempelajari cara backend memeriksa masa berlaku token dan cara frontend menampilkan pesan error tanpa logout paksa.", "obstacles": "Alur login dan logout perlu dicek ulang di ponsel karena tampilannya sempat bergeser setelah perubahan validasi form."}`
 
 const one = (c: GitCommit) => {
   const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')
