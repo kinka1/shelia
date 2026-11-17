@@ -11,9 +11,9 @@ describe('extension mh.js', () => {
 
   it('knows MagangHub and only our origins', () => {
     expect(MH_SITE).toBe('https://monev.maganghub.kemnaker.go.id')
-    expect(ALLOWED_ORIGINS).toEqual(['https://phoenix.holo.my.id', 'https://test-shelia.holo.my.id'])
-    expect(manifest.externally_connectable.matches).toEqual(['https://phoenix.holo.my.id/*', 'https://test-shelia.holo.my.id/*'])
-    expect(manifest.host_permissions).toEqual(['https://monev.maganghub.kemnaker.go.id/*', 'https://phoenix.holo.my.id/*', 'https://test-shelia.holo.my.id/*'])
+    expect(ALLOWED_ORIGINS).toEqual(['https://phoenix.holo.my.id'])
+    expect(manifest.externally_connectable.matches).toEqual(['https://phoenix.holo.my.id/*'])
+    expect(manifest.host_permissions).toEqual(['https://monev.maganghub.kemnaker.go.id/*', 'https://phoenix.holo.my.id/*'])
     expect(todayWIB(NOW)).toBe('2026-11-18')
   })
 

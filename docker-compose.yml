@@ -1,4 +1,4 @@
-# Phoenix (formerly test-shelia) — dev-only test client, behind Cloudflare Access.
+# Phoenix — dev-only test client, behind Cloudflare Access.
 # Public path: Cloudflare Access (email OTP) -> tunnel -> nginx-proxy -> this container.
 # Update: ./deploy.sh (builds web-app, syncs, validates nginx.conf, recreates containers)
 services:
@@ -7,7 +7,7 @@ services:
     container_name: shelia-test-web
     expose: ["80"]
     environment:
-      - VIRTUAL_HOST=phoenix.holo.my.id,test-shelia.holo.my.id
+      - VIRTUAL_HOST=phoenix.holo.my.id
       - VIRTUAL_PORT=80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

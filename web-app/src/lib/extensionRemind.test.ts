@@ -85,7 +85,7 @@ describe('when an alarm fires', () => {
 })
 
 describe('clicking a notification', () => {
-  it('focuses an open test-shelia tab; with the log open it asks the page to generate', async () => {
+  it('focuses an open Phoenix tab; with the log open it asks the page to generate', async () => {
     const c = fake({ remind: { status: { date: '2026-11-17', masuk: true, pulang: true, log: false } } }, [{ id: 4, windowId: 2 }])
     await onClick('pulang', c, at('2026-11-17T09:45:00Z'))
     expect(c.tabs.update).toHaveBeenCalledWith(4, { active: true, url: 'https://phoenix.holo.my.id/?generate=1' })

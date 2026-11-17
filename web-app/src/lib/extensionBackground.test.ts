@@ -120,7 +120,7 @@ describe('extension worker', () => {
   it('a whole request fits in Chrome\'s 5-minute limit for one event', () => {
     expect(DEFAULTS.loadWaitMs + DEFAULTS.tokenWaitMs + DEFAULTS.loginWaitMs + 1_000).toBeLessThanOrEqual(270_000)
   })
-  it('after install or update, reloads open test-shelia tabs so they see the extension', async () => {
+  it('after install or update, reloads open Phoenix tabs so they see the extension', async () => {
     const c = fake()
     c.tabs.query.mockResolvedValueOnce([{ id: 3 }, { id: 4 }] as any)
     ;(c.tabs as any).reload = vi.fn(async () => {})
