@@ -52,7 +52,7 @@ export async function fetchDailyLogs(page: number, action = 'Ambil log MagangHub
   try { body = await res.json() } catch { return { status: 'ok', rows: [], total: null, error: 'Respons bukan JSON' } }
   return {
     status: 'ok',
-    rows: Array.isArray(body?.data) ? body.data : [],
+    rows: Array.isArray(body?.data) ? body.data.filter((r: unknown) => r && typeof r === 'object') : [],
     total: typeof body?.total === 'number' ? body.total : null,
   }
 }

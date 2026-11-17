@@ -5,7 +5,8 @@ import { StatusPill } from '@/features/shelia/Sessions'
 import type { MhLog } from '@/lib/maganghub'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-export const fmtDate = (d: string) => {
+export const fmtDate = (d?: string) => {
+  if (typeof d !== 'string') return '-'
   const [y, m, day] = d.split('-')
   return MONTHS[Number(m) - 1] ? `${Number(day)} ${MONTHS[Number(m) - 1]} ${y}` : d
 }

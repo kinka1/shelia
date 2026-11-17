@@ -27,9 +27,12 @@ export default function RiwayatMagangHub() {
   const rowEls = useRef(new Map<number, HTMLTableRowElement>())
   const opener = useRef<number | null>(null)
 
+  const latest = useRef(0)
   const load = useCallback(async (p: number, action?: string) => {
+    const id = ++latest.current
     setResult(null)
     const r = await fetchDailyLogs(p, action)
+    if (id !== latest.current) return // respons lama tidak boleh menimpa halaman terbaru
     setResult(r)
     // Ukuran halaman = jumlah baris halaman pertama.
     if (p === 1 && r.rows.length) setPerPage(r.rows.length)
@@ -43,7 +46,7 @@ export default function RiwayatMagangHub() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold tracking-tight">Riwayat MagangHub</h1>
-        <Button variant="outline" className="h-9" disabled={!result} onClick={() => void load(page, 'Muat riwayat MagangHub')}>
+        <Button variant="outline" className="h-9" onClick={() => void load(page, 'Muat riwayat MagangHub')}>
           <RefreshCw className="size-4" aria-hidden /> Muat ulang
         </Button>
       </div>
@@ -70,7 +73,7 @@ export default function RiwayatMagangHub() {
                   <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">Belum ada log.</TableCell></TableRow>
                 ) : rows.map((r, i) => (
                   <TableRow
-                    key={r.date} tabIndex={0} className="cursor-pointer"
+                    key={i} tabIndex={0} className="cursor-pointer"
                     ref={(el) => { if (el) rowEls.current.set(i, el); else rowEls.current.delete(i) }}
                     onClick={() => show(i)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) show(i) }}

@@ -72,3 +72,12 @@ describe('token hand-off', () => {
     expect(await fetchDailyLogs(1)).toMatchObject({ status: 'ok', rows: [{ date: '2026-11-17' }], total: 3 })
   })
 })
+
+describe('fetchDailyLogs element filtering', () => {
+  afterEach(() => { vi.unstubAllGlobals(); localStorage.clear() })
+  it('drops non-object elements', async () => {
+    localStorage.setItem('maganghub.token', 't')
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: [null, 1, {}, { date: '2026-11-17' }], total: 4 }))))
+    expect((await fetchDailyLogs(1)).rows).toEqual([{}, { date: '2026-11-17' }])
+  })
+})

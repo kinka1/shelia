@@ -68,4 +68,24 @@ describe('RiwayatMagangHub', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Muat ulang' }))
     await waitFor(() => expect(fetchDailyLogs).toHaveBeenLastCalledWith(1, 'Muat riwayat MagangHub'))
   })
+
+  it('tolerates rows without a date', async () => {
+    fetchDailyLogs.mockResolvedValue({ status: 'ok', rows: [{}, { date: '2026-11-17', activity_log: 'a' }], total: 2 })
+    renderPage()
+    expect(await screen.findByText('17 Nov 2026')).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('row')[1])
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('ignores a slower earlier response', async () => {
+    let slow!: (v: unknown) => void
+    fetchDailyLogs.mockReturnValueOnce(new Promise((r) => { slow = r }))
+    fetchDailyLogs.mockResolvedValue({ status: 'ok', rows, total: 3 })
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'Muat ulang' }))
+    await screen.findByText('11 Nov 2026')
+    slow({ status: 'ok', rows: [{ date: '2020-01-01' }], total: 1 })
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByText('1 Jan 2020')).toBeNull()
+  })
 })
