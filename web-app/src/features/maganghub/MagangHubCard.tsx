@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { StatusPill } from '@/features/shelia/Sessions'
 import { LocationPicker, OFFICE } from './LocationPicker'
 import { MhConnect, MhConnectPanel } from './MhConnect'
+import { GenerateLog } from './GenerateLog'
 import { useMhToken } from './useMhToken'
 
 const FIELDS = [
@@ -120,6 +121,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           </div>
         </div>
         <LocationPicker value={point} onChange={setPoint} disabled={!!sentAt} />
+        <GenerateLog value={v} onChange={setV} />
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
           return (

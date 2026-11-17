@@ -147,6 +147,20 @@ describe('MagangHubCard gates', () => {
     expect(await screen.findByRole('button', { name: 'Hubungkan MagangHub' })).toBeInTheDocument()
   })
 
+  it('Generate fills the three fields', async () => {
+    const texts = { activity_log: 'a'.repeat(110), lesson_learned: 'b'.repeat(110), obstacles: 'c'.repeat(110) }
+    localStorage.setItem('generate.settings', JSON.stringify({ repo: 'https://github.com/o/r', token: 'T', deepseekKey: 'K' }))
+    const gc = await import('@/lib/gitCommits'); const gl = await import('@/lib/generateLog')
+    vi.spyOn(gc, 'fetchTodayCommits').mockResolvedValue({ commits: [], trimmed: false })
+    vi.spyOn(gl, 'generateLog').mockResolvedValue(texts)
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue(texts.activity_log))
+    expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue(texts.obstacles)
+  })
+
   it('without a token: a connect step instead of the form, then the form', async () => {
     localStorage.removeItem('maganghub.token')
     let tokenAnswer: any = { error: 'login' }
