@@ -32,7 +32,9 @@ const CELL: Record<Bucket, string> = {
   kosong: 'border-dotted border-muted-foreground/60 bg-transparent text-muted-foreground',
   libur: 'border-transparent bg-transparent font-normal text-muted-foreground',
 }
-const LEGEND: Bucket[] = ['hadir', 'terlambat', 'izin', 'cuti', 'dinas', 'tidak_hadir', 'kosong', 'nanti']
+// Always the attendance words; Belum absen and Hari mendatang only when the month has such a day.
+const LEGEND: Bucket[] = ['hadir', 'terlambat', 'izin', 'cuti', 'dinas', 'tidak_hadir', 'kosong', 'belum', 'nanti']
+const ONLY_IF_SHOWN: Bucket[] = ['belum', 'nanti']
 
 type Data = { period: string; shelia: SheliaRow[] | { error: string } | null; mh: { status: MhStatus; logs: MhLog[]; error?: string } }
 
@@ -52,6 +54,9 @@ export default function Riwayat() {
   const [data, setData] = useState<Data | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
   const seq = useRef(0)
+  const detail = useRef<HTMLElement>(null)
+  // On phones the details sit below the calendar: bring them into view when a day is picked.
+  useEffect(() => { if (picked) detail.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' }) }, [picked])
 
   useEffect(() => {
     const id = ++seq.current
@@ -65,6 +70,8 @@ export default function Riwayat() {
   const rows = ready && Array.isArray(ready.shelia) ? ready.shelia : []
   const days = ready ? monthDays(period, rows, ready.mh.logs, today) : []
   const counts = monthCounts(days, today)
+  const noShelia = !ready || !Array.isArray(ready.shelia) // counts unknown, not zero
+  const shown = (n: number) => (noShelia ? '–' : n)
   const selected = picked ?? (period === current ? today : `${period}-01`)
   const day = days.find((d) => d.date === selected)
   const title = monthTitle(period)
@@ -125,7 +132,7 @@ export default function Riwayat() {
                 })}
               </ul>
               <ul aria-label="Keterangan" className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                {LEGEND.map((b) => (
+                {LEGEND.filter((b) => !ONLY_IF_SHOWN.includes(b) || days.some((d) => d.bucket === b)).map((b) => (
                   <li key={b} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <span aria-hidden className={cn('size-4 rounded-sm border', CELL[b])} />{BUCKET[b].label}
                   </li>
@@ -137,12 +144,12 @@ export default function Riwayat() {
             <dl className="flex flex-col gap-3 lg:min-w-0 lg:flex-1 lg:border-l lg:pl-4">
               <div>
                 <dt className="text-xs font-medium text-muted-foreground">Hadir</dt>
-                <dd className="text-lg font-semibold tabular-nums">{counts.hadir} dari {counts.workDays} hari kerja</dd>
+                <dd className="text-lg font-semibold tabular-nums">{shown(counts.hadir)} dari {counts.workDays} hari kerja</dd>
               </div>
-              {([['Terlambat', counts.terlambat, 'text-warning-ink'], ['Tidak hadir', counts.tidakHadir, 'text-destructive-ink'], ['Log MagangHub terkirim', counts.logs, 'text-success-ink']] as const).map(([label, n, ink]) => (
+              {([['Terlambat', shown(counts.terlambat), 'text-warning-ink'], ['Tidak hadir', shown(counts.tidakHadir), 'text-destructive-ink'], ['Log MagangHub terkirim', counts.logs, 'text-success-ink']] as const).map(([label, n, ink]) => (
                 <div key={label} className="flex items-baseline justify-between gap-3 border-t pt-3">
                   <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                  <dd className={cn('text-lg font-semibold tabular-nums', n > 0 ? ink : 'text-foreground')}>{n}</dd>
+                  <dd className={cn('text-lg font-semibold tabular-nums', typeof n === 'number' && n > 0 ? ink : 'text-foreground')}>{n}</dd>
                 </div>
               ))}
               <p className="border-t pt-3 text-xs text-muted-foreground">Hari kerja Senin–Jumat sampai hari ini.</p>
@@ -152,7 +159,7 @@ export default function Riwayat() {
       </section>
 
       {day && (
-        <section aria-label={`Detail ${fmtDate(day.date)}`} className="rounded-xl border bg-card p-4">
+        <section ref={detail} aria-label={`Detail ${fmtDate(day.date)}`} className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 text-[15px] font-semibold">{fmtDate(day.date)} · {BUCKET[day.bucket].label}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">

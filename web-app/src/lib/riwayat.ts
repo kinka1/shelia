@@ -75,11 +75,11 @@ export function monthDays(period: string, rows: SheliaRow[], logs: MhLog[], toda
   })
 }
 
-/** Work days are Monday–Friday up to today; Hadir includes Terlambat (as in the admin panel). */
+/** Work days are Monday–Friday up to today; Hadir includes Terlambat and Dinas (as in the admin panel). */
 export function monthCounts(days: CalDay[], today: string) {
   const has = (b: Bucket) => days.filter((d) => d.bucket === b).length
   return {
-    hadir: has('hadir') + has('terlambat'),
+    hadir: has('hadir') + has('terlambat') + has('dinas'),
     workDays: days.filter((d) => d.date <= today && weekday(d.date) < 5).length,
     terlambat: has('terlambat'),
     tidakHadir: has('tidak_hadir'),
@@ -104,7 +104,8 @@ export async function fetchMhMonth(period: string): Promise<{ status: MhStatus; 
     const r = await fetchDailyLogs(page, 'Riwayat MagangHub sebulan')
     if (r.status !== 'ok' || r.error) return { status: r.status, logs, ...(r.error ? { error: r.error } : {}) }
     logs.push(...r.rows.filter((l) => l.date?.startsWith(period)))
-    if (!r.rows.length || r.rows.some((l) => (l.date ?? '') < `${period}-01`)) break
+    if (!r.rows.length || r.rows.some((l) => l.date && l.date < `${period}-01`)) return { status: 'ok', logs }
   }
-  return { status: 'ok', logs }
+  // ponytail: page cap, so an old month stops after MAX_PAGES requests; it says so instead of showing 0.
+  return { status: 'ok', logs, error: 'Log yang lebih lama tidak dimuat; sebagian tanda ✓ mungkin tidak tampil.' }
 }

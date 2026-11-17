@@ -83,3 +83,19 @@ describe('fetchMhMonth', () => {
     expect(f).not.toHaveBeenCalled()
   })
 })
+
+describe('final review fixes', () => {
+  it('Dinas days count as attended, as in the admin panel', () => {
+    const d = monthDays('2026-11', [{ attendance_date: '2026-11-03 00:00:00', status: 'business_trip' }], [], '2026-11-17')
+    expect(monthCounts(d, '2026-11-17').hadir).toBe(1)
+  })
+  it('an undated MagangHub row does not stop paging; hitting the page cap says logs may be missing', async () => {
+    localStorage.setItem('maganghub.token', 'mh')
+    const f = vi.fn(async (url: string) => json({ data: url.endsWith('page=1') ? [{ date: '2026-11-05' }, { }] : [{ date: '2026-11-04' }] }))
+    vi.stubGlobal('fetch', f)
+    const r = await fetchMhMonth('2026-11')
+    expect(r.logs.map((l) => l.date)).toContain('2026-11-04')
+    expect(f).toHaveBeenCalledTimes(10)
+    expect(r.error).toBe('Log yang lebih lama tidak dimuat; sebagian tanda ✓ mungkin tidak tampil.')
+  })
+})

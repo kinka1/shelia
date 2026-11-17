@@ -93,4 +93,30 @@ describe('Riwayat', () => {
     expect(await screen.findByText('MagangHub belum terhubung')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: '3 November: Hadir' })).toBeInTheDocument()
   })
+
+  it('without Shelia data the attendance counts say "–", not 0', async () => {
+    localStorage.removeItem('absen.token')
+    stub(); ui()
+    await screen.findByText('Shelia belum login')
+    expect(screen.getByText('– dari 12 hari kerja')).toBeInTheDocument()
+    expect(screen.queryByText('0 dari 12 hari kerja')).toBeNull()
+  })
+
+  it('the legend lists only what the month shows: Belum absen today, no Hari mendatang in a past month', async () => {
+    stub(); ui()
+    const legend = () => within(screen.getByRole('list', { name: 'Keterangan' }))
+    await screen.findByRole('button', { name: /^3 November/ })
+    expect(legend().getByText('Belum absen')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Bulan sebelumnya' }))
+    await screen.findByRole('list', { name: 'Kalender Oktober 2026' })
+    expect(legend().queryByText('Hari mendatang')).toBeNull()
+    expect(legend().queryByText('Belum absen')).toBeNull()
+  })
+
+  it('picking a day scrolls its details into view', async () => {
+    const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView")
+    stub(); ui()
+    fireEvent.click(await screen.findByRole('button', { name: /^3 November/ }))
+    await waitFor(() => expect(scroll).toHaveBeenCalled())
+  })
 })
