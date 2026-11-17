@@ -73,6 +73,7 @@ describe('MagangHubCard sending', () => {
     expect(sends(s)[0]).toEqual({ date: TODAY, status: 'PRESENT', activity_log: L, lesson_learned: L, obstacles: L, latitude: -7.308430344545027, longitude: 112.785199930883 })
     finish({ ok: true, status: 201 })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(localStorage.getItem('maganghub.draft')).toBeNull() // sent: the draft is gone
   })
 
   it('sends the device GPS position when used', async () => {
@@ -267,5 +268,38 @@ describe('MagangHubCard gates', () => {
     render(<MagangHubCard />)
     await waitFor(() => expect(localStorage.getItem('maganghub.token')).toBe('fresh'))
     expect(s).toHaveBeenCalledWith(expect.any(String), { type: 'token', interactive: false }, expect.any(Function))
+  })
+})
+
+describe('MagangHubCard draft (tab closed and reopened)', () => {
+  const draft = (date: string) => JSON.stringify({ date, v: { activity_log: 'aku', lesson_learned: 'belajar', obstacles: 'kendala' }, point: { lat: -6.2, lng: 106.8 } })
+
+  it("restores today's three texts and location", async () => {
+    localStorage.setItem('maganghub.draft', draft(TODAY))
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('aku')
+    expect(screen.getByRole('textbox', { name: 'Pembelajaran' })).toHaveValue('belajar')
+    expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue('kendala')
+    expect(screen.getByLabelText('Latitude')).toHaveValue('-6.2')
+    expect(screen.getByLabelText('Longitude')).toHaveValue('106.8')
+  })
+
+  it('ignores a draft from another day', async () => {
+    localStorage.setItem('maganghub.draft', draft('2000-01-01'))
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('')
+    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
+  })
+
+  it('saves what is typed', async () => {
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.change(screen.getByRole('textbox', { name: 'Aktivitas' }), { target: { value: 'ketik' } })
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('maganghub.draft')!)).toMatchObject({ date: TODAY, v: { activity_log: 'ketik' } }))
   })
 })

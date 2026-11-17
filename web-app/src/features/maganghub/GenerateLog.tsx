@@ -47,7 +47,7 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
   function openSettings() {
     const s = getGenSettings()
     setForm(s ? { repos: s.repos!.map((r) => ({ url: r.url, token: r.token ?? '' })), deepseekKey: s.deepseekKey, model: s.model ?? DEFAULT_MODEL } : BLANK)
-    setFormErr(''); setTried(false); setOpen(true)
+    setFormErr(''); setTried(false); setShow(false); setOpen(true)
   }
 
   async function run(s: Settings) {

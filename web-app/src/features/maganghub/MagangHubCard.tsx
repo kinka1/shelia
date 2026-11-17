@@ -32,6 +32,14 @@ const CONN = {
 const LABEL = 'text-xs font-semibold text-muted-foreground'
 const READ_ONLY = 'bg-muted text-muted-foreground focus-visible:ring-0'
 
+// Today's unsent texts and location, kept in this browser so closing the tab loses nothing.
+// Tied to the date, so yesterday's draft never fills today's log; removed once sent.
+const DRAFT = 'maganghub.draft'
+type Draft = { date: string; v: Record<Key, string>; point: typeof OFFICE }
+function readDraft(date: string): Draft | null {
+  try { const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); return d?.date === date ? d : null } catch { return null }
+}
+
 const hhmm = (d: Date) => d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')
 
 export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: string | null) => void; onConnected?: (ok: boolean) => void }) {
@@ -39,10 +47,15 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   // The page's status card shows the same connection, so it hears about every change.
   useEffect(() => { onConnected?.(mh.status === 'ok') }, [mh.status, onConnected])
   const date = todayWIB() // locked to today, like MagangHub's own form
-  const [v, setV] = useState<Record<Key, string>>({ activity_log: '', lesson_learned: '', obstacles: '' })
+  const [draft] = useState(() => readDraft(date))
+  const [v, setV] = useState<Record<Key, string>>(draft?.v ?? { activity_log: '', lesson_learned: '', obstacles: '' })
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const [point, setPoint] = useState(OFFICE)
+  const [point, setPoint] = useState(draft?.point ?? OFFICE)
+  useEffect(() => {
+    if (sentAt) return
+    try { localStorage.setItem(DRAFT, JSON.stringify({ date, v, point })) } catch { /* storage blocked */ }
+  }, [date, v, point, sentAt])
   const [confirming, setConfirming] = useState(false)
   const ext = useExtension()
   const [sending, setSending] = useState(false)
@@ -86,7 +99,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
     if (now && 'error' in now) { setSending(false); setSendErr('Belum bisa memastikan log hari ini, jadi tidak dikirim. Coba lagi.'); return }
     const r = await extSend(sendBody({ date, ...v, latitude: point.lat, longitude: point.lng }))
     setSending(false)
-    if ('ok' in r && r.ok) { setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
+    if ('ok' in r && r.ok) { try { localStorage.removeItem(DRAFT) } catch { /* storage blocked */ }; setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
     setSendErr(extError(r))
   }
 

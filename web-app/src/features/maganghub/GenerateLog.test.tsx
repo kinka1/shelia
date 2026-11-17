@@ -176,4 +176,16 @@ describe('GenerateLog', () => {
     expect(a).toHaveAttribute('target', '_blank')
     expect(a).toHaveAttribute('rel', 'noopener noreferrer')
   })
+
+  it('Tampilkan kunci goes back to hidden when the settings are reopened', async () => {
+    ui()
+    fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
+    fireEvent.click(await screen.findByLabelText('Tampilkan kunci'))
+    expect(screen.getByLabelText(/API key DeepSeek/)).toHaveAttribute('type', 'text')
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
+    expect(await screen.findByLabelText('Tampilkan kunci')).not.toBeChecked()
+    expect(screen.getByLabelText(/API key DeepSeek/)).toHaveAttribute('type', 'password')
+  })
 })
