@@ -5,7 +5,7 @@ import { Toaster, toast } from 'sonner'
 const fetchTodayCommits = vi.fn()
 const generateLog = vi.fn()
 vi.mock('@/lib/gitCommits', async (real) => ({ ...(await real<object>()), fetchTodayCommits: (...a: any[]) => fetchTodayCommits(...a) }))
-vi.mock('@/lib/generateLog', () => ({ generateLog: (...a: any[]) => generateLog(...a) }))
+vi.mock('@/lib/generateLog', async (real) => ({ ...(await real<object>()), generateLog: (...a: any[]) => generateLog(...a) }))
 
 import { GenerateLog } from './GenerateLog'
 
@@ -44,7 +44,7 @@ describe('GenerateLog', () => {
     const saved = { repos: [{ url: SETTINGS.repo, token: 'T' }], deepseekKey: 'K' }
     expect(JSON.parse(localStorage.getItem('generate.settings')!)).toMatchObject(saved)
     expect(fetchTodayCommits).toHaveBeenCalledWith(expect.objectContaining(saved))
-    expect(generateLog).toHaveBeenCalledWith(expect.any(Array), 'K')
+    expect(generateLog).toHaveBeenCalledWith(expect.any(Array), 'K', 'deepseek-flash')
   })
 
   it('busy and single-run on double click; Batalkan restores the previous text', async () => {
@@ -151,5 +151,18 @@ describe('GenerateLog', () => {
     ui()
     fireEvent.click(screen.getByRole('button', { name: 'Generate' }))
     expect(await screen.findByText(/o\/secret: Repo tidak ditemukan/)).toBeInTheDocument()
+  })
+
+  it('Model DeepSeek: flash is the recommended default; pro can be chosen and is saved', async () => {
+    ui()
+    fireEvent.click(screen.getByRole('button', { name: 'Pengaturan Generate' }))
+    const model = await screen.findByLabelText(/Model DeepSeek/)
+    expect(model).toHaveValue('deepseek-flash')
+    expect(screen.getByRole('option', { name: /deepseek-flash.*Rekomendasi/ })).toBeInTheDocument()
+    fireEvent.change(model, { target: { value: 'deepseek-v4-pro' } })
+    type(/^Link repo 1/, SETTINGS.repo); type(/^Token akses/, 'T'); type(/API key DeepSeek/, 'K')
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }))
+    await waitFor(() => expect(generateLog).toHaveBeenCalledWith(expect.any(Array), 'K', 'deepseek-v4-pro'))
+    expect(JSON.parse(localStorage.getItem('generate.settings')!).model).toBe('deepseek-v4-pro')
   })
 })

@@ -26,7 +26,7 @@ describe('generateLog', () => {
     const [url, init] = f.mock.calls[0]
     expect(url).toBe('https://api.deepseek.com/chat/completions')
     expect(init.headers.Authorization).toBe('Bearer K')
-    expect(body(f, 0)).toMatchObject({ model: 'deepseek-chat', response_format: { type: 'json_object' } })
+    expect(body(f, 0)).toMatchObject({ model: 'deepseek-flash', response_format: { type: 'json_object' }, thinking: { type: 'disabled' } })
     const sent = all(f, 0)
     expect(sent).toContain('feat: tambah ekstensi')
     expect(sent).toContain('src/a.ts (+3 −1)')
@@ -72,6 +72,21 @@ describe('generateLog', () => {
     expect(all(f, 0)).toMatch(/Proyek o\/web[\s\S]*Proyek g\/api/)
   })
 
+  it('uses the chosen model', async () => {
+    const f = answers(reply(good))
+    await generateLog(commits, 'K', 'deepseek-v4-pro')
+    expect(body(f, 0).model).toBe('deepseek-v4-pro')
+  })
+
+  it('busy, overloaded and timeout answers say so plainly', async () => {
+    for (const status of [429, 503]) {
+      answers(new Response('{}', { status }))
+      expect(await generateLog(commits, 'K')).toEqual({ error: 'DeepSeek sedang sibuk. Coba lagi sebentar.' })
+    }
+    answers(new Response('{}', { status: 504 }))
+    expect(await generateLog(commits, 'K')).toEqual({ error: 'DeepSeek terlalu lama menjawab. Coba lagi.' })
+  })
+
   it('reads JSON inside ```json fences', async () => {
     answers(reply('```json\n' + JSON.stringify(good) + '\n```'))
     expect(await generateLog(commits, 'K')).toEqual(good)
@@ -81,7 +96,7 @@ describe('generateLog', () => {
     answers(new Response('{}', { status: 401 }))
     expect(await generateLog(commits, 'K')).toEqual({ error: 'API key DeepSeek tidak valid.' })
     answers(new Response('{}', { status: 402 }))
-    expect(await generateLog(commits, 'K')).toEqual({ error: 'Saldo DeepSeek habis.' })
+    expect(await generateLog(commits, 'K')).toEqual({ error: 'Saldo DeepSeek habis. Isi saldo di platform.deepseek.com, lalu coba lagi.' })
     answers(reply('bukan json'))
     expect(await generateLog(commits, 'K')).toEqual({ error: 'Jawaban DeepSeek tidak bisa dibaca. Coba lagi.' })
   })

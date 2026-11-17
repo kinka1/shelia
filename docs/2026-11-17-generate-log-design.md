@@ -32,7 +32,7 @@ reviews and edits before sending (the existing confirmation dialog stays).
 - Settings stored in this browser's localStorage only: repo link, access token (optional),
   DeepSeek key, Git username (only needed without a token). Shelia's and MagangHub's Keluar don't touch them;
   a "Hapus" in the settings clears them.
-- DeepSeek: `POST https://api.deepseek.com/chat/completions`, model `deepseek-chat`, user's key as
+- DeepSeek: `POST https://api.deepseek.com/chat/completions`, model chosen in the settings (`deepseek-flash` recommended default, or `deepseek-v4-pro`; `deepseek-chat` was retired 2026-07-24), thinking disabled, user's key as
   Bearer. Ask for JSON `{activity_log, lesson_learned, obstacles}`.
 - A returned text under 100 characters is never put in the form: retry once telling the model which
   field was short; still short → error, fields untouched.

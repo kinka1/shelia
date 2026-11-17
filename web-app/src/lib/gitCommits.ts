@@ -6,7 +6,7 @@ export type GitFile = { path: string; additions: number; deletions: number }
 export type GitCommit = { sha: string; message: string; files: GitFile[]; repo?: string }
 export type RepoLink = { url: string; token?: string }
 /** `repo`/`token` are the single-repo settings saved before several repos were allowed. */
-export type Settings = { repos?: RepoLink[]; repo?: string; token?: string; deepseekKey: string; username?: string }
+export type Settings = { repos?: RepoLink[]; repo?: string; token?: string; deepseekKey: string; username?: string; model?: string }
 type Result = { commits: GitCommit[]; trimmed: boolean; note?: string } | { error: string }
 
 const MAX_COMMITS = 30

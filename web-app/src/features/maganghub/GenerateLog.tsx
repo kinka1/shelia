@@ -6,20 +6,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { fetchTodayCommits, repoLinks, type RepoLink, type Settings } from '@/lib/gitCommits'
-import { generateLog, type LogTexts } from '@/lib/generateLog'
+import { DEFAULT_MODEL, MODELS, generateLog, type LogTexts } from '@/lib/generateLog'
 
 const KEY = 'generate.settings'
 const SMALL = 'h-6 rounded-md px-2 text-xs font-semibold'
 const MAX_REPOS = 10
-type Form = { repos: RepoLink[]; deepseekKey: string }
-const BLANK: Form = { repos: [{ url: '', token: '' }], deepseekKey: '' }
+type Form = { repos: RepoLink[]; deepseekKey: string; model: string }
+const BLANK: Form = { repos: [{ url: '', token: '' }], deepseekKey: '', model: DEFAULT_MODEL }
 
 // Kept in this browser only, like the other tokens. An older single-repo setting reads as repo 1.
 export function getGenSettings(): Settings | null {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || 'null')
     const repos = s ? repoLinks(s) : []
-    return repos.length && s.deepseekKey ? { repos, deepseekKey: s.deepseekKey, username: s.username } : null
+    // An unknown or retired model (e.g. deepseek-chat) falls back to the recommended one.
+    const model = MODELS.some((m) => m.id === s.model) ? s.model : DEFAULT_MODEL
+    return repos.length && s.deepseekKey ? { repos, deepseekKey: s.deepseekKey, username: s.username, model } : null
   } catch { return null }
 }
 export const setGenSettings = (s: Settings): void => { try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* storage blocked */ } }
@@ -44,7 +46,7 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
 
   function openSettings() {
     const s = getGenSettings()
-    setForm(s ? { repos: s.repos!.map((r) => ({ url: r.url, token: r.token ?? '' })), deepseekKey: s.deepseekKey } : BLANK)
+    setForm(s ? { repos: s.repos!.map((r) => ({ url: r.url, token: r.token ?? '' })), deepseekKey: s.deepseekKey, model: s.model ?? DEFAULT_MODEL } : BLANK)
     setFormErr(''); setTried(false); setOpen(true)
   }
 
@@ -56,7 +58,7 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
       const c = await fetchTodayCommits(s)
       if ('error' in c) return setErr(c.error)
       setNote([c.note, c.trimmed && 'Hanya 30 commit pertama dipakai'].filter(Boolean).join('\n'))
-      const t = await generateLog(c.commits, s.deepseekKey)
+      const t = await generateLog(c.commits, s.deepseekKey, s.model ?? DEFAULT_MODEL)
       if ('error' in t) return setErr(t.error)
       onChange(t)
       toast.success(`Dibuat dari ${c.commits.length} commit. Periksa sebelum mengirim.`, { action: { label: 'Batalkan', onClick: () => onChange(before) } })
@@ -68,7 +70,7 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
   function save() {
     setTried(true)
     if (!complete(form)) return setFormErr('Lengkapi semua isian yang wajib.')
-    const s: Settings = { repos: form.repos.map((r) => ({ url: r.url.trim(), token: r.token!.trim() })), deepseekKey: form.deepseekKey.trim() }
+    const s: Settings = { repos: form.repos.map((r) => ({ url: r.url.trim(), token: r.token!.trim() })), deepseekKey: form.deepseekKey.trim(), model: form.model }
     setGenSettings(s); setSaved(s); setOpen(false); void run(s)
   }
 
@@ -133,6 +135,13 @@ export function GenerateLog({ value, onChange, onBusy }: { value: LogTexts; onCh
                 onClick={() => setForm({ ...form, repos: [...form.repos, { url: '', token: '' }] })}>Tambah repo</Button>
             )}
             {input('gen-deepseekKey', 'API key DeepSeek', form.deepseekKey, (v) => setForm({ ...form, deepseekKey: v }), { secret: true })}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="gen-model"><span>Model DeepSeek</span><span aria-hidden className="text-destructive-ink">{' '}*</span></Label>
+              <select id="gen-model" required aria-required value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })}
+                className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
+                {MODELS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            </div>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> Tampilkan kunci
             </label>
