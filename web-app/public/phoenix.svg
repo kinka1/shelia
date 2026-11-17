@@ -1,24 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="fire" gradientUnits="userSpaceOnUse" x1="256" y1="40" x2="256" y2="490">
-      <stop offset="0" stop-color="#FFE08A"/>
-      <stop offset="0.35" stop-color="#FF8A3D"/>
-      <stop offset="0.65" stop-color="#F0383F"/>
-      <stop offset="1" stop-color="#7A2BD9"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB020"/>
+      <stop offset="0.5" stop-color="#FF4A1C"/>
+      <stop offset="1" stop-color="#C2185B"/>
     </linearGradient>
   </defs>
-  <g fill="url(#fire)">
-    <g id="half">
-      <path d="M260 236 C292 150 372 74 474 40 C424 108 364 170 290 252 Z"/>
-      <path d="M266 256 C330 186 412 138 496 124 C434 178 364 228 294 272 Z"/>
-      <path d="M270 276 C338 238 420 222 492 226 C424 260 354 282 294 294 Z"/>
-      <path d="M270 296 C330 292 400 302 458 324 C392 334 330 326 284 314 Z"/>
-      <path d="M262 334 C318 362 338 420 298 482 C318 426 300 384 252 354 Z"/>
-      <path d="M256 124 C252 104 262 84 284 72 C274 92 270 108 260 128 Z"/>
-    </g>
-    <use href="#half" transform="translate(512 0) scale(-1 1)"/>
-    <path d="M256 176 C274 210 276 268 256 340 C236 268 238 210 256 176 Z"/>
-    <path d="M256 326 C278 370 284 420 256 490 C228 420 234 370 256 326 Z"/>
-    <path d="M256 70 C266 96 272 130 256 180 C240 130 246 96 256 70 Z"/>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <g fill="#fff">
+    <!-- back wing (dimmer, gives depth) -->
+    <path fill-opacity="0.55" d="M42 22 C44 13 41 7 34 3 C36 9 36 14 34 20 Z"/>
+    <!-- main wing: flame-tipped sail rising up-left -->
+    <path d="M40 27 C34 17 25 10 8 6 C13 9 15 11 16 13 C12 12 9 12 6 13 C13 16 17 19 19 22 C15 22 12 23 10 25 C18 26 24 28 30 33 Z"/>
+    <!-- head, crest, beak -->
+    <circle cx="45" cy="15" r="4.6"/>
+    <path d="M42 12 C39.5 9.5 39 6.5 40.5 3.5 C42 7 44 9 46 11 Z"/>
+    <path d="M44.5 11 C44.5 8 45.8 5.5 48.5 4 C48 7 48.5 9 48.4 12 Z"/>
+    <path d="M48.8 13.4 L55.5 15.8 L48.8 17.6 Z"/>
+    <!-- full chest and body -->
+    <path d="M48.5 17 C50.5 25 47 33 39 38 C34 41 29 41.5 25 41 C31 37 34 32 36 26 C37.5 21 40 17 42 14.5 Z"/>
+    <!-- fire tail: three plumes ending in curls -->
+    <path d="M31 39 C27 45 21 48.5 14 48.5 C10 48.5 7.5 46 9 43 C9.8 45.5 12 46 14.5 45.5 C20 44.5 24.5 41.5 27.5 38 Z"/>
+    <path d="M35 40 C35.5 47 33 54 26 59.5 C24 60.5 21.5 60 21 58 C23.5 59 25 58 26.5 56 C29.5 51.5 31 46.5 31 41 Z"/>
+    <path d="M33 40.5 C31.5 46 28 50.5 22 53.5 C25.5 49.5 27.5 45.5 28.5 40.5 Z"/>
   </g>
 </svg>
