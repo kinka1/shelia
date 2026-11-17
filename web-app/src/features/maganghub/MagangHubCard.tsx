@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -34,8 +34,11 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   const [busy, setBusy] = useState(false)
   const [sentAt, setSentAt] = useState<string | null>(null)
 
+  const seq = useRef(0)
   async function check(d = date) {
+    const id = ++seq.current
     const r = await fetchMyToday(d)
+    if (id !== seq.current) return r // tanggal sudah berganti: jawaban lama dibuang
     setSentAt(r?.sentAt ?? null)
     if (d === todayWIB()) onSentAt?.(r?.sentAt ?? null)
     return r

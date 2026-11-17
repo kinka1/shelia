@@ -91,7 +91,7 @@ export default function RiwayatMagangHub() {
             </Table>
             <ListPagination
               page={page} perPage={perPage || 1} total={result?.total ?? null}
-              hasNext={rows.length > 0} onPageChange={setPage}
+              hasNext={rows.length > 0 && rows.length >= perPage} onPageChange={setPage}
             />
           </div>
         )}

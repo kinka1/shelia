@@ -39,6 +39,14 @@ export function tokenExpiry(token: string): Date | null {
   } catch { return null }
 }
 
+const TEXT = ['date', 'clock_in', 'status', 'activity_log', 'lesson_learned', 'obstacles'] as const
+// An odd field type must not crash rendering: numbers become text, objects and null become ''.
+const clean = (r: any): MhLog => {
+  const o = { ...r }
+  for (const k of TEXT) if (k in o && typeof o[k] !== 'string') o[k] = typeof o[k] === 'number' || typeof o[k] === 'boolean' ? String(o[k]) : ''
+  return o
+}
+
 export async function fetchDailyLogs(page: number, action = 'Ambil log MagangHub'): Promise<{ status: MhStatus; rows: MhLog[]; total: number | null; error?: string }> {
   const t = getMhToken()
   if (!t) return { status: 'none', rows: [], total: null }
@@ -52,7 +60,7 @@ export async function fetchDailyLogs(page: number, action = 'Ambil log MagangHub
   try { body = await res.json() } catch { return { status: 'ok', rows: [], total: null, error: 'Respons bukan JSON' } }
   return {
     status: 'ok',
-    rows: Array.isArray(body?.data) ? body.data.filter((r: unknown) => r && typeof r === 'object') : [],
+    rows: Array.isArray(body?.data) ? body.data.filter((r: unknown) => r && typeof r === 'object').map(clean) : [],
     total: typeof body?.total === 'number' ? body.total : null,
   }
 }

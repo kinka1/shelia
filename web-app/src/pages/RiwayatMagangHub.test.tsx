@@ -88,4 +88,18 @@ describe('RiwayatMagangHub', () => {
     await new Promise((r) => setTimeout(r, 20))
     expect(screen.queryByText('1 Jan 2020')).toBeNull()
   })
+
+  it('without a total, next is disabled on a short last page', async () => {
+    const full = [1, 2, 3].map((i) => ({ date: `2026-11-${10 + i}` }))
+    fetchDailyLogs.mockResolvedValueOnce({ status: 'ok', rows: full, total: null })
+    fetchDailyLogs.mockResolvedValueOnce({ status: 'ok', rows: full.slice(0, 1), total: null })
+    renderPage()
+    await screen.findByText('11 Nov 2026')
+    const next = screen.getByRole('button', { name: 'Halaman berikutnya' })
+    expect(next).toBeEnabled()
+    fireEvent.click(next)
+    await waitFor(() => expect(fetchDailyLogs).toHaveBeenLastCalledWith(2, undefined))
+    await screen.findByText('11 Nov 2026')
+    expect(screen.getByRole('button', { name: 'Halaman berikutnya' })).toBeDisabled()
+  })
 })

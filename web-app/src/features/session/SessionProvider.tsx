@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  clearSession, getEmployee, getToken, onUnauthorized, saveSession, sheliaApi, type Employee,
+  ApiError, clearSession, getEmployee, getToken, onUnauthorized, saveSession, sheliaApi, type Employee,
 } from '@/lib/shelia'
 
 interface Session {
@@ -37,9 +37,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const res = await sheliaApi('/auth/login', {
       method: 'POST', json: { username: nik, password: pw }, auth: false, action: 'Masuk ke akun',
     })
+    if (!res.data?.token) throw new ApiError('Login gagal: token tidak diterima.')
     const e = res.data?.employee || {}
     const emp = { full_name: e.full_name, nik: e.nik, branch_name: e.branch_name }
-    saveSession(res.data?.token || '', emp)
+    saveSession(res.data.token, emp)
     setEmployee(emp)
     setToken(getToken())
     setExpired('')

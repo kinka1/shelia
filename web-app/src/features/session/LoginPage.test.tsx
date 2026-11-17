@@ -48,4 +48,15 @@ describe('LoginPage', () => {
     await act(async () => { await sheliaApi('/x', { action: 'T' }).catch(() => {}) })
     expect(screen.getByRole('alert')).toHaveTextContent('Sesi berakhir. Silakan login lagi.')
   })
+
+  it('rejects a login response without a token and re-enables the button', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: {} }))))
+    ui()
+    type('NIK', '1')
+    type('Password', 'pw')
+    fireEvent.click(screen.getByRole('button', { name: 'Masuk' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Login gagal: token tidak diterima.')
+    expect(getToken()).toBeNull()
+    expect(screen.getByRole('button', { name: 'Masuk' })).toBeEnabled()
+  })
 })

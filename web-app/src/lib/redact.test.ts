@@ -42,4 +42,8 @@ describe('redact', () => {
     expect(redactPath('/api/auth/login')).toBe('/api/auth/login')
     expect(redactPath('/api/x?Face_Token=a')).toBe(`/api/x?Face_Token=${HIDDEN}`)
   })
+
+  it('hides any key that looks secret', () => {
+    expect(redactJson({ refresh_token: 'a', api_key: 'b', apiKey: 'c', client_secret: 'd', ok: 1 })).toEqual({ refresh_token: HIDDEN, api_key: HIDDEN, apiKey: HIDDEN, client_secret: HIDDEN, ok: 1 })
+  })
 })

@@ -80,4 +80,9 @@ describe('fetchDailyLogs element filtering', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: [null, 1, {}, { date: '2026-11-17' }], total: 4 }))))
     expect((await fetchDailyLogs(1)).rows).toEqual([{}, { date: '2026-11-17' }])
   })
+  it('coerces odd field types to strings', async () => {
+    localStorage.setItem('maganghub.token', 't')
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: [{ date: '2026-11-17', clock_in: { x: 1 }, activity_log: 5, status: null }] }))))
+    expect((await fetchDailyLogs(1)).rows).toEqual([{ date: '2026-11-17', clock_in: '', activity_log: '5', status: '' }])
+  })
 })

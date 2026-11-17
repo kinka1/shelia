@@ -44,3 +44,19 @@ describe('MagangHubCard', () => {
     expect(await screen.findByText('Log untuk tanggal ini sudah ada.')).toBeInTheDocument()
   })
 })
+
+describe('MagangHubCard stale check', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  it('ignores a slower response for a previous date', async () => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
+    let slow!: (r: Response) => void
+    let n = 0
+    vi.stubGlobal('fetch', vi.fn(() => (++n === 1 ? new Promise<Response>((r) => { slow = r }) : Promise.resolve(json({ data: [] })))))
+    render(<MagangHubCard />)
+    fireEvent.change(screen.getByLabelText('Tanggal'), { target: { value: '2020-01-01' } })
+    await waitFor(() => expect(n).toBe(2))
+    slow(json({ data: [{ date: today, clock_in: '08:01' }] }))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(screen.queryByText('Terkirim 08:01')).toBeNull()
+  })
+})

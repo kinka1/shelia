@@ -25,6 +25,7 @@ export default function LoginPage() {
       await login(u, pw)
     } catch (err) {
       setError(errorText(err as ApiError))
+    } finally {
       setBusy(false)
     }
   }

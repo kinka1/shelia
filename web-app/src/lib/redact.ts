@@ -1,6 +1,6 @@
 export const HIDDEN = '[disembunyikan]'
 
-const SECRET = /^(password|token|access_token|face_token|bypass_token|face_bypass_token)$/i
+const SECRET = /token|password|secret|api[_-]?key/i
 
 export function redactJson(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(redactJson)

@@ -15,16 +15,19 @@ SSH=(ssh -i "$HOME/.ssh/ssh-key-2025-09-05.key")
 
 # --delete only on the built dist dir
 rsync -az --delete -e "${SSH[*]}" web-app/dist/ "$HOST:$DEST/web-app/dist/"
-rsync -az -e "${SSH[*]}" nginx.conf docker-compose.yml "$HOST:$DEST/"
+# nginx.conf goes to a .new file; it replaces the live one only after nginx -t passes
+rsync -az -e "${SSH[*]}" nginx.conf "$HOST:$DEST/nginx.conf.new"
+rsync -az -e "${SSH[*]}" docker-compose.yml "$HOST:$DEST/"
 rsync -az -e "${SSH[*]}" monev-mock/ "$HOST:$DEST/monev-mock/"
 
 # remote login shell is fish, so feed bash via stdin
 "${SSH[@]}" "$HOST" 'bash -s' <<'REMOTE'
 set -euo pipefail
 cd /home/Documents/shelia-test
-# validate before recreating; proxy-network lets shelia-test-monev resolve
+# validate the new file before it replaces the live one; proxy-network lets shelia-test-monev resolve
 docker run --rm --network proxy-network \
-  -v /home/Documents/shelia-test/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
+  -v /home/Documents/shelia-test/nginx.conf.new:/etc/nginx/conf.d/default.conf:ro \
   nginx:1.29-alpine nginx -t
+mv nginx.conf.new nginx.conf
 docker compose up -d --force-recreate web monev-mock
 REMOTE
