@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import '@fontsource-variable/inter'
 import './index.css'
 import App from './App'
+import { SessionProvider } from '@/features/session/SessionProvider'
 import { initTheme } from '@/lib/theme'
 
 initTheme()
@@ -11,7 +12,9 @@ initTheme()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <SessionProvider>
+        <App />
+      </SessionProvider>
     </BrowserRouter>
   </StrictMode>,
 )

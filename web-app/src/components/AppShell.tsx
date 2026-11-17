@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
 import { Toaster } from '@/components/ui/sonner'
 import ThemeToggle from '@/components/ThemeToggle'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useSession } from '@/features/session/SessionProvider'
 import { cn } from '@/lib/utils'
 
 const SECTIONS = [
@@ -68,6 +72,8 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
 export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const { employee, logout } = useSession()
+  const name = employee?.full_name || 'Karyawan'
   const section = SECTIONS.find((s) => s.items.some((i) => i.to === pathname))
   const item = section?.items.find((i) => i.to === pathname)
 
@@ -96,10 +102,24 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span className="flex-1" />
           <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">{today()}</span>
           <ThemeToggle />
-          {/* user menu slot */}
-          <span className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink">
-            S
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label="Menu akun"
+              className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink"
+            >
+              {name.charAt(0).toUpperCase()}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="font-normal">
+                <div className="text-sm font-semibold">{name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {[employee?.nik, employee?.branch_name].filter(Boolean).join(' · ')}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => void logout()}>Keluar</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
         <main className="flex flex-col gap-4 p-5">{children}</main>
       </div>
