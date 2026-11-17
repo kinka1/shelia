@@ -39,12 +39,12 @@ export function tokenExpiry(token: string): Date | null {
   } catch { return null }
 }
 
-export async function fetchDailyLogs(page: number): Promise<{ status: MhStatus; rows: MhLog[]; total: number | null; error?: string }> {
+export async function fetchDailyLogs(page: number, action = 'Ambil log MagangHub'): Promise<{ status: MhStatus; rows: MhLog[]; total: number | null; error?: string }> {
   const t = getMhToken()
   if (!t) return { status: 'none', rows: [], total: null }
   let res: Response
   try {
-    res = await loggedFetch(`${API}/daily-logs?page=${page}`, { headers: { Authorization: 'Bearer ' + t }, action: 'Ambil log MagangHub' })
+    res = await loggedFetch(`${API}/daily-logs?page=${page}`, { headers: { Authorization: 'Bearer ' + t }, action })
   } catch { return { status: 'ok', rows: [], total: null, error: 'Gagal terhubung' } }
   if (res.status === 401 || res.status === 403) return { status: 'expired', rows: [], total: null }
   if (!res.ok) return { status: 'ok', rows: [], total: null, error: `Gagal memuat (HTTP ${res.status})` }
