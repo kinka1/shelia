@@ -76,12 +76,12 @@ export function CameraCapture({ photo, onPhoto, onError }: {
 
   return (
     <div>
-      <div className="relative mb-3 grid h-[150px] place-items-center overflow-hidden rounded-lg border border-dashed border-input bg-muted px-3 text-center text-[13px] text-muted-foreground">
-        {url && !live ? <img src={url} alt="Foto wajah" className="absolute inset-0 h-full w-full object-cover" />
+      <div className={`relative mb-3 grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-lg px-3 text-center text-[13px] ${url || live ? 'bg-black text-white/70' : 'border border-dashed border-input bg-muted text-muted-foreground'}`}>
+        {url && !live ? <img src={url} alt="Foto wajah" className="absolute inset-0 h-full w-full object-contain" />
           : live ? 'Kamera aktif. Posisikan wajah di tengah bingkai.'
           : 'Buka kamera atau unggah foto.'}
         {/* Teksnya di bawah video: terlihat sampai bingkai pertama tiba. */}
-        {live && <video ref={attach} playsInline muted className="absolute inset-0 h-full w-full object-cover" />}
+        {live && <video ref={attach} playsInline muted className="absolute inset-0 h-full w-full object-contain" />}
       </div>
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" asChild>

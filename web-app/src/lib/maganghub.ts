@@ -4,7 +4,7 @@ export const MH_KEY = 'maganghub.token'
 const API = '/maganghub-api/v1'
 
 export type MhStatus = 'none' | 'ok' | 'expired'
-export interface MhLog { date: string; clock_in?: string; status?: string; activity_log?: string; lesson_learned?: string; obstacles?: string }
+export interface MhLog { date: string; clock_in?: string; status?: string; state?: string; created_at?: string; activity_log?: string; lesson_learned?: string; obstacles?: string }
 
 export function takeTokenFromHash(hash: string): string | null {
   const m = /^#mh=(.+)$/.exec(hash || '')
@@ -39,11 +39,15 @@ export function tokenExpiry(token: string): Date | null {
   } catch { return null }
 }
 
-const TEXT = ['date', 'clock_in', 'status', 'activity_log', 'lesson_learned', 'obstacles'] as const
+const TEXT = ['date', 'clock_in', 'status', 'state', 'created_at', 'activity_log', 'lesson_learned', 'obstacles'] as const
 // An odd field type must not crash rendering: numbers become text, objects and null become ''.
 const clean = (r: any): MhLog => {
   const o = { ...r }
   for (const k of TEXT) if (k in o && typeof o[k] !== 'string') o[k] = typeof o[k] === 'number' || typeof o[k] === 'boolean' ? String(o[k]) : ''
+  // Real MagangHub rows: no clock_in/status; the send time is created_at and the status is the review state.
+  // ponytail: created_at has no timezone; shown as given (assumed WIB).
+  if (!o.clock_in && o.created_at) o.clock_in = o.created_at.slice(11, 16)
+  if (o.state) o.status = o.state
   return o
 }
 

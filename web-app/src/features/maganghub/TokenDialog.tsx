@@ -11,7 +11,7 @@ export function TokenDialog({ connected, onDisconnect }: { connected: boolean; o
   const bookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', bookmarkletHref(location.origin)), [])
   return (
     <Dialog>
-      <DialogTrigger asChild><Button variant="outline">Perbarui token</Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold">Perbarui token</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Hubungkan MagangHub</DialogTitle>

@@ -117,8 +117,8 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
           const s = fieldState(v[k])
           return (
             <div key={k} className="mb-2.5 space-y-1">
-              <Label htmlFor={`mh-${k}`} className={LABEL}>{name}</Label>
-              <Textarea id={`mh-${k}`} rows={2} className="min-h-[70px]" value={v[k]} disabled={!!sentAt}
+              <Label htmlFor={`mh-${k}`} className={LABEL}>{name} <span className="text-destructive-ink" aria-hidden>*</span></Label>
+              <Textarea id={`mh-${k}`} aria-required rows={2} className="min-h-[70px]" value={v[k]} disabled={!!sentAt}
                 onChange={(e) => setV({ ...v, [k]: e.target.value })} />
               <p aria-live="polite" className={`text-xs tabular-nums ${s.ok ? 'text-success-ink' : s.count ? 'text-warning-ink' : 'text-muted-foreground'}`}>
                 {s.ok ? `✓ ${s.count} karakter` : s.count ? `${s.count} / ${MIN_CHARS} karakter · kurang ${s.missing}` : `0 / ${MIN_CHARS} karakter`}

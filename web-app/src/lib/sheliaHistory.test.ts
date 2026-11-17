@@ -26,3 +26,13 @@ describe('history', () => {
     expect(readHistory()).toEqual([])
   })
 })
+
+describe('shift memory', () => {
+  it('keeps the shift chosen at check-in when Shelia returns shift: null', async () => {
+    const { rememberShift, recordToday, readHistory } = await import('./sheliaHistory')
+    localStorage.clear()
+    rememberShift('2026-11-17', 'Pagi')
+    recordToday({ work_date: '2026-11-17', status: 'checked_in', sessions: [{ state: 'open', shift: null, check_in_time: '2026-11-17 07:55:07' }] })
+    expect(readHistory()[0]).toMatchObject({ date: '2026-11-17', shift: 'Pagi', checkIn: '07:55' })
+  })
+})

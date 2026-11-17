@@ -72,8 +72,8 @@ export default function RiwayatMagangHub() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[104px]">Tanggal</TableHead>
-              <TableHead className="w-[72px]">Masuk</TableHead>
-              <TableHead className="w-[100px]">Status</TableHead>
+              <TableHead className="w-[72px]">Dikirim</TableHead>
+              <TableHead className="w-[130px]">Status</TableHead>
               {['Aktivitas', 'Pembelajaran', 'Kendala'].map((h) => <TableHead key={h}>{h}</TableHead>)}
               <TableHead className="w-[64px]"><span className="sr-only">Aksi</span></TableHead>
             </TableRow>

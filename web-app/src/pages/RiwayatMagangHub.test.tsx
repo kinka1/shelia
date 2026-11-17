@@ -21,7 +21,7 @@ describe('RiwayatMagangHub', () => {
     renderPage()
     await screen.findByText('11 Nov 2026')
     expect(screen.getAllByRole('row')).toHaveLength(4)
-    for (const h of ['Tanggal', 'Masuk', 'Status', 'Aktivitas', 'Pembelajaran', 'Kendala']) expect(screen.getByRole('columnheader', { name: h })).toBeInTheDocument()
+    for (const h of ['Tanggal', 'Dikirim', 'Status', 'Aktivitas', 'Pembelajaran', 'Kendala']) expect(screen.getByRole('columnheader', { name: h })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByText('Baris per halaman')).toBeNull()
   })

@@ -15,7 +15,7 @@ describe('MagangHubCard', () => {
     const send = screen.getByRole('button', { name: 'Kirim log' })
     expect(send).toBeDisabled()
     expect(await screen.findByText('Lengkapi 3 isian lagi')).toBeInTheDocument()
-    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } })
+    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
     expect(send).toBeEnabled()
   })
 
@@ -24,16 +24,16 @@ describe('MagangHubCard', () => {
     render(<MagangHubCard />)
     expect(await screen.findByText('Terkirim 08:01')).toBeInTheDocument()
     // Bagian yang selesai dilipat jadi satu baris; Lihat membukanya lagi.
-    expect(screen.queryByLabelText('Aktivitas')).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Lihat' }))
-    expect(screen.getByLabelText('Aktivitas')).toBeDisabled()
+    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toBeDisabled()
   })
 
   it('maps 422 errors to fields', async () => {
     vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
       i?.method === 'POST' ? json({ message: 'x', errors: { obstacles: 'obstacles minimal 100 karakter' } }, 422) : json({ data: [] })))
     render(<MagangHubCard />)
-    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } })
+    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
     fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
     expect(await screen.findByText('Minimal 100 karakter')).toBeInTheDocument()
   })
@@ -42,7 +42,7 @@ describe('MagangHubCard', () => {
     vi.stubGlobal('fetch', vi.fn(async (_u: string, i?: RequestInit) =>
       i?.method === 'POST' ? json({ message: 'Absensi untuk tanggal ini sudah ada' }, 409) : json({ data: [] })))
     render(<MagangHubCard />)
-    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } })
+    for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } })
     fireEvent.click(screen.getByRole('button', { name: 'Kirim log' }))
     expect(await screen.findByText('Log untuk tanggal ini sudah ada.')).toBeInTheDocument()
   })
@@ -74,7 +74,7 @@ describe('MagangHubCard location', () => {
     }))
     return posts
   }
-  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByLabelText(n), { target: { value: L } }) }
+  const fill = () => { for (const n of ['Aktivitas', 'Pembelajaran', 'Kendala']) fireEvent.change(screen.getByRole('textbox', { name: n }), { target: { value: L } }) }
 
   it('sends the office coordinates by default', async () => {
     const posts = sent()

@@ -14,6 +14,7 @@ import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
 import { Sessions } from './Sessions'
 import type { useToday } from './useToday'
+import { rememberShift } from '@/lib/sheliaHistory'
 
 const STEPS = ['1 · Shift dipilih', '2 · Foto wajah', '3 · Kirim']
 const hhmm = (t: unknown) => (typeof t === 'string' ? t.slice(0, 5) : '?')
@@ -99,6 +100,7 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
         }),
       })
       // face_token sekali pakai; check-out butuh verifikasi wajah baru.
+      if (isIn && needShift && shift) rememberShift(today.work_date, shift.name)
       setFaceToken(null); setBypass(null); setPhoto(null); setReason('')
       toast.success(successText(isIn, res))
       await reload()
@@ -113,15 +115,13 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
     }
   }
 
-  const site = today?.site
-  const siteText = site
-    ? (site.name || '-') + (site.business_site_name && site.business_site_name !== site.name ? ` (${site.business_site_name})` : '')
-    : today?.setup?.geofence_configured === null ? 'Pengecekan lokasi tidak aktif' : '-'
-  const hasPlace = !!site || today?.distance_meters != null || today?.setup?.geofence_configured === null
   const shift = shifts.find((x) => x.id === shiftId)
+  const outside = !!today?.is_outside_location
+  // Satu baris pendek, seperti "Log harian" di MagangHub: langkahnya, shift, dan posisi terhadap area.
   const subtitle = [
-    shift ? `Shift ${shift.name} ${hhmm(shift.check_in_start)}-${hhmm(shift.check_out_end)}` : today?.message,
-    canAttend && faceOn && 'verifikasi wajah wajib',
+    isIn ? 'Absen masuk' : kind === 'check_out' ? 'Absen pulang' : 'Absen kantor',
+    shift && `Shift ${shift.name} ${hhmm(shift.check_in_start)}-${hhmm(shift.check_out_end)}`,
+    today?.distance_meters != null && !outside && 'di dalam area',
   ].filter(Boolean).join(' · ')
   // check-out still pending → keep the form open so the afternoon action isn't hidden
   const done = sheliaDone(today) && kind !== 'check_out'
@@ -152,14 +152,10 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
       {done && !expanded ? error && <div className="mt-2"><Note tone="destructive">{error}</Note></div> : (<>
       {today && (
         <div className="mb-3 mt-0.5">
-          <p className="text-[13px] text-muted-foreground">{subtitle || '-'}</p>
-          {hasPlace && (
-            <p className="text-xs text-muted-foreground">
-              {today.work_date || '-'}
-              {' · '}{siteText}
-              {today.distance_meters != null ? ` · ${fmtMeters(today.distance_meters)}${site?.radius_meters ? ` (radius ${fmtMeters(site.radius_meters)})` : ''} ${today.is_outside_location ? 'di luar area' : 'di dalam area'}` : ''}
-            </p>
-          )}
+          <p className="text-[13px] text-muted-foreground">
+            {subtitle}
+            {outside && <span className="font-medium text-warning-ink"> · di luar area ({fmtMeters(today.distance_meters)} dari kantor)</span>}
+          </p>
         </div>
       )}
       <div className="space-y-3">

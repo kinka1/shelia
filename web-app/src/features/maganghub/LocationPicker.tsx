@@ -32,7 +32,7 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
     let dead = false
     void import('leaflet').then(({ default: L }) => {
       if (dead || !box.current) return
-      const m = L.map(box.current, { center: [value.lat, value.lng], zoom: 16, scrollWheelZoom: false })
+      const m = L.map(box.current, { center: [value.lat, value.lng], zoom: 16, scrollWheelZoom: true })
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap',

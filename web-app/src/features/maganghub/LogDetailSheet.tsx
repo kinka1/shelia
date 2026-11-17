@@ -17,6 +17,12 @@ const STATUS: Record<string, [string, string]> = {
   PERMIT: ['late', 'Izin'],
   SICK: ['late', 'Sakit'],
   ABSENT: ['rejected', 'Tidak hadir'],
+  // state review pembimbing di MagangHub asli
+  APPROVED: ['closed', 'Disetujui'],
+  REJECTED: ['rejected', 'Ditolak'],
+  PENDING: ['open', 'Menunggu review'],
+  SUBMITTED: ['open', 'Menunggu review'],
+  WAITING: ['open', 'Menunggu review'],
 }
 export const MhStatusPill = ({ status }: { status?: string }) => {
   const [key, label] = STATUS[status ?? ''] ?? ['', status || '-']
@@ -45,7 +51,7 @@ export function LogDetailSheet({ rows, index, onIndexChange, onClose, returnFocu
             <SheetHeader>
               <SheetTitle>{fmtDate(row.date)}</SheetTitle>
               <SheetDescription className="flex items-center gap-2">
-                <span className="tabular-nums">Masuk {row.clock_in || '-'}</span>
+                <span className="tabular-nums">Dikirim {row.clock_in || '-'}</span>
                 <MhStatusPill status={row.status} />
               </SheetDescription>
             </SheetHeader>
