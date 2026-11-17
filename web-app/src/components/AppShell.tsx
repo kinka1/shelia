@@ -40,7 +40,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
     <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar px-3 py-4 text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
         <img src="/phoenix.svg" alt="" className="size-10" />
-        Shelia
+        Phoenix
       </div>
       {SECTIONS.map((s) => (
         <div key={s.title}>

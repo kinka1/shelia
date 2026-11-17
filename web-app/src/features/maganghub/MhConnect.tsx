@@ -59,7 +59,7 @@ export function MhConnect({ installed, onRefresh, onBusy }: { installed: boolean
       <DialogTrigger asChild><Button variant="outline" size="sm" className={SMALL}>Pasang ekstensi</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Pasang ekstensi Shelia MagangHub</DialogTitle>
+          <DialogTitle>Pasang ekstensi Phoenix MagangHub</DialogTitle>
           <DialogDescription>Token dan log harian dikirim lewat situs MagangHub di browser Anda, dengan satu klik. Hanya untuk Chrome.</DialogDescription>
         </DialogHeader>
         <InstallSteps />

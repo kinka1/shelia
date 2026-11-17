@@ -1,4 +1,4 @@
-# Shelia MagangHub (ekstensi Chrome)
+# Phoenix MagangHub (ekstensi Chrome)
 
 Mengirim log harian dan mengambil token MagangHub dari test-shelia dengan satu klik.
 Semua permintaan dibuat di halaman MagangHub sendiri, dari browser Anda; tidak lewat server.

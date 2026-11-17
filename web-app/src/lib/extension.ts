@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-// The "Shelia MagangHub" Chrome extension (repo: extension/). Its ID is fixed by the manifest key.
+// The "Phoenix MagangHub" Chrome extension (repo: extension/). Its ID is fixed by the manifest key.
 export const EXT_ID = 'fiagillffjfgpckjfblgknnhhcahecdj'
 export const EXT_ZIP = '/shelia-maganghub.zip'
 
