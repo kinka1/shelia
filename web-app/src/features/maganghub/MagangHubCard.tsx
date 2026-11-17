@@ -34,7 +34,7 @@ const hhmm = (d: Date) => d.toLocaleTimeString('id-ID', { hour: '2-digit', minut
 
 export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null) => void }) {
   const mh = useMhToken()
-  const [date, setDate] = useState(() => todayWIB())
+  const date = todayWIB() // locked to today, like MagangHub's own form
   const [v, setV] = useState<Record<Key, string>>({ activity_log: '', lesson_learned: '', obstacles: '' })
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -48,7 +48,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
   async function check(d = date) {
     const id = ++seq.current
     const r = await fetchMyToday(d)
-    if (id !== seq.current) return r // tanggal sudah berganti: jawaban lama dibuang
+    if (id !== seq.current) return r // ada pengecekan yang lebih baru: jawaban lama dibuang
     setSentAt(r?.sentAt ?? null)
     if (d === todayWIB()) onSentAt?.(r?.sentAt ?? null)
     return r
@@ -105,7 +105,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         <div className="grid grid-cols-2 gap-x-2.5">
           <div className="mb-2.5 space-y-1">
             <Label htmlFor="mh-date" className={LABEL}>Tanggal</Label>
-            <Input id="mh-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input id="mh-date" value={fmtDate(date)} readOnly aria-readonly className={READ_ONLY} />
           </div>
           <div className="mb-2.5 space-y-1">
             <Label htmlFor="mh-status" className={LABEL}>Status</Label>

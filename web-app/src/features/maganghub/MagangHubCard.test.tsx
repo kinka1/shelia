@@ -34,23 +34,13 @@ describe('MagangHubCard', () => {
 
 })
 
-describe('MagangHubCard stale check', () => {
-  afterEach(() => vi.unstubAllGlobals())
-  it('ignores a slower response for a previous date', async () => {
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
-    // Hold every request made for the first date (the check and the token probe), answer the new date at once.
-    const held: ((r: Response) => void)[] = []
-    let changed = false
-    vi.stubGlobal('fetch', vi.fn(() => (changed ? Promise.resolve(json({ data: [] })) : new Promise<Response>((r) => { held.push(r) }))))
-    render(<MagangHubCard />)
-    await waitFor(() => expect(held.length).toBeGreaterThan(0))
-    changed = true
-    fireEvent.change(screen.getByLabelText('Tanggal'), { target: { value: '2020-01-01' } })
-    await new Promise((r) => setTimeout(r, 10))
-    for (const r of held) r(json({ data: [{ date: today, created_at: today + 'T08:01:00' }] }))
-    await new Promise((r) => setTimeout(r, 30))
-    expect(screen.queryByText('Terkirim 08:01')).toBeNull()
-  })
+it('locks the date to today', () => {
+  vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })))
+  render(<MagangHubCard />)
+  const f = screen.getByLabelText('Tanggal')
+  expect(f).toHaveAttribute('readonly')
+  expect(f).not.toHaveAttribute('type', 'date')
+  vi.unstubAllGlobals()
 })
 
 // The log is sent from MagangHub's page by the bookmark; here we check what the link we open carries.
@@ -76,7 +66,7 @@ describe('MagangHubCard location', () => {
     fill(); await openMh()
     expect(urls).toHaveLength(1)
     expect(new URL(urls[0]).origin).toBe('https://monev.maganghub.kemnaker.go.id')
-    expect(payload(urls[0])).toMatchObject({ status: 'PRESENT', latitude: -7.308430344545027, longitude: 112.785199930883 })
+    expect(payload(urls[0])).toMatchObject({ date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()), status: 'PRESENT', latitude: -7.308430344545027, longitude: 112.785199930883 })
   })
 
   it('fills latitude and longitude from the device GPS', async () => {

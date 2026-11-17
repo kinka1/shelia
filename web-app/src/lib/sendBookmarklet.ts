@@ -22,6 +22,7 @@ if(location.hostname!=='monev.maganghub.kemnaker.go.id'){alert('Buka halaman Mag
 var p=${JSON.stringify(KEY)};
 if(location.hash.indexOf(p)!==0){alert('Data log tidak ditemukan. Klik "Buka MagangHub" di Shelia dulu.');return}
 var d;try{d=JSON.parse(decodeURIComponent(location.hash.slice(p.length)))}catch(e){alert('Data log rusak. Buka lagi dari Shelia.');return}
+if(d&&d.date!==new Date(Date.now()+252e5).toISOString().slice(0,10)){alert('Log hanya bisa dikirim untuk hari ini. Buka lagi dari Shelia.');return}
 var T=['activity_log','lesson_learned','obstacles'];
 if(!d||!/^\\d{4}-\\d{2}-\\d{2}$/.test(d.date)||d.status!=='PRESENT'||!T.every(function(k){return typeof d[k]==='string'&&d[k].trim().length>=100})){alert('Data log tidak valid. Buka lagi dari Shelia.');return}
 var b={date:d.date,status:'PRESENT',activity_log:d.activity_log,lesson_learned:d.lesson_learned,obstacles:d.obstacles};
