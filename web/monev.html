@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monev MagangHub</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/monev.js" defer></script>
+  <script src="/maganghub.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <header class="topbar">
+      <h1>Monev MagangHub</h1>
+      <a href="/" class="btn ghost small">Kembali ke Shelia</a>
+    </header>
+    <section id="mh-card" class="card">
+      <h2>MagangHub</h2>
+      <p class="small muted">1. Seret tombol <a id="mh-bm" href="#">→ Shelia</a> ke bookmark bar (sekali saja).
+        2. Login di <a href="https://monev.maganghub.kemnaker.go.id/" target="_blank" rel="noopener">MagangHub</a>.
+        3. Klik bookmark tadi.</p>
+      <p id="mh-msg" class="muted small" hidden></p>
+      <ul id="mh-list" class="sessions"></ul>
+      <div id="mh-nav" class="row between" hidden>
+        <button id="mh-prev" type="button" class="btn small">Sebelumnya</button>
+        <span id="mh-info" class="muted small"></span>
+        <button id="mh-next" type="button" class="btn small">Berikutnya</button>
+      </div>
+      <button id="mh-out" type="button" class="btn ghost small" hidden>Keluar</button>
+    </section>
+    <p id="auth-msg" class="alert warn" hidden>Login dulu di halaman Shelia. <a href="/">Buka Shelia</a></p>
+
+    <form id="monev-form" class="card">
+      <h2>Absen + Log Harian</h2>
+      <label>Tanggal <input id="f-date" type="date" required></label>
+      <label>Status
+        <select id="f-status" disabled>
+          <option value="PRESENT">Hadir</option>
+        </select>
+      </label>
+      <label>Latitude <input id="f-lat" value="-7.308430344545027"></label>
+      <label>Longitude <input id="f-lng" value="112.785199930883"></label>
+      <label>Lokasi <input id="f-location" value="Surabaya" readonly></label>
+      <label>Aktivitas <textarea id="f-activity" required rows="3"></textarea></label>
+      <label>Pembelajaran <textarea id="f-lesson" required rows="2"></textarea></label>
+      <label>Kendala <textarea id="f-obstacles" required rows="2"></textarea></label>
+      <button id="submit-btn" type="submit" class="btn primary block">Kirim</button>
+    </form>
+
+    <div class="card">
+      <h2>Request</h2>
+      <pre id="req-out" class="small">-</pre>
+      <h2>Response</h2>
+      <pre id="res-out" class="small">-</pre>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <h2>Daftar Log</h2>
+        <span id="page-info" class="muted small"></span>
+      </div>
+      <p id="list-err" class="alert error" hidden></p>
+      <ul id="list" class="sessions"></ul>
+      <div class="row between">
+        <button id="prev-btn" type="button" class="btn small">Sebelumnya</button>
+        <button id="next-btn" type="button" class="btn small">Berikutnya</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

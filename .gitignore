@@ -21,3 +21,6 @@ desktop.ini
 # Dokumen lokal yang tidak dipublikasikan
 CLAUDE.md
 WEB_ATTENDANCE_API.md
+
+# Deploy (test-shelia)
+*.tmp
