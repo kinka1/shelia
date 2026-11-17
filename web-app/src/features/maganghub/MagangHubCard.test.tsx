@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { Toaster, toast } from 'sonner'
 import { MagangHubCard } from './MagangHubCard'
 import { stubExt } from '@/test/ext'
 
@@ -301,5 +302,32 @@ describe('MagangHubCard draft (tab closed and reopened)', () => {
     await screen.findByLabelText('Tanggal')
     fireEvent.change(screen.getByRole('textbox', { name: 'Aktivitas' }), { target: { value: 'ketik' } })
     await waitFor(() => expect(JSON.parse(localStorage.getItem('maganghub.draft')!)).toMatchObject({ date: TODAY, v: { activity_log: 'ketik' } }))
+  })
+})
+
+describe('MagangHubCard Kosongkan', () => {
+  beforeEach(() => toast.dismiss())
+  const draft = JSON.stringify({ date: TODAY, v: { activity_log: 'aku', lesson_learned: 'b', obstacles: 'c' }, point: { lat: -6.2, lng: 106.8 } })
+
+  it('is disabled when the form is already empty', async () => {
+    setup()
+    render(<MagangHubCard />)
+    await screen.findByLabelText('Tanggal')
+    expect(screen.getByRole('button', { name: 'Kosongkan' })).toBeDisabled()
+  })
+
+  it('clears the three texts and the location, and Batalkan brings them back', async () => {
+    localStorage.setItem('maganghub.draft', draft)
+    setup()
+    render(<><MagangHubCard /><Toaster /></>)
+    await screen.findByLabelText('Tanggal')
+    fireEvent.click(screen.getByRole('button', { name: 'Kosongkan' }))
+    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('')
+    expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue('')
+    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('maganghub.draft')!).v.activity_log).toBe(''))
+    fireEvent.click(await screen.findByRole('button', { name: 'Batalkan' }))
+    expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('aku')
+    expect(screen.getByLabelText('Latitude')).toHaveValue('-6.2')
   })
 })

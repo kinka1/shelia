@@ -79,6 +79,14 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   useEffect(() => { void check() }, [date]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const left = remainingFields(v)
+  const BLANK_V = { activity_log: '', lesson_learned: '', obstacles: '' }
+  const empty = !v.activity_log && !v.lesson_learned && !v.obstacles && point.lat === OFFICE.lat && point.lng === OFFICE.lng
+  // No confirm dialog: Batalkan in the toast undoes it.
+  function clearForm() {
+    const before = { v, point }
+    setV(BLANK_V); setPoint(OFFICE)
+    toast('Form dikosongkan', { action: { label: 'Batalkan', onClick: () => { setV(before.v); setPoint(before.point) } } })
+  }
   // The token is what proves this is your MagangHub account, so no token, no send.
   const canSend = !!ext.version && mh.status === 'ok'
   const [connKey, connLabel] = CONN[mh.status]
@@ -175,6 +183,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
                   </span>
                 ) : left > 0 && <span className="text-xs text-muted-foreground">Lengkapi {left} isian lagi</span>}
               <span className="flex-1" />
+              <Button type="button" variant="ghost" disabled={empty || generating} onClick={clearForm}>Kosongkan</Button>
               <Button type="submit" disabled={left > 0 || today !== 'ok' || generating}>Kirim log</Button>
             </>
           )}
