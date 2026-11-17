@@ -21,5 +21,5 @@ ekstensi, tidak ada token. Chrome harus menyala agar pengingat muncul.
 
 Setiap kali ekstensi dipasang atau di-reload, muncul satu notifikasi "Pengingat absen aktif" berisi
 jadwal pengingat berikutnya. Kalau notifikasi itu tidak muncul, buka System Settings → Notifications →
-Google Chrome di Mac: nyalakan Allow notifications, dan pilih gaya Alerts (bukan Banners) supaya
+Google Chrome di Mac: nyalakan Allow notifications, dan pilih gaya Persistent (di macOS lama: Alerts) supaya
 notifikasi tetap di layar sampai ditutup. Cek juga Focus / Do Not Disturb tidak sedang aktif.
