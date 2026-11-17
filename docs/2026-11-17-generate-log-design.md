@@ -12,7 +12,7 @@ reviews and edits before sending (the existing confirmation dialog stays).
   **all branches**, on GitHub (github.com) or GitLab (gitlab.com or a self-hosted GitLab by link).
 - The intern supplies the repo link and their own DeepSeek API key; private repos also need a
   read-only access token (GitHub fine-grained/classic PAT, GitLab `read_api`/`read_repository`).
-- Each text: Indonesian, ≥ 100 characters after trim, aimed at roughly 100–160 characters.
+- Each text: Indonesian, ≥ 100 characters after trim, aimed at 100–130 characters.
 - All three are always generated from the commits (user's decision):
   - Aktivitas: what was built/changed.
   - Pembelajaran: what the work touched or required (tools, parts of the system, techniques).
@@ -56,9 +56,11 @@ reviews and edits before sending (the existing confirmation dialog stays).
 - **Overwrite:** Generate replaces all three fields (the intern reviews before sending).
 
 ## Calls made after the builder check (author's, not the user's)
-- **Length:** target 100–160 characters; no hard upper bound and never padded or cut by code
-  (padding would be filler, cutting breaks sentences). Under 100 → one retry naming the short
-  field; still under → error, fields untouched.
+- **Length (user, 2026-11-17: "within minimum limit of 100 characters and keep it as short and as
+  preserved as possible"):** the prompt asks for 100–130 characters per field, faithful to the
+  commits (no filler). Code checks every field: under 100 → one retry naming the short field; still
+  under → error, fields untouched. Over 160 → one retry asking for a shorter text (still ≥ 100);
+  still over → the longer valid text is used. Never padded or cut by code.
 - **Who "you" is:** with a token, identity comes from the token (GitHub `GET /user`: login + email;
   GitLab `GET /user`: username, name, email, commit_email) and commits are matched client-side on
   any of those. Without a token (public repo) the "Git username" setting is used (GitHub login /
