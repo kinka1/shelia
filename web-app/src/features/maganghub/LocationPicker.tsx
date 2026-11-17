@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Crosshair, Undo2 } from 'lucide-react'
+import { Undo2 } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -78,8 +78,8 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
       <div ref={box} role="application" aria-label="Peta lokasi, geser pin untuk memilih titik" className="isolate h-[180px] overflow-hidden rounded-md border bg-muted" />
       {!disabled && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" disabled={locating} onClick={locate}>
-            <Crosshair /> {locating ? 'Mencari lokasi…' : 'Gunakan lokasi saya'}
+          <Button type="button" variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold" disabled={locating} onClick={locate}>
+            {locating ? 'Mencari lokasi…' : 'Gunakan lokasi saya'}
           </Button>
           {!atOffice && (
             <Button type="button" variant="ghost" onClick={() => { setAccuracy(null); onChange(OFFICE) }}>
