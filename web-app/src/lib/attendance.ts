@@ -5,9 +5,6 @@ export const STATUS_LABEL: Record<string, string> = {
   checked_in: 'Sudah masuk',
   late: 'Terlambat',
 }
-export const STATE_LABEL: Record<string, string> = {
-  open: 'Terbuka', on_break: 'Istirahat', closed: 'Selesai', expired: 'Kedaluwarsa', rejected: 'Ditolak',
-}
 const REVIEW_REASON_LABEL: Record<string, string> = {
   face_recognition_bypass: 'bypass verifikasi wajah',
   outside_location: 'di luar area',

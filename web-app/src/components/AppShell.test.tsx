@@ -75,4 +75,17 @@ describe('AppShell', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Hubungkan MagangHub' }))
     expect(await screen.findByText('Belum diisi')).toBeInTheDocument()
   })
+
+  it('Shelia card: no Sesi box, but keeps the check-out window and the HR review note', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    const today = { next_action: 'check_out', status: 'checked_in', work_date: '2026-11-17', sessions: [{
+      session_no: 1, state: 'open', work_date: '2026-11-17', check_in_time: '2026-11-17 07:55:00', needs_hr_review: true,
+      shift: { name: 'Pagi', check_out_start_at: '2026-11-17 16:00:00', check_out_end_at: '2026-11-17 18:00:00' },
+    }] }
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ data: today }))))
+    render(<MemoryRouter initialEntries={['/']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    expect(await screen.findByText(/Check-out mulai/)).toBeInTheDocument()
+    expect(screen.getByText(/Menunggu pemeriksaan HR/)).toBeInTheDocument()
+    expect(screen.queryByText(/Sesi 1/)).toBeNull()
+  })
 })

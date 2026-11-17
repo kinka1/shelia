@@ -12,7 +12,7 @@ import {
 } from '@/lib/attendance'
 import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
-import { Sessions } from './Sessions'
+import { SessionNotes } from './Sessions'
 import type { useToday } from './useToday'
 import { rememberShift } from '@/lib/sheliaHistory'
 import { useSession } from '@/features/session/SessionProvider'
@@ -218,7 +218,7 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
                 )}
               </form>
             )}
-            <Sessions sessions={sessions} />
+            <SessionNotes sessions={sessions} />
           </>
         )}
       </div>

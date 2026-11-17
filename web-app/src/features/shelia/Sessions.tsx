@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Circle, Clock, PlayCircle, XCircle } from 'lucide-react'
-import { STATE_LABEL, fmtTime } from '@/lib/attendance'
+import { fmtTime } from '@/lib/attendance'
 
 const TONE: Record<string, [string, typeof Circle]> = {
   not_checked_in: ['bg-warning/15 text-warning-ink', AlertTriangle],
@@ -22,29 +22,22 @@ export function StatusPill({ status, label }: { status?: string; label: string }
   )
 }
 
-export function Sessions({ sessions }: { sessions: any[] }) {
-  if (!sessions.length) return null
+/** What the status card at the top doesn't say: the check-out window and an HR review. No box. */
+export function SessionNotes({ sessions }: { sessions: any[] }) {
+  const s = sessions[sessions.length - 1]
+  if (!s) return null
+  const window_ = s.state === 'open' && s.shift?.check_out_start_at
+  if (!window_ && !s.needs_hr_review) return null
   return (
-    <ul className="divide-y rounded-md border">
-      {sessions.map((s, i) => (
-        <li key={i} className="space-y-1 p-3 text-sm">
-          <div className="flex items-center justify-between gap-2">
-            <strong>Sesi {s.session_no ?? '-'}{s.shift?.name ? ` · ${s.shift.name}` : ''}</strong>
-            <StatusPill status={s.state} label={STATE_LABEL[s.state] || s.state || '-'} />
-          </div>
-          <div className="text-muted-foreground">
-            Masuk {fmtTime(s.check_in_time, s.work_date)} · Pulang {fmtTime(s.check_out_time, s.work_date)}
-          </div>
-          {s.state === 'open' && s.shift?.check_out_start_at && (
-            <div className="text-muted-foreground">
-              Check-out mulai {fmtTime(s.shift.check_out_start_at, s.work_date)} sampai {fmtTime(s.shift.check_out_end_at, s.work_date)}
-            </div>
-          )}
-          {s.needs_hr_review && (
-            <div className="text-warning-ink">Menunggu pemeriksaan HR{s.hr_review_status ? ` (${s.hr_review_status})` : ''}</div>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-1 text-[13px]">
+      {window_ && (
+        <p className="text-muted-foreground">
+          Check-out mulai {fmtTime(s.shift.check_out_start_at, s.work_date)} sampai {fmtTime(s.shift.check_out_end_at, s.work_date)}
+        </p>
+      )}
+      {s.needs_hr_review && (
+        <p className="text-warning-ink">Menunggu pemeriksaan HR{s.hr_review_status ? ` (${s.hr_review_status})` : ''}</p>
+      )}
+    </div>
   )
 }
