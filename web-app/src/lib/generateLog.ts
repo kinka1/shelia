@@ -23,7 +23,7 @@ Gaya bahasa: Bahasa Indonesia baku yang luwes, seperti peserta magang menulis la
 - Gunakan kalimat aktif tanpa subjek "saya", diawali kata kerja: "Memperbaiki…", "Menambahkan…", "Mempelajari…".
 - Tulis dengan susunan kalimat Indonesia, bukan terjemahan harfiah dari bahasa Inggris. Hindari: "melakukan implementasi" (tulis "menerapkan"), "melakukan perbaikan" (tulis "memperbaiki"), "di mana" dan "yang mana" sebagai kata sambung, "dalam rangka", "hal ini", "adalah sebuah", "berhasil" yang tidak perlu.
 - Hindari kata yang terdengar dibuat AI atau berlebihan: "secara signifikan", "memastikan", "meningkatkan pengalaman pengguna", "krusial", "optimal", "berbagai", "mulus", "efisien dan efektif".
-- Pakai kata Indonesia yang lazim: "halaman", "tampilan", "tombol", "data", "fitur", "perbaikan". Istilah teknis yang memang biasa dipakai (API, token, login, branch) boleh tetap; jangan menulis kata "commit".
+- Tulis seperti developer Indonesia: kalimatnya Bahasa Indonesia, tetapi istilah teknis yang biasa diucapkan dalam bahasa Inggris tetap ditulis apa adanya, misalnya fix bug, solve bug, improve frontend, backend, endpoint, filter, login, logout, embed, deploy, refactor, API, token, branch, database. Jangan memaksa padanan Indonesia yang terasa kaku ("antarmuka depan", "titik akhir", "masuk/keluar akun"). Selain istilah itu, jangan menulis kalimat atau frasa bahasa Inggris utuh, dan jangan menulis kata "commit".
 - Tanpa markdown, tanpa hash commit, tanpa nama file lengkap; sebut bagian sistemnya saja.
 
 Aturan isi untuk setiap field:
@@ -36,7 +36,7 @@ lesson_learned: apa yang dipelajari dari pekerjaan itu: teknologi, bagian sistem
 obstacles: kendala yang terlihat dari commit (fix, revert, wip, perbaikan berulang, file yang diubah berkali-kali). Jika tidak ada tanda kendala, tulis bahwa tidak ada kendala berarti, lalu sebut singkat hal yang perlu dijaga atau dicek dari pekerjaan itu.
 
 Contoh nada yang diinginkan (bukan isi):
-{"activity_log": "Memperbaiki validasi formulir login dan menambahkan pesan galat yang lebih jelas saat token akses sudah kedaluwarsa.", "lesson_learned": "Mempelajari cara aplikasi memeriksa masa berlaku token dan menampilkan pesan galat tanpa membuat pengguna keluar dari halaman.", "obstacles": "Tidak ada kendala berarti. Alur login perlu dicek ulang di ponsel karena tampilannya sempat bergeser setelah perubahan."}`
+{"activity_log": "Fix bug validasi form login dan menambahkan filter tanggal pada endpoint riwayat absensi agar data lebih mudah dicari.", "lesson_learned": "Mempelajari cara backend memeriksa masa berlaku token dan cara frontend menampilkan pesan error tanpa logout paksa.", "obstacles": "Tidak ada kendala berarti. Alur login dan logout perlu dicek ulang di ponsel karena tampilannya sempat bergeser."}`
 
 const one = (c: GitCommit) => {
   const files = c.files.map((f) => `  - ${f.path} (+${f.additions} −${f.deletions})`).join('\n')

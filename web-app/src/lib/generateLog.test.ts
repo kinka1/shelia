@@ -111,6 +111,7 @@ describe('generateLog prompt', () => {
     const sent = JSON.parse(f.mock.calls[0][1].body).messages.map((m: any) => m.content).join('\n')
     expect(sent).toMatch(/baku/)
     expect(sent).toMatch(/terjemahan/)
+    expect(sent).toMatch(/fix bug[\s\S]*endpoint[\s\S]*embed/) // common English dev terms stay English
     expect(sent).toContain('Periode: 10–12 Nov 2026')
   })
 })
