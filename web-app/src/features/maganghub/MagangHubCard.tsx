@@ -94,7 +94,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />
         {sentAt && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
-        <TokenDialog connected={!!mh.token} onDisconnect={mh.disconnect} />
+        <TokenDialog token={mh.token} connected={!!mh.token} onDisconnect={mh.disconnect} />
       </div>
       {sentAt && !expanded ? (
         <div className="mt-1 flex items-center gap-2 text-[13px]">

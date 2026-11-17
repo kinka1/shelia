@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TokenDialog } from './TokenDialog'
 
 describe('TokenDialog', () => {
@@ -29,5 +29,12 @@ describe('TokenDialog', () => {
     fireEvent.click(screen.getByRole('link', { name: 'MagangHub' }))
     expect(open).toHaveBeenCalledWith('https://monev.maganghub.kemnaker.go.id/', '_blank', 'noopener')
     open.mockRestore()
+  })
+  it('closes itself when a new token arrives', async () => {
+    const { rerender } = render(<TokenDialog token="old" connected onDisconnect={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Perbarui token' }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    rerender(<TokenDialog token="new" connected onDisconnect={() => {}} />)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 })

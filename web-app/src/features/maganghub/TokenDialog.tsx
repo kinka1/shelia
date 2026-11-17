@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -11,11 +11,13 @@ const STEPS = [
   'Klik bookmark → Shelia',
 ]
 
-export function TokenDialog({ connected, onDisconnect }: { connected: boolean; onDisconnect: () => void }) {
+export function TokenDialog({ token, connected, onDisconnect }: { token?: string | null; connected: boolean; onDisconnect: () => void }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => setOpen(false), [token]) // new token from the bookmark: done here
   // React 19 swaps javascript: hrefs set as props for a throwing URL, so set it on the node.
   const bookmarkRef = useCallback((el: HTMLAnchorElement | null) => el?.setAttribute('href', bookmarkletHref(location.origin)), [])
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button variant="outline" size="sm" className="h-6 rounded-md px-2 text-xs font-semibold">Perbarui token</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader>
