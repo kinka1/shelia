@@ -17,16 +17,15 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C web-app/dist -czf - . | "${SSH[@]}" "$HOST
 # nginx.conf goes to a .new file; it replaces the live one only after nginx -t passes
 "${SSH[@]}" "$HOST" "cat > $DEST/nginx.conf.new" < nginx.conf
 "${SSH[@]}" "$HOST" "cat > $DEST/docker-compose.yml" < docker-compose.yml
-COPYFILE_DISABLE=1 tar --no-xattrs -czf - monev-mock | "${SSH[@]}" "$HOST" "bash -c 'tar -xzf - -C $DEST'"
 
 # remote login shell is fish, so feed bash via stdin
 "${SSH[@]}" "$HOST" 'bash -s' <<'REMOTE'
 set -euo pipefail
 cd /home/Documents/shelia-test
-# validate the new file before it replaces the live one; proxy-network lets shelia-test-monev resolve
+# validate the new file before it replaces the live one
 docker run --rm --network proxy-network \
   -v /home/Documents/shelia-test/nginx.conf.new:/etc/nginx/conf.d/default.conf:ro \
   nginx:1.29-alpine nginx -t
 mv nginx.conf.new nginx.conf
-docker compose up -d --force-recreate web monev-mock
+docker compose up -d --force-recreate --remove-orphans web
 REMOTE

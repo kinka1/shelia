@@ -29,8 +29,8 @@ describe('loggedFetch', () => {
 
   it('classifies source by path prefix', async () => {
     stub(async () => json({}))
-    for (const p of ['/api/a', '/monev-api/v1/x', '/maganghub-api/v1/x']) await loggedFetch(p, { action: 'a' })
-    expect(log().map((e) => e.source)).toEqual(['maganghub', 'maganghub', 'shelia'])
+    for (const p of ['/api/a', '/maganghub-api/v1/x']) await loggedFetch(p, { action: 'a' })
+    expect(log().map((e) => e.source)).toEqual(['maganghub', 'shelia'])
   })
 
   it('records status null on network error and rethrows', async () => {

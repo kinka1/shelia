@@ -69,7 +69,7 @@ export async function loggedFetch(url: string, init: RequestInit & { action: str
   } finally {
     const entry: LogEntry = {
       id: nextId++, action, method, path,
-      source: /^\/(monev|maganghub)-api\//.test(path) ? 'maganghub' : 'shelia',
+      source: /^\/maganghub-api\//.test(path) ? 'maganghub' : 'shelia',
       title: titleFor(method, path),
       status: res ? res.status : null,
       ms: Date.now() - started, at: started,
