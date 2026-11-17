@@ -1,5 +1,5 @@
 import { loggedFetch } from './apiLog'
-import { getMhToken } from './maganghub'
+import { getMhToken, reportMhRejected } from './maganghub'
 
 export const MIN_CHARS = 100
 // Real MagangHub, read-only through our nginx (GET daily-logs). Sending happens on MagangHub's own page.
@@ -23,6 +23,7 @@ export async function fetchMyToday(date: string): Promise<{ sentAt: string } | {
   if (!t) return null
   try {
     const res = await loggedFetch(`${BASE}/daily-logs?page=1`, { headers: { Authorization: `Bearer ${t}` }, action: 'Cek log hari ini' })
+    if (res.status === 401 || res.status === 403) reportMhRejected()
     if (!res.ok) return { error: `MagangHub menjawab HTTP ${res.status}` }
     const b = await res.json()
     const row = (Array.isArray(b?.data) ? b.data : []).find((r: any) => String(r?.date ?? '').slice(0, 10) === date)

@@ -17,6 +17,11 @@ export const signOutMh = (): void => {
   try { for (const k of [MH_KEY, 'maganghub.draft', 'generate.settings']) localStorage.removeItem(k); localStorage.setItem(OUT_KEY, '1') } catch { /* storage blocked */ }
 }
 
+// Any 401/403 from MagangHub means the saved token no longer works, whichever request saw it:
+// every card showing the connection listens and turns Kedaluwarsa.
+export const MH_REJECTED = 'maganghub:rejected'
+export const reportMhRejected = (): void => { window.dispatchEvent(new Event(MH_REJECTED)) }
+
 export function tokenExpiry(token: string): Date | null {
   try {
     const p = token.split('.')[1]
@@ -45,7 +50,7 @@ export async function fetchDailyLogs(page: number, action = 'Ambil log MagangHub
   try {
     res = await loggedFetch(`${API}/daily-logs?page=${page}`, { headers: { Authorization: 'Bearer ' + t }, action })
   } catch { return { status: 'ok', rows: [], total: null, error: 'Gagal terhubung' } }
-  if (res.status === 401 || res.status === 403) return { status: 'expired', rows: [], total: null }
+  if (res.status === 401 || res.status === 403) { reportMhRejected(); return { status: 'expired', rows: [], total: null } }
   if (!res.ok) return { status: 'ok', rows: [], total: null, error: `Gagal memuat (HTTP ${res.status})` }
   let body: any = null
   try { body = await res.json() } catch { return { status: 'ok', rows: [], total: null, error: 'Respons bukan JSON' } }
