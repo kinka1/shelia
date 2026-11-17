@@ -77,7 +77,7 @@ export function MagangHubCard({ onSentAt }: { onSentAt?: (sentAt: string | null)
     <section>
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-          <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-xs text-primary-ink">2</span>MagangHub
+          MagangHub
         </h2>
         <span className="flex-1" />
         <StatusPill status={connKey} label={connLabel} />

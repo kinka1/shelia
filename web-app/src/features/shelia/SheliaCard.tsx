@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  RELOAD_CODES, STATUS_LABEL, buildAttendForm, currentStep, fmtMeters, fmtTime, shiftLabel, successText, tokenUsable,
+  RELOAD_CODES, buildAttendForm, currentStep, fmtMeters, fmtTime, shiftLabel, successText, tokenUsable,
   type TimedToken,
 } from '@/lib/attendance'
 import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
-import { Sessions, StatusPill } from './Sessions'
+import { Sessions } from './Sessions'
 import type { useToday } from './useToday'
 
 const STEPS = ['1 · Shift dipilih', '2 · Foto wajah', '3 · Kirim']
@@ -133,10 +133,9 @@ export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType
     <section>
       <div className="flex items-center gap-2">
         <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-          <span className="grid size-5 place-items-center rounded-full bg-primary/10 text-xs text-primary-ink">1</span>Shelia
+          Shelia
         </h2>
         <span className="flex-1" />
-        {today && <StatusPill status={today.status} label={STATUS_LABEL[today.status] || today.status || '-'} />}
         {done && expanded && <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>Tutup</Button>}
         <Button variant="ghost" size="icon" aria-label="Muat ulang" disabled={loading} onClick={() => void reload()}>
           <RefreshCw className={loading ? 'animate-spin' : ''} />
