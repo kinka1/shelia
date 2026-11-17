@@ -14,7 +14,7 @@ import {
 import { errorText, sheliaApi, type ApiError } from '@/lib/shelia'
 import { CameraCapture } from './CameraCapture'
 import { Sessions, StatusPill } from './Sessions'
-import { useToday } from './useToday'
+import type { useToday } from './useToday'
 
 const STEPS = ['1 · Shift', '2 · Foto wajah', '3 · Kirim']
 
@@ -27,8 +27,7 @@ function Note({ tone, children }: { tone: 'warning' | 'destructive' | 'info'; ch
   )
 }
 
-export function SheliaCard() {
-  const { today, shifts, loading, reload, error } = useToday()
+export function SheliaCard({ today, shifts, loading, reload, error }: ReturnType<typeof useToday>) {
   const [shiftId, setShiftId] = useState('')
   const [reason, setReason] = useState('')
   const [photo, setPhoto] = useState<Blob | null>(null)
