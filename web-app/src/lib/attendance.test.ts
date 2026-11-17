@@ -32,7 +32,7 @@ describe('buildAttendForm', () => {
     expect(f.has('reason')).toBe(false)
   })
   it('bypass sends photo', () => {
-    const f = buildAttendForm({ isIn: true, bypassToken: 'bt', photo: new Blob(['x']), photoName: 'a.jpg' })
+    const f = buildAttendForm({ isIn: true, bypassToken: 'bt', faceToken: 'ft', photo: new Blob(['x']), photoName: 'a.jpg' })
     expect(f.get('face_bypass_token')).toBe('bt')
     expect(f.has('file_photo')).toBe(true)
     expect(f.has('face_token')).toBe(false)
