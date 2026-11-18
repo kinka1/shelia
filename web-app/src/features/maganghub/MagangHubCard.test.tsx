@@ -22,6 +22,9 @@ const kirim = async () => {
 beforeEach(() => localStorage.setItem('maganghub.token', 'mh-tok'))
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear() })
 
+type P = { latitude: number; longitude: number }
+const meters = (a: P, b: P) => Math.hypot((a.latitude - b.latitude) * 111320, (a.longitude - b.longitude) * 111320 * Math.cos(b.latitude * Math.PI / 180))
+
 describe('MagangHubCard form', () => {
   it('gates Kirim log on 100 chars per field', async () => {
     setup()
@@ -70,7 +73,11 @@ describe('MagangHubCard sending', () => {
     const btn = screen.getByRole('button', { name: /Mengirim|Kirim ke MagangHub/ })
     fireEvent.click(btn)
     await waitFor(() => expect(sends(s)).toHaveLength(1))
-    expect(sends(s)[0]).toEqual({ date: TODAY, status: 'PRESENT', activity_log: L, lesson_learned: L, obstacles: L, latitude: -7.308430344545027, longitude: 112.785199930883 })
+    const sent = sends(s)[0]
+    expect(sent).toMatchObject({ date: TODAY, status: 'PRESENT', activity_log: L, lesson_learned: L, obstacles: L })
+    // never the exact same point: 1-5 m away from the office
+    const m = meters(sent, { latitude: -7.308430344545027, longitude: 112.785199930883 })
+    expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5)
     finish({ ok: true, status: 201 })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(localStorage.getItem('maganghub.draft')).toBeNull() // sent: the draft is gone
@@ -84,7 +91,9 @@ describe('MagangHubCard sending', () => {
     fireEvent.click(screen.getByRole('button', { name: /Gunakan lokasi saya/ }))
     expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
     fill(); await kirim()
-    await waitFor(() => expect(sends(s)[0]).toMatchObject({ latitude: -7.25, longitude: 112.75 }))
+    await waitFor(() => expect(sends(s)).toHaveLength(1))
+    const m = meters(sends(s)[0], { latitude: -7.25, longitude: 112.75 })
+    expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5)
   })
 
   it('cancel sends nothing, and nothing ever goes to our server', async () => {

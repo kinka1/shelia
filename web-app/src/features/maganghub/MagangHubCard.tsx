@@ -10,7 +10,7 @@ import { MIN_CHARS, fetchMyToday, fieldState, remainingFields, todayWIB } from '
 import { extError, extSend, sendBody, useExtension } from '@/lib/extension'
 import { toast } from 'sonner'
 import { StatusPill } from '@/features/shelia/Sessions'
-import { LocationPicker, OFFICE } from './LocationPicker'
+import { LocationPicker, OFFICE, jitter } from './LocationPicker'
 import { MhConnect, MhConnectPanel } from './MhConnect'
 import { GenerateLog } from './GenerateLog'
 import { useMhToken } from './useMhToken'
@@ -105,7 +105,8 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
     const now = await check()
     if (now && 'sentAt' in now) { setSending(false); setConfirming(false); toast.info('Log hari ini sudah terkirim, tidak dikirim lagi.'); return }
     if (now && 'error' in now) { setSending(false); setSendErr('Belum bisa memastikan log hari ini, jadi tidak dikirim. Coba lagi.'); return }
-    const r = await extSend(sendBody({ date, ...v, latitude: point.lat, longitude: point.lng }))
+    const at = jitter(point)
+    const r = await extSend(sendBody({ date, ...v, latitude: at.lat, longitude: at.lng }))
     setSending(false)
     if ('ok' in r && r.ok) { try { localStorage.removeItem(DRAFT) } catch { /* storage blocked */ }; setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
     setSendErr(extError(r))
