@@ -11,11 +11,11 @@ export function TelegramFooter({ invite }: { invite: string }) {
   return (
     <div className="mt-auto flex items-center gap-1 border-t border-sidebar-border px-1 pt-3">
       <a href={invite} target="_blank" rel="noopener noreferrer"
-        className="flex h-9 flex-1 items-center gap-2 rounded-[8px] px-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-white">
-        <Send className="size-4" /> Channel Telegram
+        className="flex h-9 min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[8px] px-1.5 text-[13px] transition-colors hover:bg-sidebar-accent hover:text-white">
+        <Send className="size-4 shrink-0" /> Channel Telegram
       </a>
       <button type="button" onClick={() => void copy()} aria-label="Salin link channel" title={copied ? 'Tersalin' : 'Salin link'}
-        className="grid size-9 place-items-center rounded-[8px] transition-colors hover:bg-sidebar-accent hover:text-white">
+        className="grid size-8 shrink-0 place-items-center rounded-[8px] transition-colors hover:bg-sidebar-accent hover:text-white">
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
       </button>
     </div>
