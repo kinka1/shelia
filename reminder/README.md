@@ -24,7 +24,7 @@ No runtime dependencies. Tests: `node --test "reminder/**/*.test.ts"` (Node 24+)
    nano /home/Documents/phoenix/reminder.env
    ```
 
-   with these five lines:
+   with these lines:
 
    ```
    TELEGRAM_BOT_TOKEN=
@@ -32,22 +32,25 @@ No runtime dependencies. Tests: `node --test "reminder/**/*.test.ts"` (Node 24+)
    ACCESS_TEAM=spring-haze-8848
    ACCESS_AUD=
    ADMIN_EMAILS=
+   TELEGRAM_INVITE_URL=
    ```
 
    - `ACCESS_AUD`: Cloudflare Zero Trust → Access → Applications → **phoenix** → Overview → *Application Audience (AUD) Tag*.
    - `ADMIN_EMAILS`: your own Access login email (comma-separate several). Admins get the "Libur hari ini" switch.
+   - `TELEGRAM_INVITE_URL` (optional): the channel's invite link (`https://t.me/...`). Phoenix shows "Buka channel" and "Salin link".
+     Kept here, not in the repo, because the repo is public.
 6. From the repo on your Mac, run `./deploy.sh`. It starts `phoenix-reminder` once `reminder.env` exists.
 
 ## Schedule (WIB, Monday–Friday)
 
 | Time | Post |
 |---|---|
-| 07:45 | Masuk table (edited live) |
+| 07:45 | Masuk table (edited live; ⏳ = not yet, ✅ = done) |
 | 07:55, 08:00 | Nudge: Shelia masuk not done |
 | 16:45 | Pulang table: Shelia pulang (info) + MagangHub log (edited live) |
 | 17:30, 20:00, 22:00, 23:00 | Nudge: MagangHub log not sent |
 | 23:30 | Same nudge, silent |
-| 23:59:59 | Final result, silent |
+| 23:59:59 | Final result, silent; still-open ⏳ become ❌, in the live tables too |
 
 ## Data
 

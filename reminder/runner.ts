@@ -43,7 +43,13 @@ export function createRunner(o: { store: Store; tg: Tg; now?: () => Date; deboun
       const rows = store.roster(date)
       const html = e.kind === 'nudge' ? renderNudge(e.slot, rows) : tracked('pulang', date).length ? renderFinal(date, rows) : null
       if (html == null) { store.markFired(date, e.id); continue }
-      if ((await post(key, html, e.silent)) != null) store.markFired(date, e.id)
+      if ((await post(key, html, e.silent)) == null) continue
+      store.markFired(date, e.id)
+      // End of the day: the live tables turn what is still ⏳ into ❌ (no more edits after this).
+      if (e.kind === 'final') for (const slot of SLOTS) {
+        const id = store.getMessage(date, slot)
+        if (id != null) await tg.edit(id, renderTable(slot, date, tracked(slot, date), { ended: true }))
+      }
     }
   }
 

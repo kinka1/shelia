@@ -28,7 +28,7 @@ const optBool = (b: Record<string, unknown>, k: string) => {
   return b[k] as boolean | undefined
 }
 
-export function createHandler(o: { store: Store; verify: (jwt?: string) => Promise<string | null>; runner: Runner; admins: string[]; now?: () => Date }) {
+export function createHandler(o: { store: Store; verify: (jwt?: string) => Promise<string | null>; runner: Runner; admins: string[]; invite?: string | null; now?: () => Date }) {
   const { store, runner } = o
   const now = o.now ?? (() => new Date())
   const admins = new Set(o.admins.map((e) => e.trim().toLowerCase()).filter(Boolean))
@@ -48,18 +48,12 @@ export function createHandler(o: { store: Store; verify: (jwt?: string) => Promi
     const key = `${req.method} ${path}`
 
     if (key === 'GET /me') {
-      const p = store.getPerson(email) ?? { email, nick: null, sheliaName: null, shelia: false, maganghub: false }
-      return send(200, { name: nameOf(p), nick: p.nick, shelia: p.shelia, maganghub: p.maganghub, admin: admins.has(email), holiday: store.isHoliday(today) })
+      const p = store.getPerson(email) ?? { email, sheliaName: null, shelia: false, maganghub: false }
+      return send(200, { name: nameOf(p), shelia: p.shelia, maganghub: p.maganghub, admin: admins.has(email), holiday: store.isHoliday(today), invite: o.invite ?? null })
     }
     if (key === 'PUT /me') {
       const b = await body(req)
       const patch: Parameters<Store['patchPerson']>[1] = { shelia: optBool(b, 'shelia'), maganghub: optBool(b, 'maganghub') }
-      if (b.nick !== undefined) {
-        if (b.nick !== null && typeof b.nick !== 'string') throw new HttpError(400, 'nick')
-        const n = typeof b.nick === 'string' ? b.nick.trim() : ''
-        if ([...n].length > 20) throw new HttpError(400, 'nick too long')
-        patch.nick = n || null
-      }
       if (b.sheliaName !== undefined) {
         if (typeof b.sheliaName !== 'string' || b.sheliaName.length > 100) throw new HttpError(400, 'sheliaName')
         patch.sheliaName = b.sheliaName

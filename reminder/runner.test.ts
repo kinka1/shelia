@@ -81,6 +81,18 @@ test('23:30 nudge is silent; nudges stop once everyone sent the log', async () =
   assert.equal(fin[0].silent, true)
 })
 
+test('the final result also turns both live tables from ⏳ to ❌', async () => {
+  const s = setup(); const r = s.mk()
+  s.store.patchPerson('a@x.id', { shelia: true, maganghub: true })
+  s.set(at('07:45:00')); await r.tick()
+  s.set(at('16:45:00')); await r.tick()
+  assert.ok(s.sent.every((m) => m.html.includes('⏳')))
+  s.set(at('23:59:59')); await r.tick()
+  assert.match(s.sent.at(-1)!.html, /Hasil hari ini/)
+  assert.deepEqual(s.edits.map((e) => e.id).sort(), s.sent.slice(0, 2).map((m) => m.id).sort())
+  assert.ok(s.edits.every((e) => e.html.includes('❌') && !e.html.includes('⏳')))
+})
+
 test('Saturday and holidays post nothing; a holiday set after the table turns it into Libur', async () => {
   const s = setup(); const r = s.mk()
   s.store.patchPerson('a@x.id', { shelia: true })

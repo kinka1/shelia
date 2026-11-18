@@ -2,14 +2,14 @@ import { DatabaseSync } from 'node:sqlite'
 import type { Row } from './render.ts'
 import type { Slot } from './schedule.ts'
 
-export type Person = { email: string; nick: string | null; sheliaName: string | null; shelia: boolean; maganghub: boolean }
-export type PersonPatch = { nick?: string | null; sheliaName?: string; shelia?: boolean; maganghub?: boolean }
+export type Person = { email: string; sheliaName: string | null; shelia: boolean; maganghub: boolean }
+export type PersonPatch = { sheliaName?: string; shelia?: boolean; maganghub?: boolean }
 export type Flags = { masuk?: boolean; pulang?: boolean; log?: boolean }
 export type Store = ReturnType<typeof openStore>
 
-/** Name shown in the channel: own nickname, else Shelia first name, else the email's local part. */
-export const nameOf = (p: { email: string; nick: string | null; sheliaName: string | null }) =>
-  p.nick || (p.sheliaName ? p.sheliaName.trim().split(/\s+/)[0] : '') || p.email.split('@')[0]
+/** Name shown in the channel: Shelia first name, else the email's local part (MagangHub tokens carry no name). */
+export const nameOf = (p: { email: string; sheliaName: string | null }) =>
+  (p.sheliaName ? p.sheliaName.trim().split(/\s+/)[0] : '') || p.email.split('@')[0]
 
 /** Everything is kept (no automatic deletion). No tokens, log text or coordinates are ever stored. */
 export function openStore(path: string) {
@@ -25,15 +25,15 @@ export function openStore(path: string) {
   const b = (v: boolean | undefined) => (v === undefined ? null : v ? 1 : 0)
   const q = {
     insert: db.prepare('INSERT OR IGNORE INTO people (email) VALUES (?)'),
+    // ponytail: the nick column from the first version stays in the schema, unused.
     patch: db.prepare(`UPDATE people SET
-      nick = CASE WHEN :setNick THEN :nick ELSE nick END,
       shelia_name = COALESCE(:sheliaName, shelia_name),
       shelia = COALESCE(:shelia, shelia),
       maganghub = COALESCE(:maganghub, maganghub) WHERE email = :email`),
-    person: db.prepare('SELECT email, nick, shelia_name, shelia, maganghub FROM people WHERE email = ?'),
+    person: db.prepare('SELECT email, shelia_name, shelia, maganghub FROM people WHERE email = ?'),
     done: db.prepare(`INSERT INTO done (email, date, masuk, pulang, log) VALUES (:email, :date, :masuk, :pulang, :log)
       ON CONFLICT (email, date) DO UPDATE SET masuk = max(masuk, :masuk), pulang = max(pulang, :pulang), log = max(log, :log)`),
-    roster: db.prepare(`SELECT p.email, p.nick, p.shelia_name, p.shelia, p.maganghub,
+    roster: db.prepare(`SELECT p.email, p.shelia_name, p.shelia, p.maganghub,
       COALESCE(d.masuk, 0) masuk, COALESCE(d.pulang, 0) pulang, COALESCE(d.log, 0) log
       FROM people p LEFT JOIN done d ON d.email = p.email AND d.date = ? WHERE p.shelia = 1 OR p.maganghub = 1`),
     fired: db.prepare('SELECT 1 FROM fired WHERE date = ? AND event = ?'),
@@ -44,16 +44,16 @@ export function openStore(path: string) {
     addHoliday: db.prepare('INSERT OR IGNORE INTO holidays (date) VALUES (?)'),
     delHoliday: db.prepare('DELETE FROM holidays WHERE date = ?'),
   }
-  const displayName = (r: any) => nameOf({ email: r.email, nick: r.nick, sheliaName: r.shelia_name })
+  const displayName = (r: any) => nameOf({ email: r.email, sheliaName: r.shelia_name })
 
   return {
     patchPerson(email: string, p: PersonPatch): void {
       q.insert.run(email)
-      q.patch.run({ email, setNick: p.nick !== undefined ? 1 : 0, nick: p.nick ?? null, sheliaName: p.sheliaName ?? null, shelia: b(p.shelia), maganghub: b(p.maganghub) })
+      q.patch.run({ email, sheliaName: p.sheliaName ?? null, shelia: b(p.shelia), maganghub: b(p.maganghub) })
     },
     getPerson(email: string): Person | null {
       const r: any = q.person.get(email)
-      return r ? { email: r.email, nick: r.nick, sheliaName: r.shelia_name, shelia: !!r.shelia, maganghub: !!r.maganghub } : null
+      return r ? { email: r.email, sheliaName: r.shelia_name, shelia: !!r.shelia, maganghub: !!r.maganghub } : null
     },
     markDone(email: string, date: string, f: Flags): void {
       q.done.run({ email, date, masuk: f.masuk ? 1 : 0, pulang: f.pulang ? 1 : 0, log: f.log ? 1 : 0 })

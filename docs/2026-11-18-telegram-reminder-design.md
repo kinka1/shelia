@@ -78,6 +78,8 @@ The user picked **A**.
 - Nudges stop once nobody is ❌ for that item. A slot with nobody tracked posts nothing.
 - After 23:00 everything is silent.
 
+**Changed 2026-11-18 (user feedback):** an open item shows ⏳ while the day is going and ❌ only at the end of the day (final result, and the live tables are edited to ❌ then); no nicknames (name = Shelia first name, else email local part; MagangHub tokens carry no name); Phoenix shows the channel invite link (Buka channel / Salin link) from `TELEGRAM_INVITE_URL` in `reminder.env`.
+
 **Table format** (a monospace `<pre>` block, parse_mode HTML, names HTML-escaped):
 
 ```

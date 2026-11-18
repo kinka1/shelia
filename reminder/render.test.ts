@@ -10,8 +10,8 @@ test('pulang table', () => {
     '⏰ <b>Absen pulang</b> · Rabu 18 Nov · 16:45', '',
     '<pre>Nama      Shelia  MagangHub',
     '────────  ──────  ─────────',
-    'Bagas       ✅        ❌',
-    'Rina        ❌        –',
+    'Bagas       ✅        ⏳',
+    'Rina        ⏳        –',
     'Dimas       –         ✅</pre>', '',
     'Belum: Bagas (MagangHub)'].join('\n'))
 })
@@ -21,6 +21,12 @@ test('masuk table has only Shelia people and the Shelia column', () => {
   assert.match(t, /^⏰ <b>Absen masuk<\/b> · Rabu 18 Nov · 07:45/)
   assert.ok(!t.includes('Dimas') && !t.includes('MagangHub'))
   assert.match(t, /Belum: Bagas \(Shelia\), Rina \(Shelia\)$/)
+})
+
+test('at the end of the day, still-open items turn from ⏳ to ❌', () => {
+  const t = renderTable('pulang', '2026-11-18', rows, { ended: true })
+  assert.ok(t.includes('Bagas       ✅        ❌') && t.includes('Rina        ❌        –') && !t.includes('⏳'))
+  assert.ok(renderFinal('2026-11-18', rows).includes('Bagas       ✅        ❌') && !renderFinal('2026-11-18', rows).includes('⏳'))
 })
 
 test('all done', () => assert.match(renderTable('masuk', '2026-11-18', [r('A', { shelia: true, masuk: true })]), /Semua sudah ✅$/))

@@ -11,7 +11,7 @@ test('patchPerson creates and merges; only given fields change', () => {
   const s = openStore(':memory:')
   s.patchPerson('bagas@x.id', { shelia: true, sheliaName: 'Bagas Gunawan' })
   s.patchPerson('bagas@x.id', { maganghub: true })
-  assert.deepEqual(s.getPerson('bagas@x.id'), { email: 'bagas@x.id', nick: null, sheliaName: 'Bagas Gunawan', shelia: true, maganghub: true })
+  assert.deepEqual(s.getPerson('bagas@x.id'), { email: 'bagas@x.id', sheliaName: 'Bagas Gunawan', shelia: true, maganghub: true })
   s.patchPerson('bagas@x.id', { shelia: false })
   assert.equal(s.getPerson('bagas@x.id')!.maganghub, true)
   assert.equal(s.getPerson('nobody@x.id'), null)
@@ -37,14 +37,12 @@ test('roster skips people with no platform but keeps their flags for when they r
   assert.equal(s.roster(D)[0].log, true)
 })
 
-test('display name: nick, then Shelia first name, then email local part; ordered by name', () => {
+test('display name: Shelia first name, else email local part; ordered by name', () => {
   const s = openStore(':memory:')
   s.patchPerson('z@x.id', { shelia: true, sheliaName: 'Bagas Gunawan' })
   s.patchPerson('rina@x.id', { maganghub: true })
-  s.patchPerson('d@x.id', { shelia: true, sheliaName: 'Dimas P', nick: 'Adi' })
-  assert.deepEqual(s.roster(D).map((r) => [r.email, r.name]), [['d@x.id', 'Adi'], ['z@x.id', 'Bagas'], ['rina@x.id', 'rina']])
-  s.patchPerson('d@x.id', { nick: null })
-  assert.equal(s.roster(D).find((r) => r.email === 'd@x.id')!.name, 'Dimas')
+  s.patchPerson('d@x.id', { shelia: true, sheliaName: 'Dimas P' })
+  assert.deepEqual(s.roster(D).map((r) => [r.email, r.name]), [['z@x.id', 'Bagas'], ['d@x.id', 'Dimas'], ['rina@x.id', 'rina']])
 })
 
 test('fired, messages and holidays round-trip', () => {

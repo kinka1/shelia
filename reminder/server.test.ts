@@ -10,7 +10,8 @@ const calls = { changed: [] as string[], holiday: [] as string[] }
 const runner = { changed: (d: string) => { calls.changed.push(d) }, holidayChanged: async (d: string) => { calls.holiday.push(d) } }
 const verify = async (jwt?: string) => (jwt === 'good' ? 'bagas@x.id' : jwt === 'boss' ? 'boss@x.id' : null)
 const now = () => new Date('2026-11-18T03:00:00Z') // 10:00 WIB
-const server = createServer(createHandler({ store, verify, runner, admins: ['boss@x.id'], now }))
+const INVITE = 'https://t.me/+example'
+const server = createServer(createHandler({ store, verify, runner, admins: ['boss@x.id'], invite: INVITE, now }))
 await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
 after(() => server.close())
@@ -31,16 +32,14 @@ test('health needs no auth; everything else does', async () => {
 
 test('PUT /me merges, GET /me reflects it', async () => {
   assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { shelia: true, sheliaName: 'Bagas Gunawan' } })).status, 204)
-  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { maganghub: true, nick: '  Gas ' } })).status, 204)
+  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { maganghub: true, nick: 'ignored' } })).status, 204)
   const me = await (await req('/me', { jwt: 'good' })).json()
-  assert.deepEqual(me, { name: 'Gas', nick: 'Gas', shelia: true, maganghub: true, admin: false, holiday: false })
-  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { nick: '' } })).status, 204)
-  assert.equal((await (await req('/me', { jwt: 'good' })).json()).name, 'Bagas')
+  assert.deepEqual(me, { name: 'Bagas', shelia: true, maganghub: true, admin: false, holiday: false, invite: INVITE })
   assert.ok(calls.changed.includes('2026-11-18'))
 })
 
 test('GET /me for someone never seen', async () => {
-  assert.deepEqual(await (await req('/me', { jwt: 'boss' })).json(), { name: 'boss', nick: null, shelia: false, maganghub: false, admin: true, holiday: false })
+  assert.deepEqual(await (await req('/me', { jwt: 'boss' })).json(), { name: 'boss', shelia: false, maganghub: false, admin: true, holiday: false, invite: INVITE })
 })
 
 test('PUT /me/today only for today WIB', async () => {
@@ -57,11 +56,10 @@ test('PUT /holiday is admin only', async () => {
   assert.equal((await (await req('/me', { jwt: 'good' })).json()).holiday, true)
 })
 
-test('bad input: too big, wrong types, bad JSON, long nick, unknown route', async () => {
-  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', raw: JSON.stringify({ nick: 'x'.repeat(5000) }) })).status, 413)
+test('bad input: too big, wrong types, bad JSON, unknown route', async () => {
+  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', raw: JSON.stringify({ sheliaName: 'x'.repeat(5000) }) })).status, 413)
   assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { shelia: 'yes' } })).status, 400)
   assert.equal((await req('/me', { method: 'PUT', jwt: 'good', raw: '{nope' })).status, 400)
-  assert.equal((await req('/me', { method: 'PUT', jwt: 'good', body: { nick: 'x'.repeat(30) } })).status, 400)
   assert.equal((await req('/me/today', { method: 'PUT', jwt: 'good', body: { date: '2026-11-18', masuk: 1 } })).status, 400)
   assert.equal((await req('/holiday', { method: 'PUT', jwt: 'boss', body: { date: 'tomorrow', on: true } })).status, 400)
   assert.equal((await req('/nope', { jwt: 'good' })).status, 404)

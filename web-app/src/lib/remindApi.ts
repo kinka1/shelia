@@ -1,7 +1,7 @@
 // Telegram channel reminder (phoenix-reminder behind /remind-api/). Same-origin: the Cloudflare Access
 // login identifies the person. Never sends tokens. Never throws: a reminder problem must not block attendance.
 
-export type RemindMe = { name: string; nick: string | null; shelia: boolean; maganghub: boolean; admin: boolean; holiday: boolean }
+export type RemindMe = { name: string; shelia: boolean; maganghub: boolean; admin: boolean; holiday: boolean; invite: string | null }
 
 async function put(path: string, body: object): Promise<boolean> {
   try {
@@ -32,5 +32,4 @@ export async function remindMe(): Promise<RemindMe | null> {
   }
 }
 
-export const remindNick = (nick: string | null) => put('/me', { nick })
 export const remindHoliday = (date: string, on: boolean) => put('/holiday', { date, on })
