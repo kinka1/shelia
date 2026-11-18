@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +51,8 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
   const [v, setV] = useState<Record<Key, string>>(draft?.v ?? { activity_log: '', lesson_learned: '', obstacles: '' })
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [point, setPoint] = useState(draft?.point ?? OFFICE)
+  // What is shown on the map and sent: 1-5 m off the chosen point, re-rolled whenever the point changes.
+  const at = useMemo(() => jitter(point), [point.lat, point.lng])
   useEffect(() => {
     if (sentAt) return
     const blank = !v.activity_log && !v.lesson_learned && !v.obstacles && point.lat === OFFICE.lat && point.lng === OFFICE.lng
@@ -105,7 +107,6 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
     const now = await check()
     if (now && 'sentAt' in now) { setSending(false); setConfirming(false); toast.info('Log hari ini sudah terkirim, tidak dikirim lagi.'); return }
     if (now && 'error' in now) { setSending(false); setSendErr('Belum bisa memastikan log hari ini, jadi tidak dikirim. Coba lagi.'); return }
-    const at = jitter(point)
     const r = await extSend(sendBody({ date, ...v, latitude: at.lat, longitude: at.lng }))
     setSending(false)
     if ('ok' in r && r.ok) { try { localStorage.removeItem(DRAFT) } catch { /* storage blocked */ }; setConfirming(false); toast.success('Log harian terkirim ke MagangHub'); void check(); return }
@@ -151,7 +152,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
             <Input id="mh-status" value="Hadir" readOnly aria-readonly className={READ_ONLY} />
           </div>
         </div>
-        <LocationPicker value={point} onChange={setPoint} />
+        <LocationPicker value={point} shown={at} onChange={setPoint} />
         <GenerateLog value={v} onChange={setV} onBusy={setGenerating} />
         {FIELDS.map(([k, name]) => {
           const s = fieldState(v[k])
@@ -190,7 +191,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
           <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-sm">
             <dt className="text-muted-foreground">Tanggal</dt><dd>{fmtDate(date)}</dd>
             <dt className="text-muted-foreground">Kehadiran</dt><dd>Hadir</dd>
-            <dt className="text-muted-foreground">Titik</dt><dd className="break-all tabular-nums">{point.lat}, {point.lng}</dd>
+            <dt className="text-muted-foreground">Titik</dt><dd className="break-all tabular-nums">{at.lat}, {at.lng}</dd>
           </dl>
           <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-md border p-3">
             {FIELDS.map(([k, name]) => (

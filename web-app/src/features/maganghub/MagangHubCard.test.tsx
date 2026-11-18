@@ -23,6 +23,8 @@ beforeEach(() => localStorage.setItem('maganghub.token', 'mh-tok'))
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear() })
 
 type P = { latitude: number; longitude: number }
+const shown = (): P => ({ latitude: Number((screen.getByLabelText('Latitude') as HTMLInputElement).value), longitude: Number((screen.getByLabelText('Longitude') as HTMLInputElement).value) })
+const near = (a: P, b: P) => { const m = meters(a, b); expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5) }
 const meters = (a: P, b: P) => Math.hypot((a.latitude - b.latitude) * 111320, (a.longitude - b.longitude) * 111320 * Math.cos(b.latitude * Math.PI / 180))
 
 describe('MagangHubCard form', () => {
@@ -54,12 +56,11 @@ describe('MagangHubCard form', () => {
     expect(screen.queryByLabelText('Lokasi')).toBeNull()
   })
 
-  it('shows the coordinates exactly as sent, not rounded', async () => {
+  it('shows the coordinates exactly as sent: 1-5 m off the office', async () => {
     setup()
     render(<MagangHubCard />)
     await screen.findByLabelText('Tanggal')
-    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
-    expect(screen.getByLabelText('Longitude')).toHaveValue('112.785199930883')
+    near(shown(), { latitude: -7.308430344545027, longitude: 112.785199930883 })
   })
 })
 
@@ -74,7 +75,7 @@ describe('MagangHubCard sending', () => {
     fireEvent.click(btn)
     await waitFor(() => expect(sends(s)).toHaveLength(1))
     const sent = sends(s)[0]
-    expect(sent).toMatchObject({ date: TODAY, status: 'PRESENT', activity_log: L, lesson_learned: L, obstacles: L })
+    expect(sent).toMatchObject({ date: TODAY, status: 'PRESENT', activity_log: L, lesson_learned: L, obstacles: L, ...shown() })
     // never the exact same point: 1-5 m away from the office
     const m = meters(sent, { latitude: -7.308430344545027, longitude: 112.785199930883 })
     expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5)
@@ -92,8 +93,8 @@ describe('MagangHubCard sending', () => {
     expect(await screen.findByText(/akurasi ± 18 m/)).toBeInTheDocument()
     fill(); await kirim()
     await waitFor(() => expect(sends(s)).toHaveLength(1))
-    const m = meters(sends(s)[0], { latitude: -7.25, longitude: 112.75 })
-    expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5)
+    near(shown(), { latitude: -7.25, longitude: 112.75 })
+    expect(sends(s)[0]).toMatchObject(shown())
   })
 
   it('cancel sends nothing, and nothing ever goes to our server', async () => {
@@ -291,8 +292,7 @@ describe('MagangHubCard draft (tab closed and reopened)', () => {
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('aku')
     expect(screen.getByRole('textbox', { name: 'Pembelajaran' })).toHaveValue('belajar')
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue('kendala')
-    expect(screen.getByLabelText('Latitude')).toHaveValue('-6.2')
-    expect(screen.getByLabelText('Longitude')).toHaveValue('106.8')
+    near(shown(), { latitude: -6.2, longitude: 106.8 })
   })
 
   it('ignores a draft from another day', async () => {
@@ -301,7 +301,7 @@ describe('MagangHubCard draft (tab closed and reopened)', () => {
     render(<MagangHubCard />)
     await screen.findByLabelText('Tanggal')
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('')
-    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
+    near(shown(), { latitude: -7.308430344545027, longitude: 112.785199930883 })
   })
 
   it('saves what is typed', async () => {
@@ -332,11 +332,11 @@ describe('MagangHubCard Kosongkan', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kosongkan' }))
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('')
     expect(screen.getByRole('textbox', { name: 'Kendala' })).toHaveValue('')
-    expect(screen.getByLabelText('Latitude')).toHaveValue('-7.308430344545027')
+    near(shown(), { latitude: -7.308430344545027, longitude: 112.785199930883 })
     await waitFor(() => expect(localStorage.getItem('maganghub.draft')).toBeNull())
     fireEvent.click(await screen.findByRole('button', { name: 'Batalkan' }))
     expect(screen.getByRole('textbox', { name: 'Aktivitas' })).toHaveValue('aku')
-    expect(screen.getByLabelText('Latitude')).toHaveValue('-6.2')
+    near(shown(), { latitude: -6.2, longitude: 106.8 })
   })
 })
 

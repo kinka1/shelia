@@ -19,7 +19,8 @@ const GEO_ERROR: Record<number, string> = {
 }
 
 /** Peta OpenStreetMap dengan pin yang bisa digeser; GPS perangkat mengisi titiknya. */
-export function LocationPicker({ value, onChange, disabled }: { value: LatLng; onChange: (v: LatLng) => void; disabled?: boolean }) {
+/** `value` is the chosen point; `shown` (default `value`) is where the pin and the fields sit: the point actually sent. */
+export function LocationPicker({ value, shown = value, onChange, disabled }: { value: LatLng; shown?: LatLng; onChange: (v: LatLng) => void; disabled?: boolean }) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<{ map: any; pin: any } | null>(null)
   const change = useRef(onChange)
@@ -33,14 +34,14 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
     let dead = false
     void import('leaflet').then(({ default: L }) => {
       if (dead || !box.current) return
-      const m = L.map(box.current, { center: [value.lat, value.lng], zoom: 16, scrollWheelZoom: true })
+      const m = L.map(box.current, { center: [shown.lat, shown.lng], zoom: 16, scrollWheelZoom: true })
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap',
         referrerPolicy: 'strict-origin-when-cross-origin', // OSM menolak permintaan tanpa Referer
       }).addTo(m)
       const icon = L.divIcon({ className: '', html: '<span class="map-pin"></span>', iconSize: [22, 22], iconAnchor: [11, 22] })
-      const pin = L.marker([value.lat, value.lng], { icon, draggable: !disabled, keyboard: true, title: 'Titik lokasi' }).addTo(m)
+      const pin = L.marker([shown.lat, shown.lng], { icon, draggable: !disabled, keyboard: true, title: 'Titik lokasi' }).addTo(m)
       const set = (ll: { lat: number; lng: number }) => { setAccuracy(null); change.current({ lat: ll.lat, lng: ll.lng }) }
       pin.on('dragend', () => set(pin.getLatLng()))
       m.on('click', (e: any) => { if (pin.dragging?.enabled()) set(e.latlng) })
@@ -53,9 +54,9 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
   useEffect(() => {
     const m = map.current
     if (!m) return
-    m.pin.setLatLng([value.lat, value.lng])
-    m.map.panTo([value.lat, value.lng])
-  }, [value.lat, value.lng])
+    m.pin.setLatLng([shown.lat, shown.lng])
+    m.map.panTo([shown.lat, shown.lng])
+  }, [shown.lat, shown.lng])
 
   useEffect(() => {
     const d = map.current?.pin.dragging
@@ -96,11 +97,11 @@ export function LocationPicker({ value, onChange, disabled }: { value: LatLng; o
       <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-1">
           <Label htmlFor="mh-lat" className={LABEL}>Latitude</Label>
-          <Input id="mh-lat" value={String(value.lat)} readOnly aria-readonly className={READ_ONLY} />
+          <Input id="mh-lat" value={String(shown.lat)} readOnly aria-readonly className={READ_ONLY} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="mh-lng" className={LABEL}>Longitude</Label>
-          <Input id="mh-lng" value={String(value.lng)} readOnly aria-readonly className={READ_ONLY} />
+          <Input id="mh-lng" value={String(shown.lng)} readOnly aria-readonly className={READ_ONLY} />
         </div>
       </div>
     </div>
