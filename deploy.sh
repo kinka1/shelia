@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 HOST=ubuntu@213.35.109.129
-DEST=/home/Documents/shelia-test
+DEST=/home/Documents/phoenix
 SSH=(ssh -i "$HOME/.ssh/ssh-key-2025-09-05.key")
 
 # The Chrome extension is offered as a download from the site (web-app/public is copied into dist).
@@ -24,10 +24,10 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C web-app/dist -czf - . | "${SSH[@]}" "$HOST
 # remote login shell is fish, so feed bash via stdin
 "${SSH[@]}" "$HOST" 'bash -s' <<'REMOTE'
 set -euo pipefail
-cd /home/Documents/shelia-test
+cd /home/Documents/phoenix
 # validate the new file before it replaces the live one
 docker run --rm --network proxy-network \
-  -v /home/Documents/shelia-test/nginx.conf.new:/etc/nginx/conf.d/default.conf:ro \
+  -v /home/Documents/phoenix/nginx.conf.new:/etc/nginx/conf.d/default.conf:ro \
   nginx:1.29-alpine nginx -t
 mv nginx.conf.new nginx.conf
 docker compose up -d --force-recreate --remove-orphans web
