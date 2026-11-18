@@ -7,6 +7,10 @@ export type PersonPatch = { nick?: string | null; sheliaName?: string; shelia?: 
 export type Flags = { masuk?: boolean; pulang?: boolean; log?: boolean }
 export type Store = ReturnType<typeof openStore>
 
+/** Name shown in the channel: own nickname, else Shelia first name, else the email's local part. */
+export const nameOf = (p: { email: string; nick: string | null; sheliaName: string | null }) =>
+  p.nick || (p.sheliaName ? p.sheliaName.trim().split(/\s+/)[0] : '') || p.email.split('@')[0]
+
 /** Everything is kept (no automatic deletion). No tokens, log text or coordinates are ever stored. */
 export function openStore(path: string) {
   const db = new DatabaseSync(path)
@@ -40,7 +44,7 @@ export function openStore(path: string) {
     addHoliday: db.prepare('INSERT OR IGNORE INTO holidays (date) VALUES (?)'),
     delHoliday: db.prepare('DELETE FROM holidays WHERE date = ?'),
   }
-  const displayName = (r: any) => r.nick || (r.shelia_name ? String(r.shelia_name).trim().split(/\s+/)[0] : '') || String(r.email).split('@')[0]
+  const displayName = (r: any) => nameOf({ email: r.email, nick: r.nick, sheliaName: r.shelia_name })
 
   return {
     patchPerson(email: string, p: PersonPatch): void {

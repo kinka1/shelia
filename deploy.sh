@@ -20,6 +20,9 @@ COPYFILE_DISABLE=1 tar --no-xattrs -C web-app/dist -czf - . | "${SSH[@]}" "$HOST
 # nginx.conf goes to a .new file; it replaces the live one only after nginx -t passes
 "${SSH[@]}" "$HOST" "cat > $DEST/nginx.conf.new" < nginx.conf
 "${SSH[@]}" "$HOST" "cat > $DEST/docker-compose.yml" < docker-compose.yml
+# Telegram reminder service source (tests stay here). Secrets are never shipped: reminder.env lives only on the VPS.
+COPYFILE_DISABLE=1 tar --no-xattrs --exclude='*.test.ts' -C reminder -czf - . | "${SSH[@]}" "$HOST" \
+  "bash -c 'rm -rf $DEST/reminder.new && mkdir -p $DEST/reminder.new && tar -xzf - -C $DEST/reminder.new && rm -rf $DEST/reminder && mv $DEST/reminder.new $DEST/reminder'"
 
 # remote login shell is fish, so feed bash via stdin
 "${SSH[@]}" "$HOST" 'bash -s' <<'REMOTE'
@@ -31,4 +34,9 @@ docker run --rm --network proxy-network \
   nginx:1.29-alpine nginx -t
 mv nginx.conf.new nginx.conf
 docker compose up -d --force-recreate --remove-orphans web
+if [ -f reminder.env ]; then
+  docker compose up -d --build reminder
+else
+  echo 'reminder.env missing: Telegram reminder not started (see reminder/README.md)'
+fi
 REMOTE

@@ -29,3 +29,4 @@ WEB_ATTENDANCE_API.md
 web-app/node_modules
 web-app/dist
 web-app/public/phoenix-maganghub.zip
+reminder.env

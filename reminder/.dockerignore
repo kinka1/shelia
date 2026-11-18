@@ -1,0 +1,4 @@
+*.test.ts
+README.md
+Dockerfile
+.dockerignore
