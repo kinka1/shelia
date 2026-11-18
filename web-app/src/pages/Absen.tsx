@@ -11,7 +11,6 @@ import LoginPage from '@/features/session/LoginPage'
 import { fmtTime } from '@/lib/attendance'
 import { todayWIB } from '@/lib/dailyLog'
 import { extRemind } from '@/lib/extension'
-import { RemindPanel } from '@/features/remind/RemindPanel'
 import { useRemindReport } from '@/features/remind/useRemindReport'
 import { cn } from '@/lib/utils'
 
@@ -118,7 +117,6 @@ export default function Absen() {
         <Card id="form-shelia" className="scroll-mt-20 p-5 shadow-none">{token ? <SheliaCard {...shelia} /> : <LoginPage />}</Card>
         <Card id="form-maganghub" className="scroll-mt-20 p-5 shadow-none"><MagangHubCard onSentAt={setSentAt} onConnected={setMhConnected} /></Card>
       </div>
-      <RemindPanel />
     </div>
   )
 }

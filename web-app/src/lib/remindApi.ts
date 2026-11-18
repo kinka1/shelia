@@ -25,7 +25,9 @@ export async function remindMe(): Promise<RemindMe | null> {
   try {
     const r = await fetch('/remind-api/me')
     if (!r.ok) throw new Error(String(r.status))
-    return (await r.json()) as RemindMe
+    const m = await r.json()
+    if (typeof m?.name !== 'string') throw new Error('unexpected response')
+    return m as RemindMe
   } catch (e) {
     console.warn('Pengingat Telegram: /me', e instanceof Error ? e.message : e)
     return null

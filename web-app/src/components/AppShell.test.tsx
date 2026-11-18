@@ -107,3 +107,76 @@ describe('AppShell', () => {
     await waitFor(() => expect(shelia.querySelector('[inert]')).toBeNull())
   })
 })
+
+describe('AppShell: Telegram reminder', () => {
+  afterEach(() => { vi.unstubAllGlobals(); localStorage.clear() })
+  const INVITE = 'https://t.me/+example'
+  const me = (o = {}) => ({ name: 'Budi', shelia: true, maganghub: false, admin: false, holiday: false, invite: INVITE, ...o })
+  function stubMe(body: unknown, status = 200) {
+    const f = vi.fn(async (u: string, init?: RequestInit) =>
+      String(u) === '/remind-api/me' && !init?.method ? new Response(JSON.stringify(body), { status })
+        : init?.method === 'PUT' ? new Response(null, { status: 204 }) : new Response(JSON.stringify({ data: [] })))
+    vi.stubGlobal('fetch', f)
+    return f
+  }
+  const ui = (path = '/log-api') => render(<MemoryRouter initialEntries={[path]}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+  const openMenu = async () => {
+    const t = await screen.findByRole('button', { name: 'Menu akun' })
+    fireEvent.pointerDown(t, { button: 0, ctrlKey: false, pointerType: 'mouse' })
+    return screen.findByRole('menu')
+  }
+
+  it('sidebar footer opens the channel and copies its link', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    stubMe(me())
+    const writeText = vi.fn(async () => {})
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
+    ui()
+    const nav = screen.getByRole('navigation', { name: 'Menu utama' })
+    const link = await within(nav).findByRole('link', { name: /Channel Telegram/ })
+    expect(link).toHaveAttribute('href', INVITE)
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    fireEvent.click(within(nav).getByRole('button', { name: 'Salin link channel' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(INVITE))
+  })
+
+  it('no invite, or the reminder service off: no channel footer', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    const f = stubMe({}, 502)
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    ui()
+    await waitFor(() => expect(f.mock.calls.some(([u]) => String(u) === '/remind-api/me')).toBe(true))
+    expect(screen.queryByRole('link', { name: /Channel Telegram/ })).toBeNull()
+  })
+
+  it('profile menu shows the reminder status; Libur hari ini only for admins', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    stubMe(me())
+    ui()
+    const menu = await openMenu()
+    expect(within(menu).getByText('Pengingat Telegram')).toBeInTheDocument()
+    expect(within(menu).getByText('Shelia ✅ · MagangHub –')).toBeInTheDocument()
+    expect(within(menu).queryByRole('menuitemcheckbox', { name: 'Libur hari ini' })).toBeNull()
+  })
+
+  it('admin toggles Libur hari ini from the profile menu', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    const f = stubMe(me({ admin: true }))
+    ui()
+    const menu = await openMenu()
+    const item = within(menu).getByRole('menuitemcheckbox', { name: 'Libur hari ini' })
+    expect(item).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(item)
+    await waitFor(() => expect(f.mock.calls.some(([u, i]) => u === '/remind-api/holiday' && (i as RequestInit).method === 'PUT')).toBe(true))
+  })
+
+  it('the Absen page no longer has the Pengingat Telegram card', async () => {
+    saveSession('t', { full_name: 'Budi' })
+    stubExt(() => null)
+    stubMe(me())
+    ui('/')
+    await screen.findByRole('link', { name: /Channel Telegram/ })
+    expect(screen.queryByRole('heading', { name: /Pengingat Telegram/ })).toBeNull()
+  })
+})

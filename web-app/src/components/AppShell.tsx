@@ -6,9 +6,13 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/
 import { Toaster } from '@/components/ui/sonner'
 import ThemeToggle from '@/components/ThemeToggle'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useSession } from '@/features/session/SessionProvider'
+import { TelegramFooter } from '@/features/remind/TelegramFooter'
+import { useRemindMe } from '@/features/remind/useRemindMe'
+import { todayWIB } from '@/lib/dailyLog'
+import { remindHoliday } from '@/lib/remindApi'
 import { cn } from '@/lib/utils'
 
 const SECTIONS = [
@@ -35,7 +39,7 @@ const today = () =>
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
-function Rail({ onNavigate }: { onNavigate?: () => void }) {
+function Rail({ onNavigate, invite }: { onNavigate?: () => void; invite?: string | null }) {
   return (
     <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar px-3 py-4 text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
@@ -68,6 +72,7 @@ function Rail({ onNavigate }: { onNavigate?: () => void }) {
           ))}
         </div>
       ))}
+      {invite && <TelegramFooter invite={invite} />}
     </nav>
   )
 }
@@ -76,20 +81,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
   const { token, employee } = useSession()
-  const name = employee?.full_name || 'Karyawan'
+  const remind = useRemindMe()
+  const me = remind.me
+  const name = employee?.full_name || me?.name || 'Karyawan'
+  const mark = (on: boolean) => (on ? '✅' : '–')
   const section = SECTIONS.find((s) => s.items.some((i) => i.to === pathname))
   const item = section?.items.find((i) => i.to === pathname)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 hidden w-[210px] lg:block">
-        <Rail />
+        <Rail invite={me?.invite} />
       </aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-[210px] border-sidebar-border bg-sidebar p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navigasi utama</SheetDescription>
-          <Rail onNavigate={() => setOpen(false)} />
+          <Rail invite={me?.invite} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <div className="lg:pl-[210px]">
@@ -105,7 +113,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span className="flex-1" />
           <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">{today()}</span>
           <ThemeToggle />
-          {token && <DropdownMenu>
+          {(token || me) && <DropdownMenu onOpenChange={(o) => { if (o) void remind.reload() }}>
             <DropdownMenuTrigger
               aria-label="Menu akun"
               className="grid size-8 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-ink"
@@ -119,6 +127,21 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   {[employee?.nik, employee?.branch_name].filter(Boolean).join(' · ')}
                 </div>
               </DropdownMenuLabel>
+              {me && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="text-xs font-semibold text-muted-foreground">Pengingat Telegram</div>
+                    <div className="text-sm">{`Shelia ${mark(me.shelia)} · MagangHub ${mark(me.maganghub)}`}</div>
+                  </DropdownMenuLabel>
+                  {me.admin && (
+                    <DropdownMenuCheckboxItem checked={me.holiday}
+                      onCheckedChange={async (on) => { await remindHoliday(todayWIB(), on); await remind.reload() }}>
+                      Libur hari ini
+                    </DropdownMenuCheckboxItem>
+                  )}
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>}
         </header>
