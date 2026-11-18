@@ -11,6 +11,8 @@ import LoginPage from '@/features/session/LoginPage'
 import { fmtTime } from '@/lib/attendance'
 import { todayWIB } from '@/lib/dailyLog'
 import { extRemind } from '@/lib/extension'
+import { RemindPanel } from '@/features/remind/RemindPanel'
+import { useRemindReport } from '@/features/remind/useRemindReport'
 import { cn } from '@/lib/utils'
 
 type Tone = 'done' | 'partial' | 'todo'
@@ -102,12 +104,13 @@ function TodayStatus({ shelia, mh, loading }: { shelia: Item | null; mh: Item; l
 }
 
 export default function Absen() {
-  const { token } = useSession()
+  const { token, employee } = useSession()
   const shelia = useToday(!!token)
   const [sentAt, setSentAt] = useState<string | null>(null)
   const [mhConnected, setMhConnected] = useState(false)
   const status = token && shelia.today ? JSON.stringify(remindStatus(shelia.today, sentAt, todayWIB())) : ''
   useEffect(() => { if (status) void extRemind({ status: JSON.parse(status) }) }, [status])
+  useRemindReport({ date: todayWIB(), sheliaToken: token, sheliaName: employee?.full_name, sheliaToday: shelia.today, mhConnected, sentAt })
   return (
     <div className="space-y-5">
       <TodayStatus shelia={sheliaItem(shelia.today, shelia.loading, !!token)} mh={mhItem(sentAt, mhConnected)} loading={!!token && shelia.loading} />
@@ -115,6 +118,7 @@ export default function Absen() {
         <Card id="form-shelia" className="scroll-mt-20 p-5 shadow-none">{token ? <SheliaCard {...shelia} /> : <LoginPage />}</Card>
         <Card id="form-maganghub" className="scroll-mt-20 p-5 shadow-none"><MagangHubCard onSentAt={setSentAt} onConnected={setMhConnected} /></Card>
       </div>
+      <RemindPanel />
     </div>
   )
 }

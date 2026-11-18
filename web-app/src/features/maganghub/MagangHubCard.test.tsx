@@ -350,5 +350,6 @@ describe('MagangHubCard Keluar', () => {
     await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Aktivitas' })).toBeNull())
     await waitFor(() => expect(localStorage.getItem('maganghub.draft')).toBeNull())
     expect(localStorage.getItem('generate.settings')).toBeNull()
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([u, i]) => u === '/remind-api/me' && (i as RequestInit)?.body === JSON.stringify({ maganghub: false }))).toBe(true))
   })
 })

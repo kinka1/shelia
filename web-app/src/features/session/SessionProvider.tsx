@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   ApiError, clearSession, getEmployee, getToken, onUnauthorized, saveSession, sheliaApi, type Employee,
 } from '@/lib/shelia'
+import { remindPlatforms } from '@/lib/remindApi'
 
 interface Session {
   token: string | null
@@ -51,6 +52,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await sheliaApi('/auth/logout', { method: 'POST', action: 'Keluar dari akun' })
     } catch { /* sesi tetap dihapus walau request gagal */ }
     clearSession(true)
+    void remindPlatforms({ shelia: false }) // Keluar: off the Telegram table's Shelia column
     setToken(null)
     setEmployee(null)
     setExpired('')

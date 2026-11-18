@@ -14,6 +14,7 @@ import { LocationPicker, OFFICE, jitter } from './LocationPicker'
 import { MhConnect, MhConnectPanel } from './MhConnect'
 import { GenerateLog } from './GenerateLog'
 import { useMhToken } from './useMhToken'
+import { remindPlatforms } from '@/lib/remindApi'
 
 const FIELDS = [
   ['activity_log', 'Aktivitas'],
@@ -123,7 +124,7 @@ export function MagangHubCard({ onSentAt, onConnected }: { onSentAt?: (sentAt: s
         <StatusPill status={connKey} label={connLabel} />
         {canSend && <MhConnect installed onRefresh={mh.refresh} onBusy={setRefreshing} />}
         {mh.status !== 'none' && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); setV(BLANK_V); setPoint(OFFICE); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { mh.disconnect(); void remindPlatforms({ maganghub: false }); setV(BLANK_V); setPoint(OFFICE); toast('Keluar dari MagangHub di halaman ini') }}>Keluar</Button>
         )}
       </div>
       {/* While Perbarui token runs the card is greyed and can't be clicked (unlocks on success or failure). */}

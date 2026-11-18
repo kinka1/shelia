@@ -72,5 +72,7 @@ describe('LoginPage', () => {
     expect(getToken()).toBeNull()
     expect(localStorage.getItem('maganghub.token')).toBe('m')
     expect(localStorage.getItem('shelia.history')).toBeNull()
+    const f = vi.mocked(fetch)
+    expect(f.mock.calls.some(([u, i]) => u === '/remind-api/me' && (i as RequestInit).body === JSON.stringify({ shelia: false }))).toBe(true)
   })
 })
