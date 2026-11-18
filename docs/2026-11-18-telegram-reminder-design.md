@@ -117,9 +117,8 @@ Belum: Bagas (MagangHub)
 
 **What the server stores** (SQLite file in a named volume): per email — display name, on-Shelia,
 on-MagangHub; per email per date — masuk, pulang, log booleans; per date per slot — the Telegram
-message id of the live table; a holiday flag per date. Rows for dates before today are deleted
-at the first tick of each day (only the per-person platform list carries over). No tokens, no log
-text, no coordinates.
+message id of the live table; a holiday flag per date. **History is kept: nothing is deleted
+automatically** (user's decision, 2026-11-18). No tokens, no log text, no coordinates.
 
 **Holidays**: a "Libur hari ini" switch in Phoenix, available to the admin only (an
 `ADMIN_EMAILS` env var on the server; the user's own Access email). When set for today, nothing
