@@ -4,24 +4,34 @@ import { createPublicKey, verify as rsaVerify, type KeyObject } from 'node:crypt
  * Verifies a Cloudflare Access JWT (Cf-Access-Jwt-Assertion) and returns its lower-cased email, or null.
  * The plain Cf-Access-Authenticated-User-Email header is never trusted: anything on the Docker network could forge it.
  */
-export function createVerifier(o: { team: string; aud: string; fetch?: typeof fetch; now?: () => number }) {
+export function createVerifier(o: { team: string; aud: string; fetch?: typeof fetch; now?: () => number; timeoutMs?: number }) {
   const get = o.fetch ?? fetch
   const now = o.now ?? Date.now
   const url = `https://${o.team}.cloudflareaccess.com/cdn-cgi/access/certs`
   let keys = new Map<string, KeyObject>()
   let fetchedAt = -Infinity
+  let inflight: Promise<void> | null = null
 
   async function load() {
-    fetchedAt = now()
-    const r = await get(url)
-    if (!r.ok) throw new Error(`certs ${r.status}`)
-    const body = (await r.json()) as { keys?: any[] }
-    keys = new Map((body.keys ?? []).filter((k) => k.kid).map((k) => [k.kid, createPublicKey({ key: k, format: 'jwk' })]))
+    try {
+      const r = await get(url, { signal: AbortSignal.timeout(o.timeoutMs ?? 10_000) })
+      if (!r.ok) throw new Error(`certs ${r.status}`)
+      const body = (await r.json()) as { keys?: any[] }
+      keys = new Map((body.keys ?? []).filter((k) => k.kid).map((k) => [k.kid, createPublicKey({ key: k, format: 'jwk' })]))
+      fetchedAt = now() // the 60 s limit only starts after a successful fetch
+    } catch (e) {
+      console.error('reminder: Access certs fetch failed:', e instanceof Error ? e.message : e)
+    }
   }
 
   async function keyFor(kid: string): Promise<KeyObject | undefined> {
-    // Refetch for an unknown kid (Cloudflare rotates keys), at most once a minute so junk tokens cannot hammer the endpoint.
-    if (!keys.has(kid) && now() - fetchedAt >= 60_000) await load()
+    // Concurrent callers share one in-flight fetch. A kid still unknown after a successful fetch is
+    // refetched at most once a minute (Cloudflare rotates keys), so junk tokens cannot hammer the endpoint.
+    if (inflight) await inflight
+    if (!keys.has(kid) && now() - fetchedAt >= 60_000) {
+      inflight ??= load().finally(() => { inflight = null })
+      await inflight
+    }
     return keys.get(kid)
   }
 

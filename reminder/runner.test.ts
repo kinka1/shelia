@@ -107,12 +107,17 @@ test('changes are debounced into one edit per live table', async () => {
   assert.ok(s.edits.every((e) => !e.html.includes('❌')))
 })
 
-test('a failed send is retried on the next tick; tick never rejects', async () => {
-  const s = setup({ failSends: 1 }); const r = s.mk()
+test('a failed send is retried after 30 s, not on every tick; tick never rejects', async () => {
+  const s = setup({ failSends: 2 }); const r = s.mk()
   s.store.patchPerson('a@x.id', { shelia: true })
   s.set(at('07:45:00')); await r.tick()
-  assert.equal(s.sent.length, 0)
   s.set(at('07:45:01')); await r.tick()
+  s.set(at('07:45:29')); await r.tick()
+  assert.equal(s.sent.length, 0)
+  s.set(at('07:45:30')); await r.tick() // 2nd failure
+  s.set(at('07:45:31')); await r.tick()
+  assert.equal(s.sent.length, 0)
+  s.set(at('07:46:00')); await r.tick()
   assert.equal(s.sent.length, 1)
   const broken = createRunner({ store: s.store, tg: { send: async () => { throw new Error('boom') }, edit: async () => true }, now: () => at('07:55:00') })
   await broken.tick() // must resolve

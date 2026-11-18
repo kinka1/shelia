@@ -13,18 +13,29 @@ export function createRunner(o: { store: Store; tg: Tg; now?: () => Date; deboun
   const debounceMs = o.debounceMs ?? 5000
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   let busy = false
+  // After a failed send (the client already retried transient errors), wait before trying that event again,
+  // so a permanent error (bot removed, chat not found) is not resent 4 times a second.
+  const retryAt = new Map<string, number>()
+  const RETRY_MS = 30_000
 
   const tracked = (slot: Slot, date: string) => store.roster(date).filter((r) => (slot === 'masuk' ? r.shelia : r.shelia || r.maganghub))
 
-  async function runDue(date: string, time: string) {
+  async function runDue(date: string, time: string, ms: number) {
+    const post = async (key: string, html: string, silent: boolean) => {
+      if ((retryAt.get(key) ?? 0) > ms) return null
+      const id = await tg.send(html, silent)
+      if (id == null) retryAt.set(key, ms + RETRY_MS); else retryAt.delete(key)
+      return id
+    }
     for (const e of EVENTS) {
       if (time < e.at || store.fired(date, e.id)) continue
+      const key = `${date} ${e.id}`
       const late = secs(time) - secs(e.at) >= 60
       if (e.kind === 'table') {
         if (time >= TABLE_CLOSE[e.slot]) { store.markFired(date, e.id); continue }
         const rows = tracked(e.slot, date)
         if (!rows.length) continue // nobody yet: a later joiner still gets the table while the slot is open
-        const id = await tg.send(renderTable(e.slot, date, rows), e.silent)
+        const id = await post(key, renderTable(e.slot, date, rows), e.silent)
         if (id != null) { store.setMessage(date, e.slot, id); store.markFired(date, e.id) }
         continue
       }
@@ -32,7 +43,7 @@ export function createRunner(o: { store: Store; tg: Tg; now?: () => Date; deboun
       const rows = store.roster(date)
       const html = e.kind === 'nudge' ? renderNudge(e.slot, rows) : tracked('pulang', date).length ? renderFinal(date, rows) : null
       if (html == null) { store.markFired(date, e.id); continue }
-      if ((await tg.send(html, e.silent)) != null) store.markFired(date, e.id)
+      if ((await post(key, html, e.silent)) != null) store.markFired(date, e.id)
     }
   }
 
@@ -51,8 +62,9 @@ export function createRunner(o: { store: Store; tg: Tg; now?: () => Date; deboun
       if (busy) return
       busy = true
       try {
-        const { date, time, weekday } = wib(now())
-        if (weekday && !store.isHoliday(date)) await runDue(date, time)
+        const t = now()
+        const { date, time, weekday } = wib(t)
+        if (weekday && !store.isHoliday(date)) await runDue(date, time, t.getTime())
       } catch (e) {
         console.error('reminder tick failed:', e instanceof Error ? e.message : e)
       } finally { busy = false }

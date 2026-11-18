@@ -1,7 +1,7 @@
 export type Telegram = ReturnType<typeof createTelegram>
 
 /** Minimal Telegram Bot API client. Never throws; never logs the bot token. */
-export function createTelegram(o: { token: string; chatId: string; fetch?: typeof fetch; sleep?: (ms: number) => Promise<void> }) {
+export function createTelegram(o: { token: string; chatId: string; fetch?: typeof fetch; sleep?: (ms: number) => Promise<void>; timeoutMs?: number }) {
   const get = o.fetch ?? fetch
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const hide = (s: string) => s.split(o.token).join('<token>')
@@ -13,6 +13,7 @@ export function createTelegram(o: { token: string; chatId: string; fetch?: typeo
       try {
         const r = await get(`https://api.telegram.org/bot${o.token}/${method}`, {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+          signal: AbortSignal.timeout(o.timeoutMs ?? 10_000), // a silent connection must not hold the scheduler
         })
         const j: any = await r.json().catch(() => ({}))
         if (j.ok) return { ok: true, result: j.result }

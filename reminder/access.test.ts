@@ -56,3 +56,16 @@ test('an unknown kid refetches the certs, at most once a minute', async () => {
   assert.equal(await verify(sign(good({ exp: t / 1000 + 600 }), { kid: 'k3' })), null)
   assert.equal(calls.length, 2)
 })
+
+test('concurrent first requests all wait for the same certs fetch', async () => {
+  const { verify, calls } = setup()
+  const out = await Promise.all([verify(sign(good())), verify(sign(good())), verify(sign(good()))])
+  assert.deepEqual(out, ['bagas@x.id', 'bagas@x.id', 'bagas@x.id'])
+  assert.equal(calls.length, 1)
+})
+
+test('a hanging certs endpoint times out instead of stalling requests', async () => {
+  const fetch = ((_u: string, init?: RequestInit) => new Promise<Response>((_, rej) => init?.signal?.addEventListener('abort', () => rej(new Error('aborted'))))) as typeof globalThis.fetch
+  const verify = createVerifier({ team: 'team', aud: AUD, fetch, now: () => NOW, timeoutMs: 20 })
+  assert.equal(await verify(sign(good())), null)
+})

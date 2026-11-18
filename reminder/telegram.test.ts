@@ -65,3 +65,14 @@ test('logs never contain the token', async () => {
   assert.ok(lines.length > 0)
   assert.ok(lines.every((l) => !l.includes('SECRET')))
 })
+
+test('a silent connection times out per attempt instead of stalling the scheduler', async () => {
+  let calls = 0
+  const fetch = ((_u: string, init?: RequestInit) => { calls++; return new Promise<Response>((_, rej) => init?.signal?.addEventListener('abort', () => rej(new Error('timeout')))) }) as typeof globalThis.fetch
+  const orig = console.error; console.error = () => {}
+  try {
+    const tg = createTelegram({ token: TOKEN, chatId: '-100', fetch, sleep: async () => {}, timeoutMs: 20 })
+    assert.equal(await tg.send('x', false), null)
+  } finally { console.error = orig }
+  assert.equal(calls, 4)
+})
