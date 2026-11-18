@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CONFIG, errorText, sheliaApi, type ApiError } from '@/lib/shelia'
+import { CONFIG, errorText, jitter, sheliaApi, type ApiError } from '@/lib/shelia'
 
 /** Shelia's status for today; does nothing until there is a Shelia login. */
 export function useToday(enabled = true) {
@@ -13,7 +13,7 @@ export function useToday(enabled = true) {
     setError('')
     try {
       const res = await sheliaApi('/attendance-integration/user/today', {
-        method: 'POST', json: { lat: CONFIG.LAT, lng: CONFIG.LNG }, action,
+        method: 'POST', json: jitter({ lat: CONFIG.LAT, lng: CONFIG.LNG }), action,
       })
       const t = res.data || {}
       let list: any[] = []

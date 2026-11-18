@@ -1,4 +1,4 @@
-import { CONFIG } from './shelia'
+import { CONFIG, jitter } from './shelia'
 
 export const STATUS_LABEL: Record<string, string> = {
   not_checked_in: 'Belum masuk',
@@ -33,8 +33,9 @@ export function buildAttendForm(a: {
   faceToken?: string; bypassToken?: string; photo?: Blob; photoName?: string
 }): FormData {
   const f = new FormData()
-  f.append('lat', String(CONFIG.LAT))
-  f.append('lng', String(CONFIG.LNG))
+  const at = jitter({ lat: CONFIG.LAT, lng: CONFIG.LNG })
+  f.append('lat', String(at.lat))
+  f.append('lng', String(at.lng))
   f.append('platform', 'web')
   if (a.shiftId) f.append('shift_id', a.shiftId)
   if (!a.isIn && a.attendanceId) f.append('attendance_id', a.attendanceId)

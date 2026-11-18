@@ -5,15 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { CONFIG } from '@/lib/shelia'
+export { jitter } from '@/lib/shelia'
 
 export type LatLng = { lat: number; lng: number }
 export const OFFICE: LatLng = { lat: CONFIG.LAT, lng: CONFIG.LNG }
-
-/** The point moved 1-5 m in a random direction, so no two sends carry the exact same coordinates. */
-export function jitter(p: LatLng, rand = Math.random): LatLng {
-  const d = 1 + rand() * 4, a = rand() * 2 * Math.PI
-  return { lat: p.lat + (d * Math.cos(a)) / 111320, lng: p.lng + (d * Math.sin(a)) / (111320 * Math.cos((p.lat * Math.PI) / 180)) }
-}
 
 const LABEL = 'text-xs font-semibold text-muted-foreground'
 const READ_ONLY = 'bg-muted text-muted-foreground tabular-nums focus-visible:ring-0'

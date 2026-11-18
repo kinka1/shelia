@@ -2,6 +2,12 @@ import { loggedFetch } from './apiLog'
 
 export const CONFIG = { API_BASE: '/api' as const, LAT: -7.308430344545027, LNG: 112.785199930883 }
 
+/** The point moved 1-5 m in a random direction, so no two sends carry the exact same coordinates. */
+export function jitter(p: { lat: number; lng: number }, rand = Math.random): { lat: number; lng: number } {
+  const d = 1 + rand() * 4, a = rand() * 2 * Math.PI
+  return { lat: p.lat + (d * Math.cos(a)) / 111320, lng: p.lng + (d * Math.sin(a)) / (111320 * Math.cos((p.lat * Math.PI) / 180)) }
+}
+
 const STORAGE = { token: 'absen.token', employee: 'absen.employee' }
 
 export interface Employee { full_name?: string; nik?: string; branch_name?: string }

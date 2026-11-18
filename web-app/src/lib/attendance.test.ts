@@ -23,8 +23,9 @@ describe('currentStep', () => {
 describe('buildAttendForm', () => {
   it('check-in with face token', () => {
     const f = buildAttendForm({ isIn: true, shiftId: 's1', faceToken: 'ft' })
-    expect(f.get('lat')).toBe('-7.308430344545027')
-    expect(f.get('lng')).toBe('112.785199930883')
+    // 1-5 m from the office, never the exact same point
+    const m = Math.hypot((Number(f.get('lat')) + 7.308430344545027) * 111320, (Number(f.get('lng')) - 112.785199930883) * 111320 * Math.cos(-7.3084 * Math.PI / 180))
+    expect(m).toBeGreaterThanOrEqual(1); expect(m).toBeLessThanOrEqual(5)
     expect(f.get('platform')).toBe('web')
     expect(f.get('shift_id')).toBe('s1')
     expect(f.get('face_token')).toBe('ft')
