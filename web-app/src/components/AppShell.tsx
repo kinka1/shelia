@@ -13,6 +13,7 @@ import { TelegramFooter } from '@/features/remind/TelegramFooter'
 import { useRemindMe } from '@/features/remind/useRemindMe'
 import { todayWIB } from '@/lib/dailyLog'
 import { remindHoliday } from '@/lib/remindApi'
+import { isSuperadmin } from '@/lib/shelia'
 import { cn } from '@/lib/utils'
 
 const SECTIONS = [
@@ -23,7 +24,13 @@ const SECTIONS = [
       { to: '/riwayat', label: 'Riwayat', crumb: 'Riwayat' },
     ],
   },
-  { title: 'Alat', items: [{ to: '/log-api', label: 'Log API', crumb: 'Log API' }] },
+  {
+    title: 'Alat',
+    items: [
+      { to: '/log-api', label: 'Log API', crumb: 'Log API' },
+      { to: '/ubah-absen', label: 'Ubah Absen', crumb: 'Ubah Absen', admin: true },
+    ],
+  },
 ]
 
 const today = () =>
@@ -39,7 +46,7 @@ const today = () =>
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 
-function Rail({ onNavigate, invite }: { onNavigate?: () => void; invite?: string | null }) {
+function Rail({ onNavigate, invite, admin }: { onNavigate?: () => void; invite?: string | null; admin: boolean }) {
   return (
     <nav aria-label="Menu utama" className="flex h-full flex-col bg-sidebar px-3 py-4 text-sidebar-foreground">
       <div className="flex items-center gap-2.5 px-2 pb-4 pt-1 text-[15px] font-bold text-white">
@@ -49,7 +56,7 @@ function Rail({ onNavigate, invite }: { onNavigate?: () => void; invite?: string
       {SECTIONS.map((s) => (
         <div key={s.title}>
           <div className="px-2.5 pb-1.5 pt-3.5 text-[11px] uppercase tracking-[0.08em]">{s.title}</div>
-          {s.items.map((i) => (
+          {s.items.filter((i) => admin || !('admin' in i)).map((i) => (
             <NavLink
               key={i.to}
               to={i.to}
@@ -91,13 +98,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 hidden w-[210px] lg:block">
-        <Rail invite={me?.invite} />
+        <Rail invite={me?.invite} admin={isSuperadmin(employee)} />
       </aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-[210px] border-sidebar-border bg-sidebar p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navigasi utama</SheetDescription>
-          <Rail invite={me?.invite} onNavigate={() => setOpen(false)} />
+          <Rail invite={me?.invite} admin={isSuperadmin(employee)} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <div className="lg:pl-[210px]">

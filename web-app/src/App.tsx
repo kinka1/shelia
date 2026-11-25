@@ -3,6 +3,7 @@ import AppShell from '@/components/AppShell'
 import Absen from '@/pages/Absen'
 import Riwayat from '@/pages/Riwayat'
 import LogApi from '@/pages/LogApi'
+import UbahAbsen from '@/pages/UbahAbsen'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/riwayat-shelia" element={<Navigate to="/riwayat" replace />} />
         <Route path="/riwayat-maganghub" element={<Navigate to="/riwayat" replace />} />
         <Route path="/log-api" element={<LogApi />} />
+        <Route path="/ubah-absen" element={<UbahAbsen />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
