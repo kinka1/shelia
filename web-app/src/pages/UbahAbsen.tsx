@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useSession } from '@/features/session/SessionProvider'
 import { CHECK_IN_STATUSES, editCheckIn, listAttendance, type AdminRow, type CheckInStatus } from '@/lib/adminAttendance'
 import { todayWIB } from '@/lib/dailyLog'
-import { ApiError, errorText, isSuperadmin } from '@/lib/shelia'
+import { ApiError, errorText } from '@/lib/shelia'
 
 const hhmm = (s: string | null) => (s ? s.slice(11, 16) : '–')
 const failText = (e: unknown, fallback: string) => (e instanceof ApiError ? errorText(e) : fallback)
@@ -71,8 +71,8 @@ function EditDialog({ row, onClose, onSaved }: { row: AdminRow; onClose: () => v
 }
 
 export default function UbahAbsen() {
-  const { employee } = useSession()
-  const admin = isSuperadmin(employee)
+  const { superadmin } = useSession()
+  const admin = !!superadmin
   const [date, setDate] = useState(todayWIB)
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<AdminRow[] | null>(null)
@@ -96,6 +96,7 @@ export default function UbahAbsen() {
     return () => clearTimeout(t)
   }, [admin, date, q, load])
 
+  if (superadmin === null) return null
   if (!admin) return <Navigate to="/" replace />
 
   return (

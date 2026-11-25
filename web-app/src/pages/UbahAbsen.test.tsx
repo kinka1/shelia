@@ -13,9 +13,10 @@ const ROWS = [
     check_in_record: null, check_out_record: null },
 ]
 
-function stub(patch: () => Response = () => json({ status: 'success', data: {} })) {
-  const f = vi.fn(async (_url: string, init?: RequestInit) =>
-    init?.method === 'PATCH' ? patch() : json({ data: { data: ROWS } }))
+function stub(patch: () => Response = () => json({ status: 'success', data: {} }), roles: string[] = []) {
+  const f = vi.fn(async (url: string, init?: RequestInit) =>
+    String(url).startsWith('/api/me/access') ? json({ data: { roles } })
+      : init?.method === 'PATCH' ? patch() : json({ data: { data: ROWS } }))
   vi.stubGlobal('fetch', f)
   return f
 }
@@ -86,11 +87,18 @@ describe('UbahAbsen', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
-  it('a non-Superadmin is sent home', () => {
-    saveSession('tok', { full_name: 'Budi' })
-    const f = stub()
+  it('a non-Superadmin is sent home', async () => {
+    saveSession('tok', { full_name: 'Budi', role_name: 'Administrator' })
+    const f = stub(undefined, ['Supervisor'])
     ui()
-    expect(screen.getByText('HOME')).toBeInTheDocument()
+    expect(await screen.findByText('HOME')).toBeInTheDocument()
     expect(lists(f)).toHaveLength(0)
+  })
+
+  it('Superadmin from /me/access roles opens the page', async () => {
+    saveSession('tok', { full_name: 'Andi', role_name: 'Administrator' })
+    stub(undefined, ['Patrol Supervisor', 'Superadmin'])
+    ui()
+    expect(await screen.findByText('Budi')).toBeInTheDocument()
   })
 })

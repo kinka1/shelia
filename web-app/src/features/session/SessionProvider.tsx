@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
-  ApiError, clearSession, getEmployee, getToken, onUnauthorized, saveSession, sheliaApi, type Employee,
+  ApiError, clearSession, getEmployee, getToken, isSuperadmin, onUnauthorized, saveSession, sheliaApi, type Employee,
 } from '@/lib/shelia'
 import { remindPlatforms } from '@/lib/remindApi'
 
@@ -10,6 +10,8 @@ interface Session {
   login: (nik: string, pw: string) => Promise<void>
   logout: () => Promise<void>
   expiredMessage: string
+  /** null while /me/access is still being asked. */
+  superadmin: boolean | null
 }
 
 const Ctx = createContext<Session | null>(null)
@@ -24,6 +26,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState(getToken)
   const [employee, setEmployee] = useState(getEmployee)
   const [expiredMessage, setExpired] = useState('')
+  const [rbacAdmin, setRbacAdmin] = useState<boolean | null>(null)
+
+  // Superadmin may come from the RBAC roles table only (role_name then reads e.g. "Administrator").
+  useEffect(() => {
+    if (!token || isSuperadmin(employee)) return
+    let live = true
+    setRbacAdmin(null)
+    sheliaApi<{ data?: { roles?: unknown } }>('/me/access?platform=web', { action: 'Cek akses' })
+      .then((b) => live && setRbacAdmin(Array.isArray(b.data?.roles) && b.data.roles.includes('Superadmin')))
+      .catch(() => live && setRbacAdmin(false))
+    return () => { live = false }
+  }, [token, employee])
+  const superadmin = !token ? false : isSuperadmin(employee) ? true : rbacAdmin
 
   useEffect(
     () => onUnauthorized(() => {
@@ -59,8 +74,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ token, employee, login, logout, expiredMessage }),
-    [token, employee, login, logout, expiredMessage],
+    () => ({ token, employee, login, logout, expiredMessage, superadmin }),
+    [token, employee, login, logout, expiredMessage, superadmin],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -35,6 +35,14 @@ describe('AppShell', () => {
     expect(screen.queryByRole('link', { name: 'Ubah Absen' })).toBeNull()
   })
 
+  it('shows Ubah Absen when Superadmin comes from /me/access roles', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (u: string) =>
+      new Response(String(u).startsWith('/api/me/access') ? JSON.stringify({ data: { roles: ['Supervisor', 'Superadmin'] } }) : '{}')))
+    saveSession('t', { full_name: 'Andi', role_name: 'Administrator' })
+    render(<MemoryRouter initialEntries={['/log-api']}><SessionProvider><App /></SessionProvider></MemoryRouter>)
+    expect(await screen.findByRole('link', { name: 'Ubah Absen' })).toHaveAttribute('href', '/ubah-absen')
+  })
+
   it('opens without a Shelia login: Absen shows the login in the Shelia card, MagangHub still there', async () => {
     localStorage.clear()
     const f = vi.fn(async (_u: string) => new Response(JSON.stringify({ data: [] })))

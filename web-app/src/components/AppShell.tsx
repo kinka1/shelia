@@ -13,7 +13,6 @@ import { TelegramFooter } from '@/features/remind/TelegramFooter'
 import { useRemindMe } from '@/features/remind/useRemindMe'
 import { todayWIB } from '@/lib/dailyLog'
 import { remindHoliday } from '@/lib/remindApi'
-import { isSuperadmin } from '@/lib/shelia'
 import { cn } from '@/lib/utils'
 
 const SECTIONS = [
@@ -87,7 +86,7 @@ function Rail({ onNavigate, invite, admin }: { onNavigate?: () => void; invite?:
 export default function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
-  const { token, employee } = useSession()
+  const { token, employee, superadmin } = useSession()
   const remind = useRemindMe()
   const me = remind.me
   const name = employee?.full_name || me?.name || 'Karyawan'
@@ -98,13 +97,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 hidden w-[210px] lg:block">
-        <Rail invite={me?.invite} admin={isSuperadmin(employee)} />
+        <Rail invite={me?.invite} admin={!!superadmin} />
       </aside>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-[210px] border-sidebar-border bg-sidebar p-0">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SheetDescription className="sr-only">Navigasi utama</SheetDescription>
-          <Rail invite={me?.invite} admin={isSuperadmin(employee)} onNavigate={() => setOpen(false)} />
+          <Rail invite={me?.invite} admin={!!superadmin} onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <div className="lg:pl-[210px]">
