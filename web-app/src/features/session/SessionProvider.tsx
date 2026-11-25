@@ -40,7 +40,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     })
     if (!res.data?.token) throw new ApiError('Login gagal: token tidak diterima.')
     const e = res.data?.employee || {}
-    const emp = { full_name: e.full_name, nik: e.nik, branch_name: e.branch_name }
+    const emp = { full_name: e.full_name, nik: e.nik, branch_name: e.branch_name, role_name: e.role_name }
     saveSession(res.data.token, emp)
     setEmployee(emp)
     setToken(getToken())

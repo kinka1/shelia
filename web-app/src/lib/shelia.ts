@@ -10,7 +10,9 @@ export function jitter(p: { lat: number; lng: number }, rand = Math.random): { l
 
 const STORAGE = { token: 'absen.token', employee: 'absen.employee' }
 
-export interface Employee { full_name?: string; nik?: string; branch_name?: string }
+export interface Employee { full_name?: string; nik?: string; branch_name?: string; role_name?: string }
+
+export const isSuperadmin = (e: Employee | null): boolean => e?.role_name === 'Superadmin'
 
 export class ApiError extends Error {
   status?: number

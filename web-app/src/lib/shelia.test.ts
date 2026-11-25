@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, clearSession, errorText, getToken, onUnauthorized, saveSession, sheliaApi } from './shelia'
+import { ApiError, clearSession, errorText, getToken, isSuperadmin, onUnauthorized, saveSession, sheliaApi } from './shelia'
 
 const reply = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers })
@@ -88,5 +88,14 @@ describe('Keluar (clearSession)', () => {
     clearSession(true)
     expect(getToken()).toBeNull()
     expect(localStorage.getItem('shelia.history')).toBeNull()
+  })
+})
+
+describe('isSuperadmin', () => {
+  it('is true only for role_name Superadmin', () => {
+    expect(isSuperadmin({ role_name: 'Superadmin' })).toBe(true)
+    expect(isSuperadmin({ role_name: 'HR officer' })).toBe(false)
+    expect(isSuperadmin({})).toBe(false)
+    expect(isSuperadmin(null)).toBe(false)
   })
 })

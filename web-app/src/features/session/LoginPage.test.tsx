@@ -32,6 +32,17 @@ describe('LoginPage', () => {
     expect(JSON.parse(f.mock.calls[0][1].body)).toEqual({ username: '1', password: 'pw' })
   })
 
+  it('login keeps role_name', async () => {
+    const body = { data: { token: 'T', employee: { full_name: 'Andi', nik: '1', branch_name: 'X', role_name: 'Superadmin' } } }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(body))))
+    ui()
+    type('NIK', '1')
+    type('Password', 'pw')
+    fireEvent.click(screen.getByRole('button', { name: 'Masuk' }))
+    await waitFor(() => expect(getToken()).toBe('T'))
+    expect(getEmployee()?.role_name).toBe('Superadmin')
+  })
+
   it('shows the server error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: 'Salah' }), { status: 400 })))
     ui()
